@@ -14,28 +14,26 @@ sizer_aggregate <- function(sizer_object = NULL){
   # Perform necessary wrangling
   sizer_data <- sizer_raw %>%
     # Rename columns
-    dplyr::rename(x_grid = x, h_grid = h, slope = class) %>%
+    dplyr::rename(x_grid = x, h_grid = h, slope_becomes = class) %>%
     # Drop all 'insufficient data' rows
-    dplyr::filter(slope != "insufficient data") %>%
+    dplyr::filter(slope_becomes != "insufficient data") %>%
     # Within bandwidth levels (h_grid)
     dplyr::group_by(h_grid) %>%
     # Identify whether the next value is the same or different
     dplyr::mutate(transition = dplyr::case_when(
       # First identify start of each group
-      is.na(dplyr::lag(slope, n = 1)) ~ 'start',
-      # is.na(dplyr::lead(slope, n = 1)) ~ 'end',
+      is.na(dplyr::lag(slope_becomes, n = 1)) ~ 'start',
       # Now identify whether each value is the same as or different than previous
-      slope == dplyr::lag(slope, n = 1) ~ 'same',
-      slope != dplyr::lag(slope, n = 1) ~ 'change'
-      # slope == dplyr::lead(slope, n = 1) ~ 'no'
+      slope_becomes == dplyr::lag(slope_becomes, n = 1) ~ 'same',
+      slope_becomes != dplyr::lag(slope_becomes, n = 1) ~ 'change'
     )) %>%
     # Filter to retain only those rows that indicate a slope change
     dplyr::filter(transition == "change") %>%
     # Lets also identify what type of change the transition was
     dplyr::mutate(change_type = dplyr::case_when(
-      transition == "change" & slope == "increasing" ~ 'change_to_positive',
-      transition == "change" & slope == "flat" ~ 'change_to_zero',
-      transition == "change" & slope == "decreasing" ~ 'change_to_negative')) %>%
+      transition == "change" & slope_becomes == "increasing" ~ 'change_to_positive',
+      transition == "change" & slope_becomes == "flat" ~ 'change_to_zero',
+      transition == "change" & slope_becomes == "decreasing" ~ 'change_to_negative')) %>%
     # Account for if multiple of the same change happen in a curve
     dplyr::group_by(h_grid, change_type) %>%
     dplyr::mutate(change_count = seq_along(unique(x_grid))) %>%
@@ -44,7 +42,7 @@ sizer_aggregate <- function(sizer_object = NULL){
     # Group by change type
     dplyr::group_by(change_count, change_type) %>%
     # And average the x_grid value
-    dplyr::summarise(slope = dplyr::first(slope),
+    dplyr::summarise(slope_becomes = dplyr::first(slope_becomes),
                      mean_x_v1 = mean(as.numeric(x_grid), na.rm = T),
                      sd_x_v1 = sd(as.numeric(x_grid), na.rm = T),
                      n_x_v1 = dplyr::n(),
@@ -56,12 +54,12 @@ sizer_aggregate <- function(sizer_object = NULL){
     dplyr::arrange(mean_x_v1) %>%
     # Handle the same "change" occurring twice
     ## Identify these cases
-    dplyr::mutate(diagnostic = cumsum(ifelse(slope != dplyr::lag(slope) | base::is.na(dplyr::lag(slope)), yes = 1, no = 0))) %>%
+    dplyr::mutate(diagnostic = cumsum(ifelse(slope_becomes != dplyr::lag(slope_becomes) | base::is.na(dplyr::lag(slope_becomes)), yes = 1, no = 0))) %>%
     ## Group by that diagnostic and the change type
     dplyr::group_by(change_type, diagnostic) %>%
     ## Summarize
     dplyr::summarise(change_count = dplyr::first(change_count),
-                     slope = dplyr::first(slope),
+                     slope_becomes = dplyr::first(slope_becomes),
                      mean_x = mean(as.numeric(mean_x_v1), na.rm = T),
                      sd_x = mean(as.numeric(sd_x_v1)),
                      n_x = sum(n_x_v1, na.rm = T),
@@ -122,9 +120,9 @@ sizer_slice <- function(sizer_object = NULL, bandwidth = NULL){
   # Perform necessary wrangling
   sizer_data <- sizer_raw %>%
     # Rename columns
-    dplyr::rename(x_grid = x, h_grid = h, slope = class) %>%
+    dplyr::rename(x_grid = x, h_grid = h, slope_becomes = class) %>%
     # Drop all 'insufficient data' rows
-    dplyr::filter(slope != "insufficient data") %>%
+    dplyr::filter(slope_becomes != "insufficient data") %>%
     # Find the bandwidth closest to the user-specified value
     dplyr::filter(base::abs(h_grid - bandwidth) == base::min(base::abs(h_grid - bandwidth))) %>%
     # Group within the single bandwidth
@@ -132,18 +130,18 @@ sizer_slice <- function(sizer_object = NULL, bandwidth = NULL){
     # Identify whether the next value is the same or different
     dplyr::mutate(transition = dplyr::case_when(
       # First identify start of each group
-      is.na(dplyr::lag(slope, n = 1)) ~ 'start',
+      is.na(dplyr::lag(slope_becomes, n = 1)) ~ 'start',
       # Now identify whether each value is the same as or different than previous
-      slope == dplyr::lag(slope, n = 1) ~ 'same',
-      slope != dplyr::lag(slope, n = 1) ~ 'change'
+      slope_becomes == dplyr::lag(slope_becomes, n = 1) ~ 'same',
+      slope_becomes != dplyr::lag(slope_becomes, n = 1) ~ 'change'
     )) %>%
     # Filter to retain only those rows that indicate a slope change
     dplyr::filter(transition == "change") %>%
     # Lets also identify what type of change the transition was
     dplyr::mutate(change_type = dplyr::case_when(
-      transition == "change" & slope == "increasing" ~ 'change_to_positive',
-      transition == "change" & slope == "flat" ~ 'change_to_zero',
-      transition == "change" & slope == "decreasing" ~ 'change_to_negative')) %>%
+      transition == "change" & slope_becomes == "increasing" ~ 'change_to_positive',
+      transition == "change" & slope_becomes == "flat" ~ 'change_to_zero',
+      transition == "change" & slope_becomes == "decreasing" ~ 'change_to_negative')) %>%
     # Account for if multiple of the same change happen in a curve
     dplyr::group_by(h_grid, change_type) %>%
     dplyr::mutate(change_count = seq_along(unique(x_grid))) %>%
