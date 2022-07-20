@@ -64,7 +64,8 @@ for(place in "ALBION"){
   message("IDing inflection points...")
   
   # Invoke the SiZer::SiZer function
-  e <- SiZer::SiZer(x = data_sub$Year, y = data_sub$FNYield,
+  e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
+                    y = data_sub[[response_var]],
                     h = c(2, 10), degree = 1,
                     derv = 1, grid.length = 100)
   
@@ -91,21 +92,21 @@ for(place in "ALBION"){
   
   # Plot the aggregated inflection points
   agg_plot <- sizer_ggplot(raw_data = data_sub, sizer_data = sizer_tidy,
-                           x = "Year", y = "FNYield") +
+                           x = explanatory_var, y = response_var) +
     ggtitle(label = "Aggregated Inflection Points")
   
   # Plot the bandwidth-specific plots too!
   ## Low Bandwidth (h)
   low_plot <- sizer_ggplot(raw_data = data_sub, sizer_data = sizer_low,
-               x = "Year", y = "FNYield") +
+               x = explanatory_var, y = response_var) +
     ggtitle(label = paste0("h = ", band_low, " Inflection Points"))
   ## Mid Bandwidth (h)
   mid_plot <- sizer_ggplot(raw_data = data_sub, sizer_data = sizer_mid,
-               x = "Year", y = "FNYield") +
+               x = explanatory_var, y = response_var) +
     ggtitle(label = paste0("h = ", band_mid, " Inflection Points"))
   ## High Bandwidth (h)
   high_plot <- sizer_ggplot(raw_data = data_sub, sizer_data = sizer_high,
-               x = "Year", y = "FNYield") +
+               x = explanatory_var, y = response_var) +
     ggtitle(label = paste0("h = ", band_high, " Inflection Points"))
   
   # Combine plots
@@ -163,23 +164,23 @@ for(place in "ALBION"){
   
   # Extract (1) statistics and (2) estimates from linear models
   agg_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_tidy,
-                     x = "Year", y =  "FNYield") %>%
+                     x = explanatory_var, y =  response_var) %>%
     # Then add columns for which bandwidth & which site
     purrr::map(.f = mutate, bandwidth = "aggregate",
                .before = dplyr::everything())
   ## Low bandwidth
   low_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_low,
-                     x = "Year", y =  "FNYield") %>%
+                     x = explanatory_var, y =  response_var) %>%
     purrr::map(.f = mutate, bandwidth = band_low,
                .before = dplyr::everything())
   ## Middle bandwidth
   mid_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_mid,
-                     x = "Year", y =  "FNYield") %>%
+                     x = explanatory_var, y =  response_var) %>%
     purrr::map(.f = mutate, bandwidth = band_mid,
                .before = dplyr::everything())
   ## High bandwidth
   high_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_high,
-                     x = "Year", y =  "FNYield") %>%
+                     x = explanatory_var, y =  response_var) %>%
     purrr::map(.f = mutate, bandwidth = band_high,
                .before = dplyr::everything())
   
