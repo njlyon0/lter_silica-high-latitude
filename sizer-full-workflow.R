@@ -13,10 +13,10 @@ librarian::shelf(broom, cowplot, SiZer, tidyverse)
 rm(list = ls())
 
 # Load data
-data <- readr::read_csv(file = file.path("wg_silica", "CryoData_forNick_6.29.22.csv"))
+data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv"))
 
 # Load helper functions
-source(file.path("wg_silica", "sizer-helper-fxns.R"))
+source("sizer-helper-fxns.R")
 
 # Loop Extract of SiZer Data ----
 
@@ -24,20 +24,32 @@ source(file.path("wg_silica", "sizer-helper-fxns.R"))
 export_folder <- "plots"
 dir.create(path = export_folder, showWarnings = FALSE)
 
-# Make an empty list to store all of our extracted information
-giant_list <- list()
+# Identify response (Y) and explanatory (X) variables
+response_var <- "FNYield"
+explanatory_var <- "Year"
 
-# Make a counter and set it to 1 (the list will add to it)
-j <- 1
+# Do a quick typo check
+if(!response_var %in% names(data)) {
+  message("Response not found in data! Check spelling.") } else {
+    message("Response variable looks good!") }
+if(!explanatory_var %in% names(data)) {
+  message("Response not found in data! Check spelling.") } else {
+    message("Explanatory variable looks good!") }
 
 # Identify the three bandwidths you want to look at specifically
 band_low <- 3
 band_mid <- 6
 band_high <- 9
 
+# Make an empty list to store all of our extracted information
+giant_list <- list()
+
+# Make a counter and set it to 1 (the list will add to it)
+j <- 1
+
 # Loop through sites and extract information
-for(place in unique(data$site)) {
-# for(place in "ALBION"){
+# for(place in unique(data$site)) {
+for(place in "ALBION"){
   
   # Start with a message!
   message("Processing begun for site: ", place)
@@ -152,7 +164,7 @@ for(place in unique(data$site)) {
   # Extract (1) statistics and (2) estimates from linear models
   agg_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_tidy,
                      x = "Year", y =  "FNYield") %>%
-    # Then add a column for what bandwidth this is for
+    # Then add columns for which bandwidth & which site
     purrr::map(.f = mutate, bandwidth = "aggregate",
                .before = dplyr::everything())
   ## Low bandwidth
@@ -182,6 +194,9 @@ for(place in unique(data$site)) {
     # Make all columns characters
     purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
                                           as.character)) %>%
+    # Add a site column
+    purrr::map(.f = mutate, site = place,
+               .before = dplyr::everything()) %>%
     # Combine all list elements into a dataframe
     purrr::map_dfr(.f = dplyr::select, dplyr::everything())
   
@@ -190,6 +205,8 @@ for(place in unique(data$site)) {
     purrr::map(.f = 2) %>%
     purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
                                                  as.character)) %>%
+   purrr::map(.f = mutate, site = place,
+              .before = dplyr::everything()) %>%
     purrr::map_dfr(.f = dplyr::select, dplyr::everything())
   
   # Add this information to their respective lists
