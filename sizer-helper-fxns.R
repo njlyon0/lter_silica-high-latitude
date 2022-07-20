@@ -1,7 +1,13 @@
+## ----------------------------------------- ##
+       # Custom `SiZer` Helper Functions
+## ----------------------------------------- ##
+# Written by: Nick J Lyon
+
 # Read in needed libraries
 librarian::shelf(SiZer, tidyverse)
 
 # Function No. 1 - Extract and Average -----------------------------
+## Purpose: Identifies all inflection points (i.e., changes in slope) across all bandwidths supplied to `SiZer::SiZer`. Averages within type of inflection point (i.e., +/- or -/+) to create 'aggregate' inflection points
 sizer_aggregate <- function(sizer_object = NULL){
   
   # Error out if object isn't provided or isn't a SiZer object
@@ -93,6 +99,7 @@ sizer_aggregate <- function(sizer_object = NULL){
 }
 
 # Function No. 3 - Identify Inflection Points for ONE Bandwidth ----
+## Purpose: Identifies the inflection points (i.e., +/- or -/+ slope changes) for the *one* specified bandwidth. Note that this bandwidth need not be an exact match for what is in the `SiZer` object but should be close 
 sizer_slice <- function(sizer_object = NULL, bandwidth = NULL){
   
   # Error out if object isn't provided or isn't a SiZer object
@@ -106,7 +113,7 @@ sizer_slice <- function(sizer_object = NULL, bandwidth = NULL){
   if(!is.numeric(bandwidth)){
     bandwidth <- suppressWarnings(as.numeric(bandwidth)) }
   
-  # Error out if coersion to numeric deleted bandwidth
+  # Error out if coercion to numeric deleted bandwidth
   if(is.na(bandwidth))
     stop("`bandwidth` must be numeric (or coercible to numeric)")
   
@@ -169,6 +176,7 @@ sizer_slice <- function(sizer_object = NULL, bandwidth = NULL){
   }
 
 # Function No. 4 - SiZer Base Plot ---------------------------------
+## Purpose: Creates the base R `plot` returned for `SiZer` objects and adds horizontal lines at the three bandwidths provided in `bandwidth_vec`
 sizer_plot <- function(sizer_object = NULL,
                        bandwidth_vec = c(3, 6, 9)){
   
@@ -184,6 +192,7 @@ sizer_plot <- function(sizer_object = NULL,
 }
 
 # Function No. 5 - SiZer ggplot ------------------------------------
+## Purpose: Creates a `ggplot2` plot of the trendline with slope changes identified by `SiZer` in dashed orange lines and inflection points (i.e., +/- or -/+ slope changes) identified in blue and red respectively
 sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
                          sizer_data = NULL){
   
@@ -236,12 +245,12 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
 }
 
 # Function No. 6 - Linear Models with SiZer ------------------------
+## Purpose: "Breaks" a given continuous variable at the inflection points identified by `sizer_aggregate` or `sizer_slice` and fits separate linear models for each "chunk" of the line between those inflection points. Returns a list containing (1) the model summary statistics and (2) the the estimates of the intercept and line
 sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
                      sizer_data = NULL){
   
   # Error out if these aren't provided
-  if(is.null(raw_data) | is.null(sizer_data) |
-     is.null(x) | is.null(y))
+  if(is.null(raw_data) | is.null(sizer_data) | is.null(x) | is.null(y))
     stop("All arguments must be provided.")
   
   # Error out if the data are not both dataframes
