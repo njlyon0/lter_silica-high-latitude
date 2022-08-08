@@ -313,7 +313,7 @@ sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
     
     # Identify rough groups
     data_mod <- raw_data %>%
-      dplyr::mutate(groups_rough = base::cut(x = raw_data[[y]],
+      dplyr::mutate(groups_rough = base::cut(x = raw_data[[x]],
                                  breaks = c(-Inf, brk_pts_actual, Inf)))
     
     # Fit a model for each
