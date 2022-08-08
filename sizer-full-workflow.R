@@ -92,7 +92,8 @@ for(place in unique(data$site)) {
   
   # Plot the aggregated inflection points
   agg_plot <- sizer_ggplot(raw_data = data_sub, sizer_data = sizer_tidy,
-                           x = explanatory_var, y = response_var) +
+                           x = explanatory_var, y = response_var,
+                           trendline = FALSE) +
     ggtitle(label = "Aggregated Inflection Points")
   
   # Plot the bandwidth-specific plots too!

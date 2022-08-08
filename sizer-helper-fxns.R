@@ -194,7 +194,7 @@ sizer_plot <- function(sizer_object = NULL,
 # Function No. 5 - SiZer ggplot ------------------------------------
 ## Purpose: Creates a `ggplot2` plot of the trendline with slope changes identified by `SiZer` in dashed orange lines and inflection points (i.e., +/- or -/+ slope changes) identified in blue and red respectively
 sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
-                         sizer_data = NULL){
+                         sizer_data = NULL, trendline = FALSE){
   
   # Error out if these aren't provided
   if(is.null(raw_data) | is.null(sizer_data) |
@@ -214,11 +214,15 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
   if(!x %in% names(raw_data) | !y %in% names(raw_data))
     stop("`x` and `y` are not names in the provided `raw_data` object")
   
+  # Warning if trendline isn't TRUE/FALSE
+  if(class(trendline) != "logical"){
+    message("`trendline` must be TRUE or FALSE. Defaulting to FALSE")
+    trendline <- FALSE
+  }
+  
   # Now make the actual plot
   p <- ggplot(data = raw_data, aes_string(x = x, y = y)) +
     geom_point() +
-    geom_smooth(method = 'loess', formula = 'y ~ x', 
-                se = F, color = 'black') +
     # Including SiZer-identified inflection points
     geom_vline(xintercept = sizer_data$mean_x, color = 'orange',
                linetype = 2, na.rm = TRUE) +
@@ -227,7 +231,12 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
     # And a theme
     theme_classic()
   
- 
+  # If `trendline` is TRUE, add the trendline
+  if(trendline == TRUE) {
+  p <- p +
+    geom_smooth(method = 'loess', formula = 'y ~ x', 
+                se = FALSE, color = 'black') }
+  
   # Add the positive to negative inflection point line(s) if one exists
   if(!base::all(is.na(sizer_data$pos_to_neg))){
     p <- p +
