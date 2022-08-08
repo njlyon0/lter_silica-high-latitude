@@ -37,9 +37,9 @@ if(!explanatory_var %in% names(data)) {
     message("Explanatory variable looks good!") }
 
 # Identify the three bandwidths you want to look at specifically
-band_low <- 3
-band_mid <- 6
-band_high <- 9
+band_low <- 4
+band_mid <- 5
+band_high <- 8
 
 # Make an empty list to store all of our extracted information
 giant_list <- list()
