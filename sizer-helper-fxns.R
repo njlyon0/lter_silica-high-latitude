@@ -440,5 +440,8 @@ id_inflections <- function(raw_data = NULL, sizer_data = NULL,
 ## Also need to see if the `if`/`else` bit in `sizer_lm` is actually necessary
 
 
+## Also, add `trendline = FALSE` to all of the `sizer_ggplot` calls
+## Maybe change that argument to allow (1) no trendline, (2) smooth trendline, or (3) segmented trendline?
+
 
 # End ----
