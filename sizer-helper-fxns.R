@@ -362,4 +362,83 @@ sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
     return(return_list) }
 }
 
+# Function No. 7 - Identify Inflection Points in Slope -------------
+
+id_inflections <- function(raw_data = NULL, sizer_data = NULL,
+                           x = NULL, y = NULL){
+  
+  # Error out if these aren't provided
+  if(is.null(raw_data) | is.null(sizer_data) | is.null(x) | is.null(y))
+    stop("All arguments must be provided.")
+  
+  # Error out if the data are not both dataframes
+  if(class(raw_data) != "data.frame" | class(sizer_data) != "data.frame") 
+    stop("Both the raw data and the extracted SiZer data must be data frames")
+  
+  # Error out if the column names are not characters 
+  if(!is.character(x) | !is.character(y))
+    stop("The x and y columns must be specified as characters")
+  
+  # Error out if the column names are not in the data object
+  if(!x %in% names(raw_data) | !y %in% names(raw_data))
+    stop("`x` and `y` are not names in the provided `raw_data` object")
+  
+  # Grab inflection points
+  brk_pts <- c(sizer_data$pos_to_neg, sizer_data$neg_to_pos)
+  
+  # Drop NAs
+  brk_pts_actual <- brk_pts[!is.na(brk_pts)]
+  brk_pts_actual
+  
+  # Create necessary columns
+  data_mod <- raw_data %>%
+    # Identify rough groups
+    dplyr::mutate(
+      groups = base::cut(x = raw_data[[x]],
+                         breaks = c(-Inf, brk_pts_actual, Inf)),
+      .after = x) %>%
+    # Identify start / end years from the groups
+    tidyr::separate(col = groups, sep = ",", remove = FALSE,
+                    into = c('rough_start', 'rough_end')) %>%
+    # Remove parentheses / brackets
+    dplyr::mutate(
+      simp_start = stringr::str_sub(
+        rough_start, start = 2, end = nchar(rough_start)),
+      simp_end = gsub(pattern = "]| ", replacement = "", 
+                      x = rough_end)) %>%
+    # Swap "Inf" and "-Inf" for the actual start/end X values
+    dplyr::mutate(
+      start = as.numeric(ifelse(test = (simp_start == -Inf),
+                                yes = dplyr::first(raw_data[[x]]),
+                                no = simp_start)),
+      end = as.numeric(ifelse(test = (simp_end == Inf),
+                              yes = dplyr::last(raw_data[[x]]),
+                              no = simp_end)),
+      .after = groups) %>%
+    # Remove intermediary columns
+    dplyr::select(-rough_start, -rough_end,
+                  -simp_start, -simp_end) %>%
+    # Make it a dataframe
+    as.data.frame()
+  
+  # Return that modified dataframe
+  return(data_mod) }
+
+
+
+
+# test <- id_inflections(raw_data = data_sub, sizer_data = sizer_tidy,
+#                x = explanatory_var, y =  response_var)
+# 
+# view(test)
+# 
+# head(test)
+
+
+# NEXT:
+## Need to refine `sizer_lm` so that it can use the groups identified by either `id_inflections` or `id_slope_changes` (not yet created) rather than identifying groups separately
+## Also need to see if the `if`/`else` bit in `sizer_lm` is actually necessary
+
+
+
 # End ----
