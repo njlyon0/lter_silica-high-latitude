@@ -20,10 +20,6 @@ source("sizer-helper-fxns.R")
 
 # Loop Extract of SiZer Data ----
 
-# Create a folder to save experimental outputs
-export_folder <- "plots"
-dir.create(path = export_folder, showWarnings = FALSE)
-
 # Identify response (Y) and explanatory (X) variables
 response_var <- "FNYield"
 explanatory_var <- "Year"
@@ -41,6 +37,13 @@ band_low <- 4
 band_mid <- 5
 band_high <- 8
 
+# Create a folder to save experimental outputs
+# Folder name is: [response]_bw[bandwidths]_[date]
+(export_folder <- paste0(response_var, "_bw",
+                         band_low, band_mid, band_high,
+                         "_", Sys.Date()))
+dir.create(path = export_folder, showWarnings = FALSE)
+
 # Make an empty list to store all of our extracted information
 giant_list <- list()
 
@@ -49,7 +52,7 @@ j <- 1
 
 # Loop through sites and extract information
 # for(place in unique(data$site)) {
-for(place in "ALBION"){
+for(place in "Imnavait Weir"){
   
   # Start with a message!
   message("Processing begun for site: ", place)
@@ -207,8 +210,8 @@ for(place in "ALBION"){
     purrr::map(.f = 2) %>%
     purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
                                                  as.character)) %>%
-   purrr::map(.f = mutate, site = place,
-              .before = dplyr::everything()) %>%
+    purrr::map(.f = mutate, site = place,
+               .before = dplyr::everything()) %>%
     purrr::map_dfr(.f = dplyr::select, dplyr::everything())
   
   # Add this information to their respective lists
