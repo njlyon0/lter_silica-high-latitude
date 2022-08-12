@@ -317,37 +317,29 @@ id_inflections <- function(raw_data = NULL, sizer_data = NULL,
 
 # Function No. 6 - Linear Models with SiZer ------------------------
 ## Purpose: fits separate linear models for each group of the line between the break points identified by `id_inflections` or `id_slope_changes`. Returns a list containing (1) the model summary statistics and (2) the the estimates of the intercept and line
-sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
-                     sizer_data = NULL){
+sizer_lm <- function(data = NULL, x = NULL, y = NULL,
+                     group_col = NULL){
   
   # Error out if these aren't provided
-  if(is.null(raw_data) | is.null(sizer_data) | is.null(x) | is.null(y))
+  if(is.null(data) | is.null(group_col) | is.null(x) | is.null(y))
     stop("All arguments must be provided.")
   
   # Error out if the data are not both dataframes
-  if(class(raw_data) != "data.frame" |
-     class(sizer_data) != "data.frame") 
+  if(class(data) != "data.frame") 
     stop("Both the raw data and the extracted SiZer data must be data frames")
   
   # Error out if the column names are not characters 
-  if(!is.character(x) | !is.character(y))
-    stop("The x and y columns must be specified as characters")
+  if(!is.character(x) | !is.character(y) | !is.character(group_col))
+    stop("`x`, `y`, and `group_col` must be specified as characters")
   
   # Error out if the column names are not in the data object
-  if(!x %in% names(raw_data) | !y %in% names(raw_data))
-    stop("`x` and `y` are not names in the provided `raw_data` object")
-  
-  # Grab inflection points
-  brk_pts <- c(sizer_data$pos_to_neg, sizer_data$neg_to_pos)
-  
-  # Drop NAs
-  brk_pts_actual <- brk_pts[!is.na(brk_pts)]
-  brk_pts_actual
+  if(!x %in% names(data) | !y %in% names(data) | !group_col %in% names(data))
+    stop("At least one of `x`, `y`, or `group_col` are not names in the provided `data` object")
   
   # Handle plots without break points
-  if(length(brk_pts_actual) == 0){
+  if(length(unique(data[[group_col]])) == 1){
     # Just fit model
-    model_fit <- lm(raw_data[[y]] ~ raw_data[[x]])
+    model_fit <- lm(data[[y]] ~ data[[x]])
     
     # Identify statistics and estimates
     stat_df <- data.frame(broom::glance(model_fit)) %>%
@@ -373,17 +365,11 @@ sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
     # Make an empty list to store each model
     model_fit_list <- list()
     
-    # Identify rough groups
-    data_mod <- raw_data %>%
-      dplyr::mutate(groups_rough = base::cut(x = raw_data[[x]],
-                                 breaks = c(-Inf, brk_pts_actual, Inf)))
-    
     # Fit a model for each
-    for(chunk in unique(data_mod$groups_rough)){
+    for(chunk in unique(data[[group_col]])){
       
       # Fit model
-      chunk_fit <- model_fit <- lm(data_mod[[y]] ~ data_mod[[x]],
-                      subset = data_mod$groups_rough == chunk)
+      chunk_fit <- model_fit <- lm(data[[y]] ~ data[[x]], subset = data[[group_col]] == chunk)
       
       # Grab statistics
       chk_stat_df <- data.frame(broom::glance(chunk_fit)) %>%
@@ -423,22 +409,6 @@ sizer_lm <- function(raw_data = NULL, x = NULL, y = NULL,
     # Return it
     return(return_list) }
 }
-
-
-
-
-
-# test <- id_inflections(raw_data = data_sub, sizer_data = sizer_tidy,
-#                x = explanatory_var, y =  response_var)
-# 
-# view(test)
-# 
-# head(test)
-
-
-# NEXT:
-## Need to refine `sizer_lm` so that it can use the groups identified by either `id_inflections` or `id_slope_changes` (not yet created) rather than identifying groups separately
-## Also need to see if the `if`/`else` bit in `sizer_lm` is actually necessary
 
 
 ## Also, add `trendline = FALSE` to all of the `sizer_ggplot` calls

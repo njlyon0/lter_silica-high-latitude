@@ -52,7 +52,7 @@ j <- 1
 
 # Loop through sites and extract information
 # for(place in unique(data$site)) {
-for(place in "Imnavait Weir"){
+for(place in "ALBION"){
   
   # Start with a message!
   message("Processing begun for site: ", place)
@@ -64,7 +64,7 @@ for(place in "Imnavait Weir"){
   
   # Loop - ID Inflection Points ----
   # Print a progress message
-  message("IDing inflection points...")
+  message("Run SiZer...")
   
   # Invoke the SiZer::SiZer function
   e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
@@ -162,29 +162,55 @@ for(place in "Imnavait Weir"){
   giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
   giant_list[[paste0("specific_", j)]] <- complete_export
 
+  # Loop - Identify Inflection Points ----
+  # Print a progress message
+  message("Find inflection points...")
+  
+  # Identify inflection points
+  ## Aggregate
+  data_sub_agg <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_tidy,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## Low
+  data_sub_low <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_low,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## Mid
+  data_sub_mid <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_mid,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## High
+  data_sub_high <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_high,
+                                 x = explanatory_var,
+                                 y = response_var)
+  
   # Loop - Fit Linear Models ----
   # Print a progress message
   message("Fit regressions...")
   
   # Extract (1) statistics and (2) estimates from linear models
-  agg_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_tidy,
-                     x = explanatory_var, y =  response_var) %>%
+  agg_lm <- sizer_lm(data = data_sub_agg, x = explanatory_var,
+                     y = response_var, group_col = "groups") %>%
     # Then add columns for which bandwidth & which site
     purrr::map(.f = mutate, bandwidth = "aggregate",
                .before = dplyr::everything())
   ## Low bandwidth
-  low_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_low,
-                     x = explanatory_var, y =  response_var) %>%
+  low_lm <- sizer_lm(data = data_sub_low, x = explanatory_var,
+                     y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_low,
                .before = dplyr::everything())
   ## Middle bandwidth
-  mid_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_mid,
-                     x = explanatory_var, y =  response_var) %>%
+  mid_lm <- sizer_lm(data = data_sub_mid, x = explanatory_var,
+                     y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_mid,
                .before = dplyr::everything())
   ## High bandwidth
-  high_lm <- sizer_lm(raw_data = data_sub, sizer_data = sizer_high,
-                     x = explanatory_var, y =  response_var) %>%
+  high_lm <- sizer_lm(data = data_sub_high, x = explanatory_var,
+                      y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_high,
                .before = dplyr::everything())
   
