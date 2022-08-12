@@ -48,8 +48,8 @@ giant_list <- list()
 j <- 1
 
 # Loop through sites and extract information
-for(place in unique(data$site)) {
-# for(place in "ALBION"){
+# for(place in unique(data$site)) {
+for(place in "ALBION"){
   
   # Start with a message!
   message("Processing begun for site: ", place)
