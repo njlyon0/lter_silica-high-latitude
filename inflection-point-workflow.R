@@ -97,7 +97,7 @@ for(place in "ALBION"){
   agg_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_tidy,
                            x = explanatory_var, y = response_var,
-                           trendline = FALSE) +
+                           trendline = FALSE, vline = "all") +
     ggtitle(label = "Aggregated Inflection Points")
   
   # Plot the bandwidth-specific plots too!
@@ -105,19 +105,19 @@ for(place in "ALBION"){
   low_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_low,
                x = explanatory_var, y = response_var,
-               trendline = FALSE) +
+               trendline = FALSE, vline = "all") +
     ggtitle(label = paste0("h = ", band_low, " Inflection Points"))
   ## Mid Bandwidth (h)
   mid_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_mid,
                x = explanatory_var, y = response_var,
-               trendline = FALSE) +
+               trendline = FALSE, vline = "all") +
     ggtitle(label = paste0("h = ", band_mid, " Inflection Points"))
   ## High Bandwidth (h)
   high_plot <- sizer_ggplot(raw_data = data_sub,
                             sizer_data = sizer_high,
                x = explanatory_var, y = response_var,
-               trendline = FALSE) +
+               trendline = FALSE, vline = "all") +
     ggtitle(label = paste0("h = ", band_high, " Inflection Points"))
   
   # Combine plots

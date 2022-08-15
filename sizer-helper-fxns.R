@@ -194,7 +194,8 @@ sizer_plot <- function(sizer_object = NULL,
 # Function No. 5 - SiZer ggplot ------------------------------------
 ## Purpose: Creates a `ggplot2` plot of the trendline with slope changes identified by `SiZer` in dashed orange lines and inflection points (i.e., +/- or -/+ slope changes) identified in blue and red respectively
 sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
-                         sizer_data = NULL, trendline = FALSE){
+                         sizer_data = NULL, trendline = FALSE,
+                         vline = "all"){
   
   # Error out if these aren't provided
   if(is.null(raw_data) | is.null(sizer_data) |
@@ -214,22 +215,35 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
   if(!x %in% names(raw_data) | !y %in% names(raw_data))
     stop("`x` and `y` are not names in the provided `raw_data` object")
   
+  # Error out for unsupported vertical intercept call
+  if(!vline %in% c("all", "inflections", "changes", "none"))
+    stop("`vline` must be one of 'all', 'inflections', 'changes', or 'none'")
+  
   # Warning if trendline isn't TRUE/FALSE
   if(class(trendline) != "logical"){
     message("`trendline` must be TRUE or FALSE. Defaulting to FALSE")
-    trendline <- FALSE
+    trendline <- FALSE }
+  
+  # Warning if vline is set to FALSE (rather than "none")
+  if(vline == FALSE){
+    message("`vline` should be set to 'none' if no x-intercepts are desired. Defaulting to 'none'")
+    vline <- "none"
   }
   
   # Now make the actual plot
   p <- ggplot(data = raw_data, aes_string(x = x, y = y)) +
     geom_point() +
-    # Including SiZer-identified inflection points
-    geom_vline(xintercept = sizer_data$mean_x, color = 'orange',
-               linetype = 2, na.rm = TRUE) +
-    geom_vline(xintercept = sizer_data$x_grid, color = 'orange',
-               linetype = 2, na.rm = TRUE) +
-    # And a theme
     theme_classic()
+  
+  # Add x-intercepts for slope changes if desired
+  
+  # Including SiZer-identified inflection points
+  if(vline %in% c("all", "changes")){
+  p <- p + 
+    geom_vline(xintercept = sizer_data$mean_x, color = 'orange',
+             linetype = 2, na.rm = TRUE) +
+    geom_vline(xintercept = sizer_data$x_grid, color = 'orange',
+               linetype = 2, na.rm = TRUE) }
   
   # If `trendline` is TRUE, add the trendline
   if(trendline == TRUE) {
@@ -237,14 +251,14 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
     geom_smooth(method = 'loess', formula = 'y ~ x', 
                 se = FALSE, color = 'black') }
   
-  # Add the positive to negative inflection point line(s) if one exists
-  if(!base::all(is.na(sizer_data$pos_to_neg))){
+  # Add the positive to negative inflection point line(s) if one exists and they are desired
+  if(!base::all(is.na(sizer_data$pos_to_neg)) & vline %in% c("all", "inflections")){
     p <- p +
       geom_vline(xintercept = sizer_data$pos_to_neg, color = 'blue',
                  na.rm = TRUE) }
   
   # Add *negative to positive* inflection point line(s) if one exists
-  if(!base::all(is.na(sizer_data$neg_to_pos))){
+  if(!base::all(is.na(sizer_data$neg_to_pos)) & vline %in% c("all", "inflections")){
     p <- p +
       geom_vline(xintercept = sizer_data$neg_to_pos, color = 'red',
                  na.rm = TRUE) }
