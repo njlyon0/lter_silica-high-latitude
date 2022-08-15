@@ -76,7 +76,7 @@ for(place in "ALBION"){
   place_short <- stringr::str_sub(string = place, start = 1, end = 8)
   
   # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
+  png(filename = file.path(export_folder, paste0("inflection_", place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
   sizer_plot(sizer_object = e,
              bandwidth_vec = c(band_low, band_mid, band_high))
   dev.off()
@@ -127,7 +127,7 @@ for(place in "ALBION"){
                                    labels = "AUTO")
   
   ggplot2::ggsave(plot = combo_plot, height = 8, width = 8,
-                  filename = file.path(export_folder, paste0(place_short, "_ggplots.png")))
+                  filename = file.path(export_folder, paste0("inflection_", place_short, "_ggplots.png")))
   
   # Loop - Wrangle SiZer Data ----
   # Print a progress message
@@ -277,7 +277,7 @@ for(data_type in c("aggregate", "specific", "stats", "estimates")){
   # Now save the CSV
   write_csv(x = list_sub, na = "",
             file = file.path(export_folder,
-                             paste0("_", data_type, "_exported.csv")))
+                             paste0("_inflection_", data_type, "_exported.csv")))
   
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
