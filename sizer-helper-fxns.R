@@ -268,7 +268,7 @@ sizer_ggplot <- function(raw_data = NULL, x = NULL, y = NULL,
 }
 
 # Function No. 6 - Identify Inflection Points in Slope -------------
-## Purpose: "Breaks" a given continuous variable at the inflection points identified by `sizer_aggregate` or `sizer_slice` and creates a column (named `groups`) that contains these group designations. Additionally, it identifies the start and end value of X for each group in two other new columns (named `start` and `end`, respectively)
+## Purpose: "Breaks" a given continuous variable at the *inflection points* identified by `sizer_aggregate` or `sizer_slice` and creates a column (named `groups`) that contains these group designations. Additionally, it identifies the start and end value of X for each group in two other new columns (named `start` and `end`, respectively)
 id_inflections <- function(raw_data = NULL, sizer_data = NULL,
                            x = NULL, y = NULL){
   
@@ -293,8 +293,7 @@ id_inflections <- function(raw_data = NULL, sizer_data = NULL,
   
   # Drop NAs
   brk_pts_actual <- brk_pts[!is.na(brk_pts)]
-  brk_pts_actual
-  
+
   # Create necessary columns
   data_mod <- raw_data %>%
     # Identify rough groups
@@ -329,7 +328,105 @@ id_inflections <- function(raw_data = NULL, sizer_data = NULL,
   # Return that modified dataframe
   return(data_mod) }
 
-# Function No. 6 - Linear Models with SiZer ------------------------
+# Function No. 6 - Identify Inflection Points in Slope -------------
+## Purpose: "Breaks" a given continuous variable at the *slope changes* identified by `sizer_aggregate` or `sizer_slice` and creates a column (named `groups`) that contains these group designations. Additionally, it identifies the start and end value of X for each group in two other new columns (named `start` and `end`, respectively)
+id_slope_changes <- function(raw_data = NULL, sizer_data = NULL,
+                             x = NULL, y = NULL){
+  
+  # Error out if these aren't provided
+  if(is.null(raw_data) | is.null(sizer_data) | is.null(x) | is.null(y))
+    stop("All arguments must be provided")
+  
+  # Error out if the data are not both dataframes
+  if(class(raw_data) != "data.frame" | class(sizer_data) != "data.frame") 
+    stop("Both the raw data and the extracted SiZer data must be data frames")
+  
+  # Error out if the column names are not characters 
+  if(!is.character(x) | !is.character(y))
+    stop("The x and y columns must be specified as characters")
+  
+  # Error out if the column names are not in the data object
+  if(!x %in% names(raw_data) | !y %in% names(raw_data))
+    stop("`x` and/or `y` is not in the provided `raw_data` object")
+  
+  # Rename the aggregate X column to make downstream operations easier
+  if("mean_x" %in% names(sizer_data)){
+    sizer_data <- sizer_data %>%
+      dplyr::rename(x_grid = mean_x) }
+  
+  # Grab slope change points
+  brk_pts <- c(sizer_data$x_grid)
+  
+  # Drop NAs
+  brk_pts_actual <- brk_pts[!is.na(brk_pts)]
+  
+  # Make a simpler version of the sizer data (we'll need this later)
+  sizer_simp <- sizer_data %>%
+    # Break X by breakpoints identified in this dataframe
+    dplyr::mutate(groups = base::cut(x = sizer_data$x_grid,
+                                     breaks = c(-Inf, brk_pts_actual, Inf))) %>%
+    # Identify what the slope *is* (rather than what it changes to)
+    dplyr::mutate(slope_type_rough = dplyr::case_when(
+      change_type == "change_to_positive" ~ "flat",
+      change_type == "change_to_negative" ~ "flat",
+      change_type == "change_to_zero" ~ dplyr::lag(change_type) ) ) %>%
+    # Clean that column up
+    dplyr::mutate(slope_type_v1 = dplyr::case_when(
+      slope_type_rough == "flat" ~ "flat",
+      slope_type_rough == "change_to_positive" ~ "increasing",
+      slope_type_rough == "change_to_negative" ~ "decreasing")) %>%
+    # Crop to needed columns
+    dplyr::select(groups, change_type, slope_type_v1) %>%
+    as.data.frame()
+  
+  # Create necessary columns
+  data_mod <- raw_data %>%
+    # Identify rough groups
+    dplyr::mutate(
+      groups = base::cut(x = raw_data[[x]],
+                         breaks = c(-Inf, brk_pts_actual, Inf)),
+      .after = tidyselect::all_of(x)) %>%
+    # Attach slope types from simplified SiZer object
+    dplyr::left_join(y = sizer_simp, by = "groups") %>%
+    # Fill through the last group (it is only implied by the `cut` groups)
+    tidyr::fill(change_type) %>%
+    # Combine that column with the slope_type_v1 column
+    dplyr::mutate(slope_type = dplyr::case_when(
+      !is.na(slope_type_v1) ~ slope_type_v1,
+      is.na(slope_type_v1) & change_type == "change_to_positive" ~ "increasing",
+      is.na(slope_type_v1) & change_type == "change_to_negative" ~ "decreasing",
+      is.na(slope_type_v1) & change_type == "change_to_zero" ~ "flat"),
+      .after = groups) %>%
+    # Remove intermediary columns
+    dplyr::select(-change_type, -slope_type_v1) %>%
+    # Identify start / end years from the groups
+    tidyr::separate(col = groups, sep = ",", remove = FALSE,
+                    into = c('rough_start', 'rough_end')) %>%
+    # Remove parentheses / brackets
+    dplyr::mutate(
+      simp_start = stringr::str_sub(
+        rough_start, start = 2, end = nchar(rough_start)),
+      simp_end = gsub(pattern = "]| ", replacement = "", 
+                      x = rough_end)) %>%
+    # Swap "Inf" and "-Inf" for the actual start/end X values
+    dplyr::mutate(
+      start = as.numeric(ifelse(test = (simp_start == -Inf),
+                                yes = dplyr::first(raw_data[[x]]),
+                                no = simp_start)),
+      end = as.numeric(ifelse(test = (simp_end == Inf),
+                              yes = dplyr::last(raw_data[[x]]),
+                              no = simp_end)),
+      .after = groups) %>%
+    # Remove intermediary columns
+    dplyr::select(-rough_start, -rough_end,
+                  -simp_start, -simp_end) %>%
+    # Make it a dataframe
+    as.data.frame()
+  
+  # Return that modified dataframe
+  return(data_mod) }
+
+# Function No. 8 - Linear Models with SiZer ------------------------
 ## Purpose: fits separate linear models for each group of the line between the break points identified by `id_inflections` or `id_slope_changes`. Returns a list containing (1) the model summary statistics and (2) the the estimates of the intercept and line
 sizer_lm <- function(data = NULL, x = NULL, y = NULL,
                      group_col = NULL){
@@ -423,10 +520,5 @@ sizer_lm <- function(data = NULL, x = NULL, y = NULL,
     # Return it
     return(return_list) }
 }
-
-
-## Also, add `trendline = FALSE` to all of the `sizer_ggplot` calls
-## Maybe change that argument to allow (1) no trendline, (2) smooth trendline, or (3) segmented trendline?
-
 
 # End ----
