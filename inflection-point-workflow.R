@@ -62,7 +62,7 @@ for(place in "ALBION"){
     dplyr::filter(site == place) %>%
     as.data.frame()
   
-  # Loop - ID Inflection Points ----
+  # Loop - Run SiZer ----
   # Print a progress message
   message("Run SiZer...")
   
@@ -89,6 +89,32 @@ for(place in "ALBION"){
   sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
   sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
   
+  # Loop - Identify Inflection Points ----
+  # Print a progress message
+  message("Find inflection points...")
+  
+  # Identify inflection points
+  ## Aggregate
+  data_sub_agg <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_tidy,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## Low
+  data_sub_low <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_low,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## Mid
+  data_sub_mid <- id_inflections(raw_data = data_sub,
+                                 sizer_data = sizer_mid,
+                                 x = explanatory_var,
+                                 y = response_var)
+  ## High
+  data_sub_high <- id_inflections(raw_data = data_sub,
+                                  sizer_data = sizer_high,
+                                  x = explanatory_var,
+                                  y = response_var)
+  
   # Loop - Make Plots ----
   # Print a progress message
   message("Making plots...")
@@ -97,7 +123,7 @@ for(place in "ALBION"){
   agg_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_tidy,
                            x = explanatory_var, y = response_var,
-                           trendline = FALSE, vline = "all") +
+                           trendline = "none", vline = "all") +
     ggtitle(label = "Aggregated Inflection Points")
   
   # Plot the bandwidth-specific plots too!
@@ -105,19 +131,19 @@ for(place in "ALBION"){
   low_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_low,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
+               trendline = "none", vline = "all") +
     ggtitle(label = paste0("h = ", band_low, " Inflection Points"))
   ## Mid Bandwidth (h)
   mid_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_mid,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
+               trendline = "none", vline = "all") +
     ggtitle(label = paste0("h = ", band_mid, " Inflection Points"))
   ## High Bandwidth (h)
   high_plot <- sizer_ggplot(raw_data = data_sub,
                             sizer_data = sizer_high,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
+               trendline = "none", vline = "all") +
     ggtitle(label = paste0("h = ", band_high, " Inflection Points"))
   
   # Combine plots
@@ -169,32 +195,6 @@ for(place in "ALBION"){
   giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
   giant_list[[paste0("specific_", j)]] <- complete_export
 
-  # Loop - Identify Inflection Points ----
-  # Print a progress message
-  message("Find inflection points...")
-  
-  # Identify inflection points
-  ## Aggregate
-  data_sub_agg <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_tidy,
-                                 x = explanatory_var,
-                                 y = response_var)
-  ## Low
-  data_sub_low <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_low,
-                                 x = explanatory_var,
-                                 y = response_var)
-  ## Mid
-  data_sub_mid <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_mid,
-                                 x = explanatory_var,
-                                 y = response_var)
-  ## High
-  data_sub_high <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_high,
-                                 x = explanatory_var,
-                                 y = response_var)
-  
   # Loop - Fit Linear Models ----
   # Print a progress message
   message("Fit regressions...")
