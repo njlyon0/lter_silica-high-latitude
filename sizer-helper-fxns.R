@@ -367,16 +367,10 @@ id_slope_changes <- function(raw_data = NULL, sizer_data = NULL,
                                      breaks = c(-Inf, brk_pts_actual, Inf))) %>%
     # Identify what the slope *is* (rather than what it changes to)
     dplyr::mutate(slope_type_rough = dplyr::case_when(
-      change_type == "change_to_positive" ~ "flat",
-      change_type == "change_to_negative" ~ "flat",
-      change_type == "change_to_zero" ~ dplyr::lag(change_type) ) ) %>%
-    # Clean that column up
-    dplyr::mutate(slope_type_v1 = dplyr::case_when(
-      slope_type_rough == "flat" ~ "flat",
-      slope_type_rough == "change_to_positive" ~ "increasing",
-      slope_type_rough == "change_to_negative" ~ "decreasing")) %>%
+      slope_becomes == "flat" ~ "increasing/decreasing",
+      slope_becomes != "flat" ~ "approx. zero") ) %>%
     # Crop to needed columns
-    dplyr::select(groups, change_type, slope_type_v1) %>%
+    dplyr::select(groups, change_type, slope_type_rough) %>%
     as.data.frame()
   
   # Create necessary columns
@@ -390,15 +384,16 @@ id_slope_changes <- function(raw_data = NULL, sizer_data = NULL,
     dplyr::left_join(y = sizer_simp, by = "groups") %>%
     # Fill through the last group (it is only implied by the `cut` groups)
     tidyr::fill(change_type) %>%
-    # Combine that column with the slope_type_v1 column
+    # Combine that column with the `slope_type_rough` column
     dplyr::mutate(slope_type = dplyr::case_when(
-      !is.na(slope_type_v1) ~ slope_type_v1,
-      is.na(slope_type_v1) & change_type == "change_to_positive" ~ "increasing",
-      is.na(slope_type_v1) & change_type == "change_to_negative" ~ "decreasing",
-      is.na(slope_type_v1) & change_type == "change_to_zero" ~ "flat"),
+      !is.na(slope_type_rough) ~ slope_type_rough,
+      is.na(slope_type_rough) &
+        change_type == "change_to_zero" ~ "approx. zero",
+      is.na(slope_type_rough) &
+        change_type != "change_to_zero" ~ "increasing/decreasing"),
       .after = groups) %>%
     # Remove intermediary columns
-    dplyr::select(-change_type, -slope_type_v1) %>%
+    dplyr::select(-change_type, -slope_type_rough) %>%
     # Identify start / end years from the groups
     tidyr::separate(col = groups, sep = ",", remove = FALSE,
                     into = c('rough_start', 'rough_end')) %>%
