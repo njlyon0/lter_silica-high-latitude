@@ -285,9 +285,9 @@ id_inflections <- function(raw_data = NULL, sizer_data = NULL,
   data_mod <- raw_data %>%
     # Identify rough groups
     dplyr::mutate(
-      groups = base::cut(x = raw_data[[x]],
+      groups = base::cut(x = tidyselect::all_of(raw_data[[x]]),
                          breaks = c(-Inf, brk_pts_actual, Inf)),
-      .after = x) %>%
+      .after = tidyselect::all_of(x)) %>%
     # Identify start / end years from the groups
     tidyr::separate(col = groups, sep = ",", remove = FALSE,
                     into = c('rough_start', 'rough_end')) %>%
