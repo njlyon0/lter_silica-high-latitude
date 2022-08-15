@@ -62,7 +62,7 @@ for(place in "ALBION"){
     dplyr::filter(site == place) %>%
     as.data.frame()
   
-  # Loop - ID Inflection Points ----
+  # Loop - Get SiZer Object ----
   # Print a progress message
   message("Run SiZer...")
   
@@ -88,6 +88,32 @@ for(place in "ALBION"){
   sizer_low <- sizer_slice(sizer_object = e, bandwidth = band_low)
   sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
   sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
+  
+  # Loop - Identify Slope Changes ----
+  # Print a progress message
+  message("Find slope changes...")
+  
+  # Identify inflection points
+  ## Aggregate
+  data_sub_agg <- id_slope_changes(raw_data = data_sub,
+                                   sizer_data = sizer_tidy,
+                                   x = explanatory_var,
+                                   y = response_var)
+  ## Low
+  data_sub_low <- id_slope_changes(raw_data = data_sub,
+                                   sizer_data = sizer_low,
+                                   x = explanatory_var,
+                                   y = response_var)
+  ## Mid
+  data_sub_mid <- id_slope_changes(raw_data = data_sub,
+                                   sizer_data = sizer_mid,
+                                   x = explanatory_var,
+                                   y = response_var)
+  ## High
+  data_sub_high <- id_slope_changes(raw_data = data_sub,
+                                    sizer_data = sizer_high,
+                                    x = explanatory_var,
+                                    y = response_var)
   
   # Loop - Make Plots ----
   # Print a progress message
@@ -169,32 +195,6 @@ for(place in "ALBION"){
   giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
   giant_list[[paste0("specific_", j)]] <- complete_export
 
-  # Loop - Identify Slope Changes ----
-  # Print a progress message
-  message("Find slope changes...")
-  
-  # Identify inflection points
-  ## Aggregate
-  data_sub_agg <- id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_tidy,
-                                   x = explanatory_var,
-                                   y = response_var)
-  ## Low
-  data_sub_low <- id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_low,
-                                   x = explanatory_var,
-                                   y = response_var)
-  ## Mid
-  data_sub_mid <- id_slope_changes(raw_data = data_sub,
-                                    sizer_data = sizer_mid,
-                                    x = explanatory_var,
-                                    y = response_var)
-  ## High
-  data_sub_high <- id_slope_changes(raw_data = data_sub,
-                                     sizer_data = sizer_high,
-                                     x = explanatory_var,
-                                     y = response_var)
-  
   # Loop - Fit Linear Models ----
   # Print a progress message
   message("Fit regressions...")
