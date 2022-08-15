@@ -76,7 +76,7 @@ for(place in "ALBION"){
   place_short <- stringr::str_sub(string = place, start = 1, end = 8)
   
   # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0("inflection_", place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
+  png(filename = file.path(export_folder, paste0("slope-change_", place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
   sizer_plot(sizer_object = e,
              bandwidth_vec = c(band_low, band_mid, band_high))
   dev.off()
@@ -97,28 +97,28 @@ for(place in "ALBION"){
   agg_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_tidy,
                            x = explanatory_var, y = response_var,
-                           trendline = FALSE, vline = "all") +
-    ggtitle(label = "Aggregated Inflection Points")
+                           trendline = FALSE, vline = "changes") +
+    ggtitle(label = "Aggregated Slope Changes")
   
   # Plot the bandwidth-specific plots too!
   ## Low Bandwidth (h)
   low_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_low,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
-    ggtitle(label = paste0("h = ", band_low, " Inflection Points"))
+               trendline = FALSE, vline = "changes") +
+    ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
   ## Mid Bandwidth (h)
   mid_plot <- sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_mid,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
-    ggtitle(label = paste0("h = ", band_mid, " Inflection Points"))
+               trendline = FALSE, vline = "changes") +
+    ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
   ## High Bandwidth (h)
   high_plot <- sizer_ggplot(raw_data = data_sub,
                             sizer_data = sizer_high,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "all") +
-    ggtitle(label = paste0("h = ", band_high, " Inflection Points"))
+               trendline = FALSE, vline = "changes") +
+    ggtitle(label = paste0("h = ", band_high, " Slope Changes"))
   
   # Combine plots
   combo_plot <- cowplot::plot_grid(agg_plot, low_plot,
@@ -127,7 +127,7 @@ for(place in "ALBION"){
                                    labels = "AUTO")
   
   ggplot2::ggsave(plot = combo_plot, height = 8, width = 8,
-                  filename = file.path(export_folder, paste0("inflection_", place_short, "_ggplots.png")))
+                  filename = file.path(export_folder, paste0("slope-change_", place_short, "_ggplots.png")))
   
   # Loop - Wrangle SiZer Data ----
   # Print a progress message
@@ -169,31 +169,31 @@ for(place in "ALBION"){
   giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
   giant_list[[paste0("specific_", j)]] <- complete_export
 
-  # Loop - Identify Inflection Points ----
+  # Loop - Identify Slope Changes ----
   # Print a progress message
-  message("Find inflection points...")
+  message("Find slope changes...")
   
   # Identify inflection points
   ## Aggregate
-  data_sub_agg <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_tidy,
-                                 x = explanatory_var,
-                                 y = response_var)
+  data_sub_agg <- id_slope_changes(raw_data = data_sub,
+                                   sizer_data = sizer_tidy,
+                                   x = explanatory_var,
+                                   y = response_var)
   ## Low
-  data_sub_low <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_low,
-                                 x = explanatory_var,
-                                 y = response_var)
+  data_sub_low <- id_slope_changes(raw_data = data_sub,
+                                   sizer_data = sizer_low,
+                                   x = explanatory_var,
+                                   y = response_var)
   ## Mid
-  data_sub_mid <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_mid,
-                                 x = explanatory_var,
-                                 y = response_var)
+  data_sub_mid <- id_slope_changes(raw_data = data_sub,
+                                    sizer_data = sizer_mid,
+                                    x = explanatory_var,
+                                    y = response_var)
   ## High
-  data_sub_high <- id_inflections(raw_data = data_sub,
-                                 sizer_data = sizer_high,
-                                 x = explanatory_var,
-                                 y = response_var)
+  data_sub_high <- id_slope_changes(raw_data = data_sub,
+                                     sizer_data = sizer_high,
+                                     x = explanatory_var,
+                                     y = response_var)
   
   # Loop - Fit Linear Models ----
   # Print a progress message
@@ -223,8 +223,7 @@ for(place in "ALBION"){
   
   # Form one big list
   mega_lm_list <- list(agg_lm, low_lm, mid_lm, high_lm)
-  mega_lm_list[[1]]
-  
+
   # Final dataframe processing for *statistics*
   stat_df <- mega_lm_list %>%
     # Extract first list element
@@ -277,7 +276,7 @@ for(data_type in c("aggregate", "specific", "stats", "estimates")){
   # Now save the CSV
   write_csv(x = list_sub, na = "",
             file = file.path(export_folder,
-                             paste0("_inflection_", data_type, "_exported.csv")))
+                             paste0("_slope-change_", data_type, "_exported.csv")))
   
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
