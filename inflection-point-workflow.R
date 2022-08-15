@@ -76,7 +76,7 @@ for(place in "ALBION"){
   place_short <- stringr::str_sub(string = place, start = 1, end = 8)
   
   # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0("inflection_", place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
+  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
   sizer_plot(sizer_object = e,
              bandwidth_vec = c(band_low, band_mid, band_high))
   dev.off()
