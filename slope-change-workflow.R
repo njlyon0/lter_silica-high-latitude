@@ -120,30 +120,34 @@ for(place in "ALBION"){
   message("Making plots...")
   
   # Plot the aggregated inflection points
-  agg_plot <- sizer_ggplot(raw_data = data_sub,
+  agg_plot <- sizer_ggplot(raw_data = data_sub_agg,
                            sizer_data = sizer_tidy,
                            x = explanatory_var, y = response_var,
-                           trendline = FALSE, vline = "changes") +
+                           trendline = 'sharp', vline = "none",
+                           sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = "Aggregated Slope Changes")
   
   # Plot the bandwidth-specific plots too!
   ## Low Bandwidth (h)
-  low_plot <- sizer_ggplot(raw_data = data_sub,
+  low_plot <- sizer_ggplot(raw_data = data_sub_low,
                            sizer_data = sizer_low,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "changes") +
+               trendline = 'sharp', vline = "none",
+               sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
   ## Mid Bandwidth (h)
-  mid_plot <- sizer_ggplot(raw_data = data_sub,
+  mid_plot <- sizer_ggplot(raw_data = data_sub_mid,
                            sizer_data = sizer_mid,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "changes") +
+               trendline = 'sharp', vline = "none",
+               sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
   ## High Bandwidth (h)
-  high_plot <- sizer_ggplot(raw_data = data_sub,
+  high_plot <- sizer_ggplot(raw_data = data_sub_high,
                             sizer_data = sizer_high,
                x = explanatory_var, y = response_var,
-               trendline = FALSE, vline = "changes") +
+               trendline = 'sharp', vline = "none",
+               sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_high, " Slope Changes"))
   
   # Combine plots
