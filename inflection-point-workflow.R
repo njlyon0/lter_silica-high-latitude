@@ -39,7 +39,7 @@ band_high <- 8
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0(response_var, "_bw",
+(export_folder <- paste0("export_", response_var, "_bw",
                          band_low, band_mid, band_high,
                          "_", Sys.Date()))
 dir.create(path = export_folder, showWarnings = FALSE)

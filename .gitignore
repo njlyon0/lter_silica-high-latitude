@@ -44,3 +44,4 @@ vignettes/*.pdf
 # Misc. folders
 # data/
 plots/
+export_*/
