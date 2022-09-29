@@ -45,3 +45,6 @@ vignettes/*.pdf
 # data/
 plots/
 export_*/
+
+# Ignore knit .Rmd files
+*.pdf
