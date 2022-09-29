@@ -37,12 +37,15 @@ We (at the LNO Scientific Computing Support Team) have designed a suite of helpe
 source("sizer-helper-fxns.R")
 ```
 
-To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects.
+To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects. Also, the loop normally iterates across sites but for the purposes of this report we can select a single site here
 
 ```{r load-variables}
 # Identify response (Y) and explanatory (X) variables
 response_var <- "FNYield"
 explanatory_var <- "Year"
+
+# Identify desired site
+place <- "ALBION"
 ```
 
 Also, `SiZer` assesses "bandwidths" that define the width of the 'window' used to evaluate slope changes. A very low bandwidth (i.e., a narrow window) will see a single point that deviates from the general trend and will identify a slope change on either side of that point. A higher bandwidth (e.g. a wide window) will only identify the most obvious slope changes and will often miss subtle hills or valleys in a trendline.
@@ -56,238 +59,253 @@ band_mid <- 5
 band_high <- 8
 ```
 
+Last preparation step, but because this workflow is a large loop, we must make an empty list to store various products and create a counter to advance when we move from one site to the next.
 
-
-
-## Fundamental Workflow
-
-```{r, eval = F}
-# Create a folder to save experimental outputs
-# Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("export_", response_var, "_bw",
-                         band_low, band_mid, band_high,
-                         "_", Sys.Date()))
-dir.create(path = export_folder, showWarnings = FALSE)
-
+```{r loop-prep}
 # Make an empty list to store all of our extracted information
 giant_list <- list()
 
 # Make a counter and set it to 1 (the list will add to it)
 j <- 1
+```
 
-# Loop through sites and extract information
-# for(place in unique(data$site)) {
-for(place in "ALBION"){
-  
-  # Start with a message!
-  message("Processing begun for site: ", place)
-  
-  # Subset the data
+## Fundamental Workflow - Initial Fit
+
+The loop begins by subsetting the data to only a single site. The rest of the workflow assumes you're only identifying breakpoints in a single trendline so it would certainly error out if you attempted to handle several separate trendlines at once.
+
+```{r subset-data}
+# Subset the data to desired site
   data_sub <- data %>%
     dplyr::filter(site == place) %>%
     as.data.frame()
-  
-  # Loop - Get SiZer Object ----
-  # Print a progress message
-  message("Run SiZer...")
-  
-  # Invoke the SiZer::SiZer function
+```
+
+Once we've subsetted the data, we can invoke `SiZer` to identify the slope changes across a range of bandwidths. You can see how the subsetted data, response, and explanatory variables are invoked below.
+
+The `h` argument defines which bandwidths to assess and 2 to 10 is a good expert-defined upper and lower boundary. This makes `SiZer` identify slope changes for every bandwidth between 2 and 10. The `degree`, `derv`, and `grid.length` arguments are specified for clarity but are unimportant at this level of discussion. Consult `?SiZer::SiZer` for the package authors' explanation of these arguments.
+
+```{r run-sizer, message = F}
+# Invoke the SiZer::SiZer function
   e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
                     y = data_sub[[response_var]],
                     h = c(2, 10), degree = 1,
                     derv = 1, grid.length = 100)
-  
-  # Make a shorter place name
-  place_short <- stringr::str_sub(string = place, start = 1, end = 8)
-  
-  # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
-  sizer_plot(sizer_object = e,
-             bandwidth_vec = c(band_low, band_mid, band_high))
-  dev.off()
-  
-  # Strip out the aggregated (across all bandwidths) inflection points
-  sizer_tidy <- sizer_aggregate(sizer_object = e)
-  
-  # Identify inflection points at three specific bandwidths too
-  sizer_low <- sizer_slice(sizer_object = e, bandwidth = band_low)
-  sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
-  sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
-  
-  # Loop - Identify Slope Changes ----
-  # Print a progress message
-  message("Find slope changes...")
-  
-  # Identify inflection points
-  ## Aggregate
-  data_sub_agg <- id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_tidy,
-                                   x = explanatory_var,
-                                   y = response_var)
-  ## Low
-  data_sub_low <- id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_low,
-                                   x = explanatory_var,
-                                   y = response_var)
-  ## Mid
-  data_sub_mid <- id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_mid,
-                                   x = explanatory_var,
-                                   y = response_var)
-  ## High
-  data_sub_high <- id_slope_changes(raw_data = data_sub,
-                                    sizer_data = sizer_high,
-                                    x = explanatory_var,
-                                    y = response_var)
-  
-  # Loop - Make Plots ----
-  # Print a progress message
-  message("Making plots...")
-  
-  # Plot the aggregated inflection points
-  agg_plot <- sizer_ggplot(raw_data = data_sub_agg,
-                           sizer_data = sizer_tidy,
-                           x = explanatory_var, y = response_var,
-                           trendline = 'sharp', vline = "none",
-                           sharp_colors = c("#bbbbbb", 'orange')) +
-    ggtitle(label = "Aggregated Slope Changes")
-  
-  # Plot the bandwidth-specific plots too!
-  ## Low Bandwidth (h)
-  low_plot <- sizer_ggplot(raw_data = data_sub_low,
-                           sizer_data = sizer_low,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
-    ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
-  ## Mid Bandwidth (h)
-  mid_plot <- sizer_ggplot(raw_data = data_sub_mid,
-                           sizer_data = sizer_mid,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
-    ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
-  ## High Bandwidth (h)
-  high_plot <- sizer_ggplot(raw_data = data_sub_high,
-                            sizer_data = sizer_high,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
-    ggtitle(label = paste0("h = ", band_high, " Slope Changes"))
-  
-  # Combine plots
-  combo_plot <- cowplot::plot_grid(agg_plot, low_plot,
-                                   mid_plot, high_plot,
-                                   nrow = 2, ncol = 2,
-                                   labels = "AUTO")
-  
-  ggplot2::ggsave(plot = combo_plot, height = 8, width = 8,
-                  filename = file.path(export_folder, paste0("slope-change_", place_short, "_ggplots.png")))
-  
-  # Loop - Wrangle SiZer Data ----
-  # Print a progress message
-  message("Wrangling SiZer data...")
-  
-  # Now modify the columns in the provided sizer dataframes
-  sizer_tidy_export <- sizer_tidy %>%
-    # Make everything a character
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    # Add a column for bandwidth and for site name
-    dplyr::mutate(site = place, h_grid = "averaged across bandwidths",
-                  .before = dplyr::everything() ) %>%
-    # Make sure it's a dataframe
-    as.data.frame()
-  
-  # Do the same for the bandwidth specific data
-  ## Low Bandwidth
-  sizer_low_export <- sizer_low %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(site = place, .before = dplyr::everything()) %>%
-    as.data.frame()
-  ## Mid Bandwidth
-  sizer_mid_export <- sizer_mid %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(site = place, .before = dplyr::everything()) %>%
-    as.data.frame()
-  ## High Bandwidth
-  sizer_high_export <- sizer_high %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(site = place, .before = dplyr::everything()) %>%
-    as.data.frame()
-  
-  # Combine the specific bandwidth objects
-  complete_export <- dplyr::bind_rows(sizer_low_export,
-                                      sizer_mid_export,
-                                      sizer_high_export)
-  
-  # Add these tidied dataframes to our lists
-  giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
-  giant_list[[paste0("specific_", j)]] <- complete_export
+```
 
-  # Loop - Fit Linear Models ----
-  # Print a progress message
-  message("Fit regressions...")
-  
-  # Extract (1) statistics and (2) estimates from linear models
-  agg_lm <- sizer_lm(data = data_sub_agg, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
-    # Then add columns for which bandwidth & which site
-    purrr::map(.f = mutate, bandwidth = "aggregate",
-               .before = dplyr::everything())
-  ## Low bandwidth
-  low_lm <- sizer_lm(data = data_sub_low, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
-    purrr::map(.f = mutate, bandwidth = band_low,
-               .before = dplyr::everything())
-  ## Middle bandwidth
-  mid_lm <- sizer_lm(data = data_sub_mid, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
-    purrr::map(.f = mutate, bandwidth = band_mid,
-               .before = dplyr::everything())
-  ## High bandwidth
-  high_lm <- sizer_lm(data = data_sub_high, x = explanatory_var,
-                      y = response_var, group_col = "groups") %>%
-    purrr::map(.f = mutate, bandwidth = band_high,
-               .before = dplyr::everything())
-  
-  # Form one big list
-  mega_lm_list <- list(agg_lm, low_lm, mid_lm, high_lm)
+Once we have a `SiZer` object, we can plot it to evaluate slope changes across all provided bandwidths. The custom `sizer_plot` function plots this and adds horizontal lines at the user-selected bandwidths.
 
-  # Final dataframe processing for *statistics*
-  stat_df <- mega_lm_list %>%
-    # Extract first list element
-    purrr::map(.f = 1) %>%
-    # Make all columns characters
-    purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
-                                          as.character)) %>%
-    # Add a site column
-    purrr::map(.f = mutate, site = place,
-               .before = dplyr::everything()) %>%
-    # Combine all list elements into a dataframe
-    purrr::map_dfr(.f = dplyr::select, dplyr::everything())
-  
-  # Final dataframe processing for *estimates*
- est_df <- mega_lm_list %>%
-    purrr::map(.f = 2) %>%
-    purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
-                                                 as.character)) %>%
-    purrr::map(.f = mutate, site = place,
-               .before = dplyr::everything()) %>%
-    purrr::map_dfr(.f = dplyr::select, dplyr::everything())
-  
-  # Add this information to their respective lists
-  giant_list[[paste0("stats_", j)]] <- stat_df
-  giant_list[[paste0("estimates_", j)]] <- est_df
-  
-  # Increase the counter by 1 (for the next iteration of the loop)
-  j <- j + 1
-  
-  # Return a "finished" message!
-  message("Processing complete for site: ", place)
-}
+This plot can be a little dense but here is a brief summary of the key information:
+- The x-axis is the same as the explanatory variable as it appears in the data
+- Each "row" of pixels represents the assessment of slope changes for a single bandwidth
+- **Blue** pixels are a **positive** slope, **red** pixels are a **negative** slope, and **purple** are a **flat** slope
+- Gray pixels **do not have a slope assessment**
 
-# Unlist and Export Looped Data ----
+You can see in the plot below that higher bandwidths (e.g., upper rows of pixels) identify fewer slope changes (i.e., future changes in pixel color when looking within a row from left to right) while lower bandwidths identify more slope changes.
 
+```{r sizer-plot}
+# Plot the SiZer object with horizontal lines at bandwidths of interest
+  sizer_plot(sizer_object = e, bandwidth_vec = c(band_low, band_mid, band_high))
+```
+
+We then found it useful to do two things with this object:
+
+- First, we identify the slope changes for each of the three specified bandwidths
+- Second, we aggregate within a 'column' of pixels and identify the "average" slope changes across all bandwidths. This is somewhat of an abstraction from the data but does avoid any need for an expert judgement call on which bandwidth(s) should be evaluated.
+
+`sizer_slice` and `sizer_aggregate` are custom functions written for these specific purposes by us.
+
+```{r sizer-pull}
+# Identify inflection points at three specific bandwidths too
+sizer_low <- sizer_slice(sizer_object = e, bandwidth = band_low)
+sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
+sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
+
+# Strip out the aggregated (across all bandwidths) inflection points
+sizer_tidy <- sizer_aggregate(sizer_object = e)
+```
+
+## Fundamental Workflow - Identify Slope Changes
+
+Now that we've stripped the relevant parts of the `SiZer` object, we want to take the slope changes identified there and put them back in ur data for downstream use.
+
+```{r sizer-data-connect}
+# Identify inflection points
+## Aggregate
+data_sub_agg <- id_slope_changes(raw_data = data_sub, 
+                                 sizer_data = sizer_tidy,
+                                 x = explanatory_var,
+                                 y = response_var)
+## Low
+data_sub_low <- id_slope_changes(raw_data = data_sub,
+                                 sizer_data = sizer_low,
+                                 x = explanatory_var,
+                                 y = response_var)
+## Mid
+data_sub_mid <- id_slope_changes(raw_data = data_sub,
+                                 sizer_data = sizer_mid,
+                                 x = explanatory_var,
+                                 y = response_var)
+## High
+data_sub_high <- id_slope_changes(raw_data = data_sub,
+                                  sizer_data = sizer_high,
+                                  x = explanatory_var,
+                                  y = response_var)
+```
+
+Now that we migrated the `SiZer` slope changes into the data, we can create exploratory plots of our trendline with the change points that `SiZer` said match changes in slope.
+
+This is essentially a more digestible version of the `SiZer` plot that is red/blue/purple.
+
+```{r sizer-plots-create, echo = F, warning = F, message = F}
+# Plot the aggregated inflection points
+agg_plot <- sizer_ggplot(raw_data = data_sub_agg,
+                         sizer_data = sizer_tidy,
+                         x = explanatory_var, y = response_var,
+                         trendline = 'sharp', vline = "none",
+                         sharp_colors = c("#bbbbbb", 'orange')) +
+  ggtitle(label = "Aggregated Slope Changes")
+
+# Plot the bandwidth-specific plots too!
+## Low Bandwidth (h)
+low_plot <- sizer_ggplot(raw_data = data_sub_low,
+                         sizer_data = sizer_low,
+             x = explanatory_var, y = response_var,
+             trendline = 'sharp', vline = "none",
+             sharp_colors = c("#bbbbbb", 'orange')) +
+  ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
+## Mid Bandwidth (h)
+mid_plot <- sizer_ggplot(raw_data = data_sub_mid,
+                         sizer_data = sizer_mid,
+             x = explanatory_var, y = response_var,
+             trendline = 'sharp', vline = "none",
+             sharp_colors = c("#bbbbbb", 'orange')) +
+  ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
+## High Bandwidth (h)
+high_plot <- sizer_ggplot(raw_data = data_sub_high,
+                          sizer_data = sizer_high,
+             x = explanatory_var, y = response_var,
+             trendline = 'sharp', vline = "none",
+             sharp_colors = c("#bbbbbb", 'orange')) +
+  ggtitle(label = paste0("h = ", band_high, " Slope Changes"))
+```
+
+In these plots, orange lines are either an increasing or deacreasing slope while gray lines are flat slopes. The title indicates which bandwidth is being considered in that panel of the combination plot.
+
+```{r sizer-plots-show, echo = F, warning = F, message = F}
+cowplot::plot_grid(agg_plot, low_plot, mid_plot, high_plot,
+                   nrow = 2, ncol = 2, labels = "AUTO")
+```
+
+The workflow exports these data files (that contain both data and the important findings of the `SiZer` object) for later use but we can ignore that for this report.
+
+```{r export-wrangled-data, eval = F, echo = F}
+# Now modify the columns in the provided sizer dataframes
+sizer_tidy_export <- sizer_tidy %>%
+  # Make everything a character
+  dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+  # Add a column for bandwidth and for site name
+  dplyr::mutate(site = place, h_grid = "averaged across bandwidths",
+                .before = dplyr::everything() ) %>%
+  # Make sure it's a dataframe
+  as.data.frame()
+
+# Do the same for the bandwidth specific data
+## Low Bandwidth
+sizer_low_export <- sizer_low %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+  dplyr::mutate(site = place, .before = dplyr::everything()) %>%
+  as.data.frame()
+## Mid Bandwidth
+sizer_mid_export <- sizer_mid %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+  dplyr::mutate(site = place, .before = dplyr::everything()) %>%
+  as.data.frame()
+## High Bandwidth
+sizer_high_export <- sizer_high %>%
+  dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+  dplyr::mutate(site = place, .before = dplyr::everything()) %>%
+  as.data.frame()
+
+# Combine the specific bandwidth objects
+complete_export <- dplyr::bind_rows(sizer_low_export,
+                                    sizer_mid_export,
+                                    sizer_high_export)
+
+# Add these tidied dataframes to our lists
+giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
+giant_list[[paste0("specific_", j)]] <- complete_export
+```
+
+
+## Fundamental Workflow - Analyze Data with Identified Breakpoints
+
+With these data objects that contain both the trendline *and* the slope changes we can move forward with the actual *analysis* part of breakpoint analysis.
+
+We can use our custom `sizer_lm` function to fit a linear regression on each "chunk" of the trendline (i.e., between each of the breakpoints identified above). `sizer_lm` returns the summary statistics of the regression and estimates of slope and y-intercepts.
+
+```{r sizer-lm, warning = F, message = F}
+# Extract (1) statistics and (2) estimates from linear models
+agg_lm <- sizer_lm(data = data_sub_agg, x = explanatory_var,
+                   y = response_var, group_col = "groups") %>%
+  # Then add columns for which bandwidth & which site
+  purrr::map(.f = mutate, bandwidth = "aggregate",
+             .before = dplyr::everything())
+## Low bandwidth
+low_lm <- sizer_lm(data = data_sub_low, x = explanatory_var,
+                   y = response_var, group_col = "groups") %>%
+  purrr::map(.f = mutate, bandwidth = band_low,
+             .before = dplyr::everything())
+## Middle bandwidth
+mid_lm <- sizer_lm(data = data_sub_mid, x = explanatory_var,
+                   y = response_var, group_col = "groups") %>%
+  purrr::map(.f = mutate, bandwidth = band_mid,
+             .before = dplyr::everything())
+## High bandwidth
+high_lm <- sizer_lm(data = data_sub_high, x = explanatory_var,
+                    y = response_var, group_col = "groups") %>%
+  purrr::map(.f = mutate, bandwidth = band_high,
+             .before = dplyr::everything())
+```
+
+In the true workflow we then grab these and put them in our "giant_list" object created at the start of this script. For this report though, that is the end of the workflow for breakpoint analysis!
+
+```{r export-part-1, echo = F, eval = F}
+# Form one big list
+mega_lm_list <- list(agg_lm, low_lm, mid_lm, high_lm)
+
+# Final dataframe processing for *statistics*
+stat_df <- mega_lm_list %>%
+  # Extract first list element
+  purrr::map(.f = 1) %>%
+  # Make all columns characters
+  purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
+                                        as.character)) %>%
+  # Add a site column
+  purrr::map(.f = mutate, site = place,
+             .before = dplyr::everything()) %>%
+  # Combine all list elements into a dataframe
+  purrr::map_dfr(.f = dplyr::select, dplyr::everything())
+
+# Final dataframe processing for *estimates*
+est_df <- mega_lm_list %>%
+  purrr::map(.f = 2) %>%
+  purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
+                                               as.character)) %>%
+  purrr::map(.f = mutate, site = place,
+             .before = dplyr::everything()) %>%
+  purrr::map_dfr(.f = dplyr::select, dplyr::everything())
+
+# Add this information to their respective lists
+giant_list[[paste0("stats_", j)]] <- stat_df
+giant_list[[paste0("estimates_", j)]] <- est_df
+
+# Increase the counter by 1 (for the next iteration of the loop)
+j <- j + 1
+```
+
+Over the course of the whole loop we then have *many* list elements (four per site!) so we have a chunk of code to unlist and export one dataframe for each of the four list elements across site. This step makes interpretation and comparison much simpler than retaining everything in list format.
+
+```{r export-part-2, eval = F, echo = F}
 # Check out what is in our huge list
 names(giant_list)
 
@@ -310,4 +328,3 @@ for(data_type in c("aggregate", "specific", "stats", "estimates")){
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
 ```
-
