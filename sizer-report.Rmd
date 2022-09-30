@@ -30,11 +30,15 @@ data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv")
 dplyr::glimpse(data)
 ```
 
-We (at the LNO Scientific Computing Support Team) have designed a suite of helper functions to facilitate this workflow and cut down on the number of necessary lines of code. We'll describe these functions in greater detail as we continue but for now, we can simply `source` the script containing all of them
+We (at the LNO Scientific Computing Support Team) have designed a suite of helper functions to facilitate this workflow and cut down on the number of necessary lines of code. We'll describe these functions in greater detail as we continue but for now, we can load the R package that includes these functions: `HERON`.
 
 ```{r load-helper-fxns, message = F}
-# Load helper functions
-source("sizer-helper-fxns.R")
+# Install HERON
+# install.packages("remotes")
+# remotes::install_github("lter/HERON")
+
+# Load HERON
+library(HERON)
 ```
 
 To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects. Also, the loop normally iterates across sites but for the purposes of this report we can select a single site here
@@ -104,7 +108,7 @@ You can see in the plot below that higher bandwidths (e.g., upper rows of pixels
 
 ```{r sizer-plot}
 # Plot the SiZer object with horizontal lines at bandwidths of interest
-  sizer_plot(sizer_object = e, bandwidth_vec = c(band_low, band_mid, band_high))
+  HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(band_low, band_mid, band_high))
 ```
 
 We then found it useful to do two things with this object:
@@ -116,12 +120,12 @@ We then found it useful to do two things with this object:
 
 ```{r sizer-pull}
 # Identify inflection points at three specific bandwidths too
-sizer_low <- sizer_slice(sizer_object = e, bandwidth = band_low)
-sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
-sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
+sizer_low <- HERON::sizer_slice(sizer_object = e, bandwidth = band_low)
+sizer_mid <- HERON::sizer_slice(sizer_object = e, bandwidth = band_mid)
+sizer_high <- HERON::sizer_slice(sizer_object = e, bandwidth = band_high)
 
 # Strip out the aggregated (across all bandwidths) inflection points
-sizer_tidy <- sizer_aggregate(sizer_object = e)
+sizer_tidy <- HERON::sizer_aggregate(sizer_object = e)
 ```
 
 ## Fundamental Workflow - Identify Slope Changes
@@ -131,22 +135,22 @@ Now that we've stripped the relevant parts of the `SiZer` object, we want to tak
 ```{r sizer-data-connect}
 # Identify inflection points
 ## Aggregate
-data_sub_agg <- id_slope_changes(raw_data = data_sub, 
+data_sub_agg <- HERON::id_slope_changes(raw_data = data_sub, 
                                  sizer_data = sizer_tidy,
                                  x = explanatory_var,
                                  y = response_var)
 ## Low
-data_sub_low <- id_slope_changes(raw_data = data_sub,
+data_sub_low <- HERON::id_slope_changes(raw_data = data_sub,
                                  sizer_data = sizer_low,
                                  x = explanatory_var,
                                  y = response_var)
 ## Mid
-data_sub_mid <- id_slope_changes(raw_data = data_sub,
+data_sub_mid <- HERON::id_slope_changes(raw_data = data_sub,
                                  sizer_data = sizer_mid,
                                  x = explanatory_var,
                                  y = response_var)
 ## High
-data_sub_high <- id_slope_changes(raw_data = data_sub,
+data_sub_high <- HERON::id_slope_changes(raw_data = data_sub,
                                   sizer_data = sizer_high,
                                   x = explanatory_var,
                                   y = response_var)
@@ -158,7 +162,7 @@ This is essentially a more digestible version of the `SiZer` plot that is red/bl
 
 ```{r sizer-plots-create, echo = F, warning = F, message = F}
 # Plot the aggregated inflection points
-agg_plot <- sizer_ggplot(raw_data = data_sub_agg,
+agg_plot <- HERON::sizer_ggplot(raw_data = data_sub_agg,
                          sizer_data = sizer_tidy,
                          x = explanatory_var, y = response_var,
                          trendline = 'sharp', vline = "none",
@@ -167,21 +171,21 @@ agg_plot <- sizer_ggplot(raw_data = data_sub_agg,
 
 # Plot the bandwidth-specific plots too!
 ## Low Bandwidth (h)
-low_plot <- sizer_ggplot(raw_data = data_sub_low,
+low_plot <- HERON::sizer_ggplot(raw_data = data_sub_low,
                          sizer_data = sizer_low,
              x = explanatory_var, y = response_var,
              trendline = 'sharp', vline = "none",
              sharp_colors = c("#bbbbbb", 'orange')) +
   ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
 ## Mid Bandwidth (h)
-mid_plot <- sizer_ggplot(raw_data = data_sub_mid,
+mid_plot <- HERON::sizer_ggplot(raw_data = data_sub_mid,
                          sizer_data = sizer_mid,
              x = explanatory_var, y = response_var,
              trendline = 'sharp', vline = "none",
              sharp_colors = c("#bbbbbb", 'orange')) +
   ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
 ## High Bandwidth (h)
-high_plot <- sizer_ggplot(raw_data = data_sub_high,
+high_plot <- HERON::sizer_ggplot(raw_data = data_sub_high,
                           sizer_data = sizer_high,
              x = explanatory_var, y = response_var,
              trendline = 'sharp', vline = "none",
@@ -236,7 +240,6 @@ giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
 giant_list[[paste0("specific_", j)]] <- complete_export
 ```
 
-
 ## Fundamental Workflow - Analyze Data with Identified Breakpoints
 
 With these data objects that contain both the trendline *and* the slope changes we can move forward with the actual *analysis* part of breakpoint analysis.
@@ -245,23 +248,23 @@ We can use our custom `sizer_lm` function to fit a linear regression on each "ch
 
 ```{r sizer-lm, warning = F, message = F}
 # Extract (1) statistics and (2) estimates from linear models
-agg_lm <- sizer_lm(data = data_sub_agg, x = explanatory_var,
+agg_lm <- HERON::sizer_lm(data = data_sub_agg, x = explanatory_var,
                    y = response_var, group_col = "groups") %>%
   # Then add columns for which bandwidth & which site
   purrr::map(.f = mutate, bandwidth = "aggregate",
              .before = dplyr::everything())
 ## Low bandwidth
-low_lm <- sizer_lm(data = data_sub_low, x = explanatory_var,
+low_lm <- HERON::sizer_lm(data = data_sub_low, x = explanatory_var,
                    y = response_var, group_col = "groups") %>%
   purrr::map(.f = mutate, bandwidth = band_low,
              .before = dplyr::everything())
 ## Middle bandwidth
-mid_lm <- sizer_lm(data = data_sub_mid, x = explanatory_var,
+mid_lm <- HERON::sizer_lm(data = data_sub_mid, x = explanatory_var,
                    y = response_var, group_col = "groups") %>%
   purrr::map(.f = mutate, bandwidth = band_mid,
              .before = dplyr::everything())
 ## High bandwidth
-high_lm <- sizer_lm(data = data_sub_high, x = explanatory_var,
+high_lm <- HERON::sizer_lm(data = data_sub_high, x = explanatory_var,
                     y = response_var, group_col = "groups") %>%
   purrr::map(.f = mutate, bandwidth = band_high,
              .before = dplyr::everything())

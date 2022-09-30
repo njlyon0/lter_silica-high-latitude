@@ -7,16 +7,13 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(broom, cowplot, SiZer, tidyverse)
+librarian::shelf(broom, cowplot, SiZer, tidyverse, lter/HERON)
 
 # Clear environment
 rm(list = ls())
 
 # Load data
 data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv"))
-
-# Load helper functions
-source("sizer-helper-fxns.R")
 
 # Loop Extract of SiZer Data ----
 
@@ -77,17 +74,17 @@ for(place in "ALBION"){
   
   # Plot (and export) the SiZer object with horizontal lines of interest
   png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
-  sizer_plot(sizer_object = e,
+  HERON::sizer_plot(sizer_object = e,
              bandwidth_vec = c(band_low, band_mid, band_high))
   dev.off()
   
   # Strip out the aggregated (across all bandwidths) inflection points
-  sizer_tidy <- sizer_aggregate(sizer_object = e)
+  sizer_tidy <- HERON::sizer_aggregate(sizer_object = e)
   
   # Identify inflection points at three specific bandwidths too
-  sizer_low <- sizer_slice(sizer_object = e, bandwidth = band_low)
-  sizer_mid <- sizer_slice(sizer_object = e, bandwidth = band_mid)
-  sizer_high <- sizer_slice(sizer_object = e, bandwidth = band_high)
+  sizer_low <- HERON::sizer_slice(sizer_object = e, bandwidth = band_low)
+  sizer_mid <- HERON::sizer_slice(sizer_object = e, bandwidth = band_mid)
+  sizer_high <- HERON::sizer_slice(sizer_object = e, bandwidth = band_high)
   
   # Loop - Identify Inflection Points ----
   # Print a progress message
@@ -95,22 +92,22 @@ for(place in "ALBION"){
   
   # Identify inflection points
   ## Aggregate
-  data_sub_agg <- id_inflections(raw_data = data_sub,
+  data_sub_agg <- HERON::id_inflections(raw_data = data_sub,
                                  sizer_data = sizer_tidy,
                                  x = explanatory_var,
                                  y = response_var)
   ## Low
-  data_sub_low <- id_inflections(raw_data = data_sub,
+  data_sub_low <- HERON::id_inflections(raw_data = data_sub,
                                  sizer_data = sizer_low,
                                  x = explanatory_var,
                                  y = response_var)
   ## Mid
-  data_sub_mid <- id_inflections(raw_data = data_sub,
+  data_sub_mid <- HERON::id_inflections(raw_data = data_sub,
                                  sizer_data = sizer_mid,
                                  x = explanatory_var,
                                  y = response_var)
   ## High
-  data_sub_high <- id_inflections(raw_data = data_sub,
+  data_sub_high <- HERON::id_inflections(raw_data = data_sub,
                                   sizer_data = sizer_high,
                                   x = explanatory_var,
                                   y = response_var)
@@ -120,7 +117,7 @@ for(place in "ALBION"){
   message("Making plots...")
   
   # Plot the aggregated inflection points
-  agg_plot <- sizer_ggplot(raw_data = data_sub,
+  agg_plot <- HERON::sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_tidy,
                            x = explanatory_var, y = response_var,
                            trendline = "none", vline = "all") +
@@ -128,19 +125,19 @@ for(place in "ALBION"){
   
   # Plot the bandwidth-specific plots too!
   ## Low Bandwidth (h)
-  low_plot <- sizer_ggplot(raw_data = data_sub,
+  low_plot <- HERON::sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_low,
                x = explanatory_var, y = response_var,
                trendline = "none", vline = "all") +
     ggtitle(label = paste0("h = ", band_low, " Inflection Points"))
   ## Mid Bandwidth (h)
-  mid_plot <- sizer_ggplot(raw_data = data_sub,
+  mid_plot <- HERON::sizer_ggplot(raw_data = data_sub,
                            sizer_data = sizer_mid,
                x = explanatory_var, y = response_var,
                trendline = "none", vline = "all") +
     ggtitle(label = paste0("h = ", band_mid, " Inflection Points"))
   ## High Bandwidth (h)
-  high_plot <- sizer_ggplot(raw_data = data_sub,
+  high_plot <- HERON::sizer_ggplot(raw_data = data_sub,
                             sizer_data = sizer_high,
                x = explanatory_var, y = response_var,
                trendline = "none", vline = "all") +
@@ -200,23 +197,23 @@ for(place in "ALBION"){
   message("Fit regressions...")
   
   # Extract (1) statistics and (2) estimates from linear models
-  agg_lm <- sizer_lm(data = data_sub_agg, x = explanatory_var,
+  agg_lm <- HERON::sizer_lm(data = data_sub_agg, x = explanatory_var,
                      y = response_var, group_col = "groups") %>%
     # Then add columns for which bandwidth & which site
     purrr::map(.f = mutate, bandwidth = "aggregate",
                .before = dplyr::everything())
   ## Low bandwidth
-  low_lm <- sizer_lm(data = data_sub_low, x = explanatory_var,
+  low_lm <- HERON::sizer_lm(data = data_sub_low, x = explanatory_var,
                      y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_low,
                .before = dplyr::everything())
   ## Middle bandwidth
-  mid_lm <- sizer_lm(data = data_sub_mid, x = explanatory_var,
+  mid_lm <- HERON::sizer_lm(data = data_sub_mid, x = explanatory_var,
                      y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_mid,
                .before = dplyr::everything())
   ## High bandwidth
-  high_lm <- sizer_lm(data = data_sub_high, x = explanatory_var,
+  high_lm <- HERON::sizer_lm(data = data_sub_high, x = explanatory_var,
                       y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_high,
                .before = dplyr::everything())
