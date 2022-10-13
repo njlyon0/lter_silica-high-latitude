@@ -30,15 +30,18 @@ data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv")
 dplyr::glimpse(data)
 ```
 
-We (at the LNO Scientific Computing Support Team) have designed a suite of helper functions to facilitate this workflow and cut down on the number of necessary lines of code. We'll describe these functions in greater detail as we continue but for now, we can load the R package that includes these functions: `HERON`.
+We (at the LNO Scientific Computing Support Team) have designed a suite of helper functions to facilitate this workflow and cut down on the number of necessary lines of code. We'll describe these functions in greater detail as we continue but for now, we can load the R package that includes these functions: `HERON`. `HERON` is a loose acronym for *HE*lpers for *R*iver *O*bservatio*N* given that its functions were developed with hydrological research in mind.
 
-```{r load-helper-fxns, message = F}
+```{r load-helper-fxns-demo, eval = F}
 # Install HERON
 # install.packages("remotes")
-# remotes::install_github("lter/HERON")
-
-# Load HERON
+remotes::install_github("lter/HERON")
 library(HERON)
+```
+
+```{r load-helper-fxns, include = F}
+# Get the HERON package
+librarian::shelf(lter/HERON)
 ```
 
 To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects. Also, the loop normally iterates across sites but for the purposes of this report we can select a single site here
