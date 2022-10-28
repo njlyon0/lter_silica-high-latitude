@@ -1,9 +1,11 @@
-## ----------------------------------------- ##
-   # `SiZer` Workflow for Silica Export WG
-## ----------------------------------------- ##
+## ------------------------------------------------------- ##
+          # `SiZer` Workflow for Silica Export WG
+## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
-# Housekeeping ----
+## ----------------------------------------- ##
+            # Housekeeping ----
+## ----------------------------------------- ##
 
 # Load libraries
 # install.packages("librarian")
@@ -13,9 +15,37 @@ librarian::shelf(broom, cowplot, SiZer, tidyverse, lter/HERON)
 rm(list = ls())
 
 # Load data
-data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv"))
+data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv")) %>%
+  #First subset for Polar sites
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c ("Site 7")) %>%
+  dplyr::filter(stream != "Site 69038")
 
-# Loop Extract of SiZer Data ----
+# Check out the data
+dplyr::glimpse(data_v0)
+
+# We need to wrangle this to ready it for the below workflow
+data <- data_v0 %>%
+  # Throw away stream ID stuff
+  dplyr::select(-file_name, -Stream_Element_ID, -drainSqKm) %>%
+  # Pivot diff responses *longer*
+  tidyr::pivot_longer(cols = Discharge_cms:FNYield,
+                      names_to = "response_types",
+                      values_to = "response_values") %>%
+  # Average through "duplicates" created by water year breaks across calendar years
+  ## Only relevant to the first year of two McMurdo sites
+  dplyr::group_by(LTER, stream, chemical, Year, response_types) %>%
+  dplyr::summarize(response_values = mean(response_values, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Pivot back wider with chemicals
+  tidyr::pivot_wider(names_from = chemical,
+                     values_from = response_values)
+
+# Take a look!
+dplyr::glimpse(data)
+
+## ----------------------------------------- ##
+          # Pre-Loop Preparation ----
+## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
 response_var <- "FNYield"
@@ -47,16 +77,20 @@ giant_list <- list()
 # Make a counter and set it to 1 (the list will add to it)
 j <- 1
 
+## ----------------------------------------- ##
+       # Loop Extract of SiZer Data ----
+## ----------------------------------------- ##
+
 # Loop through sites and extract information
-# for(place in unique(data$site)) {
-for(place in "ALBION"){
+# for(place in unique(data$stream)) {
+for(place in "Site 7"){
   
   # Start with a message!
   message("Processing begun for site: ", place)
   
   # Subset the data
   data_sub <- data %>%
-    dplyr::filter(site == place) %>%
+    dplyr::filter(stream == place) %>%
     as.data.frame()
   
   # Loop - Get SiZer Object ----
@@ -258,7 +292,9 @@ for(place in "ALBION"){
   message("Processing complete for site: ", place)
 }
 
-# Unlist and Export Looped Data ----
+## ----------------------------------------- ##
+    # Unlist and Export Looped Data ----
+## ----------------------------------------- ##
 
 # Check out what is in our huge list
 names(giant_list)
