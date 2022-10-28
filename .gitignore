@@ -42,7 +42,7 @@ vignettes/*.pdf
 *.Rproj
 
 # Misc. folders
-# data/
+data/
 plots/
 export_*/
 
