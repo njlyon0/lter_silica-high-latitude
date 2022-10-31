@@ -4,7 +4,7 @@
 # Written by: Nick J Lyon & Joanna Carey
 
 ## ----------------------------------------- ##
-            # Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
@@ -49,7 +49,7 @@ response_var <- "FNYield"
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "DSi"
+element <- "Si:DIN"
 
 # Do a quick typo check
 if(!response_var %in% names(data)) {
@@ -82,20 +82,23 @@ giant_list <- list()
 j <- 1
 
 ## ----------------------------------------- ##
-       # Loop Extract of SiZer Data ----
+      # Loop Extract of SiZer Data ----
 ## ----------------------------------------- ##
 
+# Subset the data to only streams that have the chemical of interest
+data_short <- data %>%
+  dplyr::filter(chemical == element)
+
 # Loop through sites and extract information
-for(place in unique(data$stream)) {
+for(place in unique(data_short$stream)) {
 # for(place in "Site 7"){
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
   
   # Subset the data
-  data_sub <- data %>%
+  data_sub <- data_short %>%
     dplyr::filter(stream == place) %>%
-    dplyr::filter(chemical == element) %>%
     as.data.frame()
   
   # Loop - Get SiZer Object ----
@@ -117,9 +120,6 @@ for(place in unique(data$stream)) {
                     bandwidth_vec = c(band_low, band_mid, band_high))
   dev.off()
   
-  # Strip out the aggregated (across all bandwidths) inflection points
-  sizer_tidy <- HERON::sizer_aggregate(sizer_object = e)
-  
   # Identify inflection points at three specific bandwidths too
   sizer_low <- HERON::sizer_slice(sizer_object = e, bandwidth = band_low)
   sizer_mid <- HERON::sizer_slice(sizer_object = e, bandwidth = band_mid)
@@ -129,67 +129,53 @@ for(place in unique(data$stream)) {
   # Print a progress message
   message("Find slope changes...")
   
-  # Identify inflection points
-  ## Aggregate
-  data_sub_agg <- HERON::id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_tidy,
-                                   x = explanatory_var,
-                                   y = response_var)
+  # Identify changes in the slope
   ## Low
   data_sub_low <- HERON::id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_low,
-                                   x = explanatory_var,
-                                   y = response_var)
+                                          sizer_data = sizer_low,
+                                          x = explanatory_var,
+                                          y = response_var)
   ## Mid
   data_sub_mid <- HERON::id_slope_changes(raw_data = data_sub,
-                                   sizer_data = sizer_mid,
-                                   x = explanatory_var,
-                                   y = response_var)
+                                          sizer_data = sizer_mid,
+                                          x = explanatory_var,
+                                          y = response_var)
   ## High
   data_sub_high <- HERON::id_slope_changes(raw_data = data_sub,
-                                    sizer_data = sizer_high,
-                                    x = explanatory_var,
-                                    y = response_var)
+                                           sizer_data = sizer_high,
+                                           x = explanatory_var,
+                                           y = response_var)
   
   # Loop - Make Plots ----
   # Print a progress message
   message("Making plots...")
   
-  # Plot the aggregated inflection points
-  agg_plot <- HERON::sizer_ggplot(raw_data = data_sub_agg,
-                           sizer_data = sizer_tidy,
-                           x = explanatory_var, y = response_var,
-                           trendline = 'sharp', vline = "none",
-                           sharp_colors = c("#bbbbbb", 'orange')) +
-    ggtitle(label = "Aggregated Slope Changes")
-  
-  # Plot the bandwidth-specific plots too!
+  # Plot the bandwidth-specific plots!
   ## Low Bandwidth (h)
   low_plot <- HERON::sizer_ggplot(raw_data = data_sub_low,
-                           sizer_data = sizer_low,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
+                                  sizer_data = sizer_low,
+                                  x = explanatory_var, y = response_var,
+                                  trendline = 'sharp', vline = "none",
+                                  sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_low, " Slope Changes"))
   ## Mid Bandwidth (h)
   mid_plot <- HERON::sizer_ggplot(raw_data = data_sub_mid,
-                           sizer_data = sizer_mid,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
+                                  sizer_data = sizer_mid,
+                                  x = explanatory_var, y = response_var,
+                                  trendline = 'sharp', vline = "none",
+                                  sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_mid, " Slope Changes"))
   ## High Bandwidth (h)
   high_plot <- HERON::sizer_ggplot(raw_data = data_sub_high,
-                            sizer_data = sizer_high,
-               x = explanatory_var, y = response_var,
-               trendline = 'sharp', vline = "none",
-               sharp_colors = c("#bbbbbb", 'orange')) +
+                                   sizer_data = sizer_high,
+                                   x = explanatory_var, y = response_var,
+                                   trendline = 'sharp', vline = "none",
+                                   sharp_colors = c("#bbbbbb", 'orange')) +
     ggtitle(label = paste0("h = ", band_high, " Slope Changes"))
   
   # Combine plots
-  combo_plot <- cowplot::plot_grid(agg_plot, low_plot,
-                                   mid_plot, high_plot,
-                                   nrow = 2, ncol = 2,
+  combo_plot <- cowplot::plot_grid(low_plot, mid_plot, high_plot,
+                                   nrow = 1, ncol = 3,
                                    labels = "AUTO")
   
   ggplot2::ggsave(plot = combo_plot, height = 8, width = 8,
@@ -198,16 +184,6 @@ for(place in unique(data$stream)) {
   # Loop - Wrangle SiZer Data ----
   # Print a progress message
   message("Wrangling SiZer data...")
-  
-  # Now modify the columns in the provided sizer dataframes
-  sizer_tidy_export <- sizer_tidy %>%
-    # Make everything a character
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    # Add a column for bandwidth and for site name
-    dplyr::mutate(site = place, h_grid = "averaged across bandwidths",
-                  .before = dplyr::everything() ) %>%
-    # Make sure it's a dataframe
-    as.data.frame()
   
   # Do the same for the bandwidth specific data
   ## Low Bandwidth
@@ -232,45 +208,40 @@ for(place in unique(data$stream)) {
                                       sizer_high_export)
   
   # Add these tidied dataframes to our lists
-  giant_list[[paste0("aggregate_", j)]] <- sizer_tidy_export
   giant_list[[paste0("specific_", j)]] <- complete_export
-
+  
   # Loop - Fit Linear Models ----
   # Print a progress message
   message("Fit regressions...")
   
   # Extract (1) statistics and (2) estimates from linear models
-  agg_lm <- HERON::sizer_lm(data = data_sub_agg, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
-    # Then add columns for which bandwidth & which site
-    purrr::map(.f = mutate, bandwidth = "aggregate",
-               .before = dplyr::everything())
   ## Low bandwidth
   low_lm <- HERON::sizer_lm(data = data_sub_low, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
+                            y = response_var, group_col = "groups") %>%
+    # Then add columns for which bandwidth
     purrr::map(.f = mutate, bandwidth = band_low,
                .before = dplyr::everything())
   ## Middle bandwidth
   mid_lm <- HERON::sizer_lm(data = data_sub_mid, x = explanatory_var,
-                     y = response_var, group_col = "groups") %>%
+                            y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_mid,
                .before = dplyr::everything())
   ## High bandwidth
   high_lm <- HERON::sizer_lm(data = data_sub_high, x = explanatory_var,
-                      y = response_var, group_col = "groups") %>%
+                             y = response_var, group_col = "groups") %>%
     purrr::map(.f = mutate, bandwidth = band_high,
                .before = dplyr::everything())
   
   # Form one big list
-  mega_lm_list <- list(agg_lm, low_lm, mid_lm, high_lm)
-
+  mega_lm_list <- list(low_lm, mid_lm, high_lm)
+  
   # Final dataframe processing for *statistics*
   stat_df <- mega_lm_list %>%
     # Extract first list element
     purrr::map(.f = 1) %>%
     # Make all columns characters
     purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
-                                          as.character)) %>%
+                                                 as.character)) %>%
     # Add a site column
     purrr::map(.f = mutate, site = place,
                .before = dplyr::everything()) %>%
@@ -278,7 +249,7 @@ for(place in unique(data$stream)) {
     purrr::map_dfr(.f = dplyr::select, dplyr::everything())
   
   # Final dataframe processing for *estimates*
- est_df <- mega_lm_list %>%
+  est_df <- mega_lm_list %>%
     purrr::map(.f = 2) %>%
     purrr::map(.f = dplyr::mutate, dplyr::across(dplyr::everything(),
                                                  as.character)) %>%
@@ -295,17 +266,17 @@ for(place in unique(data$stream)) {
   
   # Return a "finished" message!
   message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
-  }
+}
 
 ## ----------------------------------------- ##
-    # Unlist and Export Looped Data ----
+      # Unlist and Export Looped Data ----
 ## ----------------------------------------- ##
 
 # Check out what is in our huge list
 names(giant_list)
 
 # Now (ironically) we'll use a loop to unlist what the first loop made
-for(data_type in c("aggregate", "specific", "stats", "estimates")){
+for(data_type in c("specific", "stats", "estimates")){
   
   # For each data type...
   list_sub <- giant_list %>%
