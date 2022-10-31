@@ -15,30 +15,14 @@ librarian::shelf(broom, cowplot, SiZer, tidyverse, lter/HERON)
 rm(list = ls())
 
 # Load data
-data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv")) %>%
-  #First subset for Polar sites
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c ("Site 7")) %>%
-  dplyr::filter(stream != "Site 69038")
+data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
 
-# Check out the data
-dplyr::glimpse(data_v0)
-
-# We need to wrangle this to ready it for the below workflow
+# Now subset to sites of interest
 data <- data_v0 %>%
-  # Throw away stream ID stuff
-  dplyr::select(-file_name, -Stream_Element_ID, -drainSqKm) %>%
-  # Pivot diff responses *longer*
-  tidyr::pivot_longer(cols = Discharge_cms:FNYield,
-                      names_to = "response_types",
-                      values_to = "response_values") %>%
-  # Average through "duplicates" created by water year breaks across calendar years
-  ## Only relevant to the first year of two McMurdo sites
-  dplyr::group_by(LTER, stream, chemical, Year, response_types) %>%
-  dplyr::summarize(response_values = mean(response_values, na.rm = T)) %>%
-  dplyr::ungroup() %>%
-  # Pivot back wider with chemicals
-  tidyr::pivot_wider(names_from = chemical,
-                     values_from = response_values)
+  # Keep only polar sites
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c ("Site 7")) %>%
+  # But drop one site that is technically polar
+  dplyr::filter(stream != "Site 69038")
 
 # Take a look!
 dplyr::glimpse(data)
@@ -51,13 +35,19 @@ dplyr::glimpse(data)
 response_var <- "FNYield"
 explanatory_var <- "Year"
 
+# Identify which chemical you want to analyze
+element <- "DSi"
+
 # Do a quick typo check
 if(!response_var %in% names(data)) {
   message("Response not found in data! Check spelling.") } else {
     message("Response variable looks good!") }
 if(!explanatory_var %in% names(data)) {
-  message("Response not found in data! Check spelling.") } else {
+  message("Explanatory not found in data! Check spelling.") } else {
     message("Explanatory variable looks good!") }
+if(!element %in% data$chemical) {
+  message("Chemical not found in data! Check spelling.") } else {
+    message("Chemical looks good!") }
 
 # Identify the three bandwidths you want to look at specifically
 band_low <- 4
@@ -66,7 +56,8 @@ band_high <- 8
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("export_", response_var, "_bw",
+(export_folder <- paste0("export_", response_var, "_",
+                         element, "_bw",
                          band_low, band_mid, band_high,
                          "_", Sys.Date()))
 dir.create(path = export_folder, showWarnings = FALSE)
@@ -86,11 +77,12 @@ j <- 1
 for(place in "Site 7"){
   
   # Start with a message!
-  message("Processing begun for site: ", place)
+  message("Processing begun for '", response_var, "' of '", chemical, "' at '", place, "'")
   
   # Subset the data
   data_sub <- data %>%
     dplyr::filter(stream == place) %>%
+    dplyr::filter(chemical == element) %>%
     as.data.frame()
   
   # Loop - Get SiZer Object ----
@@ -289,8 +281,8 @@ for(place in "Site 7"){
   j <- j + 1
   
   # Return a "finished" message!
-  message("Processing complete for site: ", place)
-}
+  message("Processing complete for '", response_var, "' of '", chemical, "' at '", place, "'")
+  }
 
 ## ----------------------------------------- ##
     # Unlist and Export Looped Data ----
