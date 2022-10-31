@@ -9,10 +9,23 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(broom, cowplot, SiZer, tidyverse, lter/HERON)
+librarian::shelf(broom, cowplot, googledrive, SiZer, tidyverse, lter/HERON)
 
 # Clear environment
 rm(list = ls())
+
+# Identify files in Drive folder
+ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/folders/1842KSgp48k_DwvNeYbmz-_b4PSH-vrxg"))
+
+# Create a folder to save to
+dir.create(path = "data", showWarnings = F)
+
+# Download desired data
+ids %>%
+  dplyr::filter(name == "Full_Results_ResultsTable_GFN_WRTDS.csv") %>%
+  googledrive::drive_download(file = googledrive::as_id(.),
+                              path = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"),
+                              overwrite = T)
 
 # Load data
 data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
@@ -20,7 +33,7 @@ data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_G
 # Now subset to sites of interest
 data <- data_v0 %>%
   # Keep only polar sites
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c ("Site 7")) %>%
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
   # But drop one site that is technically polar
   dplyr::filter(stream != "Site 69038")
 
@@ -73,8 +86,8 @@ j <- 1
 ## ----------------------------------------- ##
 
 # Loop through sites and extract information
-# for(place in unique(data$stream)) {
-for(place in "Site 7"){
+for(place in unique(data$stream)) {
+# for(place in "Site 7"){
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", chemical, "' at '", place, "'")
