@@ -90,7 +90,7 @@ for(place in unique(data$stream)) {
 # for(place in "Site 7"){
   
   # Start with a message!
-  message("Processing begun for '", response_var, "' of '", chemical, "' at '", place, "'")
+  message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
   
   # Subset the data
   data_sub <- data %>%
@@ -294,7 +294,7 @@ for(place in unique(data$stream)) {
   j <- j + 1
   
   # Return a "finished" message!
-  message("Processing complete for '", response_var, "' of '", chemical, "' at '", place, "'")
+  message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
   }
 
 ## ----------------------------------------- ##
