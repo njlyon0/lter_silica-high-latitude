@@ -43,6 +43,7 @@ vignettes/*.pdf
 
 # Misc. folders
 export_*/
+data/
 
 # Ignore knit .Rmd files
 *.pdf
