@@ -45,8 +45,8 @@ dplyr::glimpse(data)
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "Yield"
-## Yield, Conc_uM
+response_var <- "Discharge_cms"
+## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
