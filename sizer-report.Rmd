@@ -24,7 +24,7 @@ To use this version of the workflow, you need a dataframe containing (at least) 
 
 ```{r load-data, message = F}
 # Load data
-data <- readr::read_csv(file = file.path("data", "CryoData_forNick_6.29.22.csv"))
+data <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
 
 # Briefly, check it out
 dplyr::glimpse(data)
@@ -44,15 +44,18 @@ library(HERON)
 librarian::shelf(lter/HERON)
 ```
 
-To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects. Also, the loop normally iterates across sites but for the purposes of this report we can select a single site here
+To facilitate iterating across response variables and sites, the script this report is generated from allows the user to pick the response and explanatory variables and assign them as objects. Which chemical to run the workflow on must also be specified. Finally, the loop normally iterates across sites but for the purposes of this report we can select a single site here.
 
 ```{r load-variables}
 # Identify response (Y) and explanatory (X) variables
-response_var <- "FNYield"
+response_var <- "Conc_uM"
 explanatory_var <- "Year"
 
 # Identify desired site
-place <- "ALBION"
+place <- "FINEALT"
+
+# Pick a chemical as well
+element <- "DSi"
 ```
 
 Also, `SiZer` assesses "bandwidths" that define the width of the 'window' used to evaluate slope changes. A very low bandwidth (i.e., a narrow window) will see a single point that deviates from the general trend and will identify a slope change on either side of that point. A higher bandwidth (e.g. a wide window) will only identify the most obvious slope changes and will often miss subtle hills or valleys in a trendline.
@@ -83,7 +86,8 @@ The loop begins by subsetting the data to only a single site. The rest of the wo
 ```{r subset-data}
 # Subset the data to desired site
   data_sub <- data %>%
-    dplyr::filter(site == place) %>%
+    dplyr::filter(stream == place) %>%
+    dplyr::filter(chemical == element) %>%
     as.data.frame()
 ```
 
@@ -93,10 +97,10 @@ The `h` argument defines which bandwidths to assess and 2 to 10 is a good expert
 
 ```{r run-sizer, message = F}
 # Invoke the SiZer::SiZer function
-  e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
-                    y = data_sub[[response_var]],
-                    h = c(2, 10), degree = 1,
-                    derv = 1, grid.length = 100)
+e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
+                  y = data_sub[[response_var]],
+                  h = c(2, 10), degree = 1,
+                  derv = 1, grid.length = 100)
 ```
 
 Once we have a `SiZer` object, we can plot it to evaluate slope changes across all provided bandwidths. The custom `sizer_plot` function plots this and adds horizontal lines at the user-selected bandwidths.
@@ -111,7 +115,7 @@ You can see in the plot below that higher bandwidths (e.g., upper rows of pixels
 
 ```{r sizer-plot}
 # Plot the SiZer object with horizontal lines at bandwidths of interest
-  HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(band_low, band_mid, band_high))
+HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(band_low, band_mid, band_high))
 ```
 
 We then found it useful to do two things with this object:
