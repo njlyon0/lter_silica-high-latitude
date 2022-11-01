@@ -45,11 +45,13 @@ dplyr::glimpse(data)
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "FNYield"
+response_var <- "Yield"
+## Yield, Conc_uM
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "Si:DIN"
+element <- "DSi"
+## DSi, Si:DIN, Si:P
 
 # Do a quick typo check
 if(!response_var %in% names(data)) {
@@ -175,7 +177,7 @@ for(place in unique(data_short$stream)) {
   
   # Combine plots
   combo_plot <- cowplot::plot_grid(low_plot, mid_plot, high_plot,
-                                   nrow = 1, ncol = 3,
+                                   nrow = 2, ncol = 2,
                                    labels = "AUTO")
   
   ggplot2::ggsave(plot = combo_plot, height = 8, width = 8,
