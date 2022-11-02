@@ -45,12 +45,12 @@ dplyr::glimpse(data)
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "Discharge_cms"
+response_var <- "Flux_10_6kmol_yr"
 ## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "DSi"
+element <- "Si:P"
 ## DSi, Si:DIN, Si:P
 
 # Do a quick typo check
