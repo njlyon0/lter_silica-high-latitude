@@ -167,7 +167,7 @@ for(place in unique(data_short$stream)) {
   
   # Export whichever graph got made
   ggplot2::ggsave(filename = file.path(export_folder, 
-                                       paste0("slope-change_", place_short, "_ggplots.png")),
+                                       paste0(place_short, "_ggplot.png")),
                   height = 8, width = 8)
   
   # Loop - Wrangle SiZer Data ----
