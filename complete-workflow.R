@@ -93,7 +93,7 @@ data_short <- data %>%
 
 # Loop through sites and extract information
 for(place in unique(data_short$stream)) {
-# for(place in "Site 7"){
+  # for(place in "Site 7"){
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
@@ -133,142 +133,88 @@ for(place in unique(data_short$stream)) {
                                       x = explanatory_var,
                                       y = response_var)
   
-  # Loop - Slope Change Workflow
-  # If no inflection points, run slope change workflow
-  if(is.na(sizer_info$pos_to_neg) & is.na(sizer_info$neg_to_pos)){
-    
-    # Change Workflow - Plotting ----
-    message("Making plots...")
-    
-    # Make the appropriate plot
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
-                                    sizer_data = sizer_info,
-                                    x = explanatory_var, y = response_var,
-                                    trendline = 'sharp', vline = "changes",
-                                    sharp_colors = c("#bbbbbb", 'orange')) +
-      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
-    
-    
-    # Export it
-    ggplot2::ggsave(filename = file.path(export_folder, 
-                                         paste0("slope-change_", place_short, "_ggplots.png")),
-                    height = 8, width = 8)
-    
-    # Change Workflow - Wrangle SiZer Data ----
-    message("Wrangling SiZer data...")
-    
-    # Modify the columns in the provided sizer dataframes
-    sizer_export <- data_sub %>%
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(bandwidth_h = bandwidth,
-                    site = place, 
-                    .before = dplyr::everything()) %>%
-      as.data.frame()
-    
-    # Add this tidied dataframe to our export list
-    giant_list[[paste0("data_", j)]] <- sizer_export
-    
-    # Change Workflow - Fit Linear Models ----
-    message("Fit regressions...")
-    
-    # Extract statistics/estimates from linear models
-    lm_obj <- HERON::sizer_lm(data = data_sub, x = explanatory_var,
-                              y = response_var, group_col = "groups") %>%
-      # Then add column for bandwidth
-      purrr::map(.f = mutate, bandwidth_h = bandwidth,
-                 .before = dplyr::everything())
-    
-    # Final dataframe processing for *statistics*
-    stat_df <- lm_obj[[1]] %>%
-      # Make all columns characters
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      # Add a site column
-      dplyr::mutate(site = place, .before = dplyr::everything())
-    
-    # Final dataframe processing for *estimates*
-    est_df <- lm_obj[[2]] %>%
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(site = place, .before = dplyr::everything())
-    
-    # Add this information to their respective lists
-    giant_list[[paste0("stats_", j)]] <- stat_df
-    giant_list[[paste0("estimates_", j)]] <- est_df
-    
-    # Increase the counter by 1 (for the next iteration of the loop)
-    j <- j + 1
-    
-    # Return a "finished" message!
-    message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
-    
-  } # End slope change workflow
+  # Loop - Plotting ----
+  message("Making plots...")
   
-  # Loop - Inflection Point Workflow
-  # If *any* inflection points, run inflection point workflow
+  # Handle three possible types of changes
+  ## 1. No inflection point
+  if(nrow(sizer_info) == 0){
+    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+                                     sizer_data = sizer_info,
+                                     x = explanatory_var, y = response_var,
+                                     trendline = 'sharp', vline = "none",
+                                     sharp_colors = c("#bbbbbb", 'purple')) +
+      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
+  } else {
+  ## 2. Slope changes (+/0, -/0, 0/+, 0/-) without full inflection point (+/-, -/+)
+  if(is.na(sizer_info$pos_to_neg) & is.na(sizer_info$neg_to_pos)){
+    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+                                     sizer_data = sizer_info,
+                                     x = explanatory_var, y = response_var,
+                                     trendline = 'sharp', vline = "changes",
+                                     sharp_colors = c("#bbbbbb", 'purple')) +
+      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
+  }
+  ## 3. Full inflection point(s) (+/-, -/+) found
   if(!is.na(sizer_info$pos_to_neg) | !is.na(sizer_info$neg_to_pos)){
-    
-    # Inflection Workflow - Plotting ----
-    message("Making plots...")
-    
-    # Make the appropriate plot
     demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
                                      sizer_data = sizer_info,
                                      x = explanatory_var, y = response_var,
                                      trendline = 'sharp', vline = "inflections",
-                                     sharp_colors = c("#bbbbbb", 'teal')) +
+                                     sharp_colors = c("#bbbbbb", 'purple')) +
       ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
-    
-    # Export it
-    ggplot2::ggsave(filename = file.path(export_folder, 
-                                         paste0("slope-change_", place_short, "_ggplots.png")),
-                    height = 8, width = 8)
-    
-    # Inflection Workflow - Wrangle SiZer Data ----
-    message("Wrangling SiZer data...")
-    
-    # Modify the columns in the provided sizer dataframes
-    sizer_export <- data_sub %>%
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(bandwidth_h = bandwidth,
-                    site = place, 
-                    .before = dplyr::everything()) %>%
-      as.data.frame()
-    
-    # Add this tidied dataframe to our export list
-    giant_list[[paste0("data_", j)]] <- sizer_export
-    
-    # Change Workflow - Fit Linear Models ----
-    message("Fit regressions...")
-    
-    # Extract statistics/estimates from linear models
-    lm_obj <- HERON::sizer_lm(data = data_sub, x = explanatory_var,
-                              y = response_var, group_col = "groups") %>%
-      # Then add column for bandwidth
-      purrr::map(.f = mutate, bandwidth_h = bandwidth,
-                 .before = dplyr::everything())
-    
-    # Final dataframe processing for *statistics*
-    stat_df <- lm_obj[[1]] %>%
-      # Make all columns characters
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      # Add a site column
-      dplyr::mutate(site = place, .before = dplyr::everything())
-    
-    # Final dataframe processing for *estimates*
-    est_df <- lm_obj[[2]] %>%
-      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(site = place, .before = dplyr::everything())
-    
-    # Add this information to their respective lists
-    giant_list[[paste0("stats_", j)]] <- stat_df
-    giant_list[[paste0("estimates_", j)]] <- est_df
-    
-    # Increase the counter by 1 (for the next iteration of the loop)
-    j <- j + 1
-    
-    # Return a "finished" message!
-    message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
-    
-  } # End slope change workflow
+  } }
+  
+  # Export whichever graph got made
+  ggplot2::ggsave(filename = file.path(export_folder, 
+                                       paste0("slope-change_", place_short, "_ggplots.png")),
+                  height = 8, width = 8)
+  
+  # Loop - Wrangle SiZer Data ----
+  message("Wrangling SiZer data...")
+  
+  # Modify the columns in the provided sizer dataframes
+  sizer_export <- data_sub %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+    dplyr::mutate(bandwidth_h = bandwidth,
+                  site = place, 
+                  .before = dplyr::everything()) %>%
+    as.data.frame()
+  
+  # Add this tidied dataframe to our export list
+  giant_list[[paste0("data_", j)]] <- sizer_export
+  
+  # Loop - Fit Linear Models ----
+  message("Fit regressions...")
+  
+  # Extract statistics/estimates from linear models
+  lm_obj <- HERON::sizer_lm(data = data_sub, x = explanatory_var,
+                            y = response_var, group_col = "groups") %>%
+    # Then add column for bandwidth
+    purrr::map(.f = mutate, bandwidth_h = bandwidth,
+               .before = dplyr::everything())
+  
+  # Final dataframe processing for *statistics*
+  stat_df <- lm_obj[[1]] %>%
+    # Make all columns characters
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+    # Add a site column
+    dplyr::mutate(site = place, .before = dplyr::everything())
+  
+  # Final dataframe processing for *estimates*
+  est_df <- lm_obj[[2]] %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+    dplyr::mutate(site = place, .before = dplyr::everything())
+  
+  # Add this information to their respective lists
+  giant_list[[paste0("stats_", j)]] <- stat_df
+  giant_list[[paste0("estimates_", j)]] <- est_df
+  
+  # Increase the counter by 1 (for the next iteration of the loop)
+  j <- j + 1
+  
+  # Return a "finished" message!
+  message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
   
 } # Close loop
 
