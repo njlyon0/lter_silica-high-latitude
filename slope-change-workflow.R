@@ -187,7 +187,7 @@ for(place in unique(data_short$stream)) {
   # Print a progress message
   message("Wrangling SiZer data...")
   
-  # Do the same for the bandwidth specific data
+  # Modify the columns in the provided sizer dataframes
   ## Low Bandwidth
   sizer_low_export <- sizer_low %>%
     dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
