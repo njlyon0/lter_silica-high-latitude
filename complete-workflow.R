@@ -137,7 +137,8 @@ for(place in unique(data_short$stream)) {
   place_short <- stringr::str_sub(string = place, start = 1, end = 8)
   
   # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")), width = 5, height = 5, res = 720, units = 'in')
+  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")),
+      width = 5, height = 5, res = 720, units = 'in')
   HERON::sizer_plot(sizer_object = e,
                     bandwidth_vec = c(bandwidth))
   dev.off()
@@ -156,7 +157,8 @@ for(place in unique(data_short$stream)) {
     data_info <- HERON::id_slope_changes(raw_data = data_sub,
                                          sizer_data = sizer_info,
                                          x = explanatory_var,
-                                         y = response_var)
+                                         y = response_var,
+                                         group_dig = 5)
     
     # Make plot
     demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
@@ -182,7 +184,8 @@ for(place in unique(data_short$stream)) {
       data_info <- HERON::id_inflections(raw_data = data_sub,
                                          sizer_data = sizer_info,
                                          x = explanatory_var,
-                                         y = response_var) 
+                                         y = response_var,
+                                         group_dig = 5)
       
       # Make plot
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
@@ -200,7 +203,8 @@ for(place in unique(data_short$stream)) {
       
       # Strip group assignments
       data_info <- HERON::id_slope_changes(raw_data = data_sub, sizer_data = sizer_info,
-                                           x = explanatory_var, y = response_var)
+                                           x = explanatory_var, y = response_var,
+                                           group_dig = 5)
      
       # Plot 
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
