@@ -31,7 +31,7 @@ ids %>%
 data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
 
 # Now subset to sites of interest
-data_sub <- data_v0 %>%
+data_simp <- data_v0 %>%
   # Keep only polar sites
   dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
   # But drop one site that is technically polar
@@ -48,14 +48,14 @@ data_sub <- data_v0 %>%
   dplyr::select(-dplyr::contains("_10_6"))
 
 # Take a look!
-dplyr::glimpse(data_sub)
+dplyr::glimpse(data_simp)
 
 # Check lost/gained columns
-setdiff(x = names(data_v0), y = names(data_sub)) # lost
-setdiff(y = names(data_v0), x = names(data_sub)) # gained
+setdiff(x = names(data_v0), y = names(data_simp)) # lost
+setdiff(y = names(data_v0), x = names(data_simp)) # gained
 
 # Clean up environment
-rm(list = setdiff(ls(), c("data_sub")))
+rm(list = setdiff(ls(), c("data_simp")))
 
 ## ----------------------------------------- ##
           # Pre-Loop Preparation ----
@@ -71,13 +71,13 @@ element <- "DSi"
 ## DSi, Si:DIN, Si:P
 
 # Do a quick typo check
-if(!response_var %in% names(data_sub)) {
+if(!response_var %in% names(data_simp)) {
   message("Response not found in data! Check spelling.") } else {
     message("Response variable looks good!") }
-if(!explanatory_var %in% names(data_sub)) {
+if(!explanatory_var %in% names(data_simp)) {
   message("Explanatory not found in data! Check spelling.") } else {
     message("Explanatory variable looks good!") }
-if(!element %in% data_sub$chemical) {
+if(!element %in% data_simp$chemical) {
   message("Chemical not found in data! Check spelling.") } else {
     message("Chemical looks good!") }
 
@@ -85,7 +85,7 @@ if(!element %in% data_sub$chemical) {
 bandwidth <- 5
 
 # Carve data down to only needed bits
-data <- data_sub %>%
+data <- data_simp %>%
   dplyr::select(LTER:chemical, dplyr::starts_with(response_var))
 
 # Check that out
@@ -167,24 +167,24 @@ for(place in unique(data_short$stream)) {
                                      sharp_colors = c("#bbbbbb", 'purple')) +
       ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
   } else {
-  ## 2. Slope changes (+/0, -/0, 0/+, 0/-) without full inflection point (+/-, -/+)
-  if(is.na(sizer_info$pos_to_neg) & is.na(sizer_info$neg_to_pos)){
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
-                                     sizer_data = sizer_info,
-                                     x = explanatory_var, y = response_var,
-                                     trendline = 'sharp', vline = "changes",
-                                     sharp_colors = c("#bbbbbb", 'purple')) +
-      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
-  }
-  ## 3. Full inflection point(s) (+/-, -/+) found
-  if(!is.na(sizer_info$pos_to_neg) | !is.na(sizer_info$neg_to_pos)){
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
-                                     sizer_data = sizer_info,
-                                     x = explanatory_var, y = response_var,
-                                     trendline = 'sharp', vline = "inflections",
-                                     sharp_colors = c("#bbbbbb", 'purple')) +
-      ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
-  } }
+    ## 2. Full inflection point(s) (+/-, -/+) found
+    if(!TRUE %in% is.na(sizer_info$pos_to_neg) | !TRUE %in% is.na(sizer_info$neg_to_pos)){
+      demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+                                       sizer_data = sizer_info,
+                                       x = explanatory_var, y = response_var,
+                                       trendline = 'sharp', vline = "inflections",
+                                       sharp_colors = c("#bbbbbb", 'purple')) +
+        ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
+    }
+    ## 3. Slope changes (+/0, -/0, 0/+, 0/-) without full inflection point (+/-, -/+)
+    if(TRUE %in% is.na(sizer_info$pos_to_neg) & TRUE %in% is.na(sizer_info$neg_to_pos)){
+      demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+                                       sizer_data = sizer_info,
+                                       x = explanatory_var, y = response_var,
+                                       trendline = 'sharp', vline = "changes",
+                                       sharp_colors = c("#bbbbbb", 'purple')) +
+        ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
+    } }
   
   # Export whichever graph got made
   ggplot2::ggsave(filename = file.path(export_folder, 
