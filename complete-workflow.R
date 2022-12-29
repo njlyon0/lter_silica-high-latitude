@@ -113,8 +113,8 @@ data_short <- data %>%
   dplyr::filter(chemical == element)
 
 # Loop through sites and extract information
-for(place in unique(data_short$stream)) {
-  # for(place in "Site 7"){
+# for(place in unique(data_short$stream)) {
+  for(place in "Site 7"){
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
@@ -149,7 +149,7 @@ for(place in unique(data_short$stream)) {
   message("Find slope changes...")
   
   # Identify changes in the slope
-  data_sub <- HERON::id_slope_changes(raw_data = data_sub,
+  data_info <- HERON::id_slope_changes(raw_data = data_sub,
                                       sizer_data = sizer_info,
                                       x = explanatory_var,
                                       y = response_var)
@@ -160,7 +160,7 @@ for(place in unique(data_short$stream)) {
   # Handle three possible types of changes
   ## 1. No inflection point
   if(nrow(sizer_info) == 0){
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+    demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                      sizer_data = sizer_info,
                                      x = explanatory_var, y = response_var,
                                      trendline = 'sharp', vline = "none",
@@ -169,7 +169,7 @@ for(place in unique(data_short$stream)) {
   } else {
     ## 2. Full inflection point(s) (+/-, -/+) found
     if(!TRUE %in% is.na(sizer_info$pos_to_neg) | !TRUE %in% is.na(sizer_info$neg_to_pos)){
-      demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+      demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "inflections",
@@ -178,7 +178,7 @@ for(place in unique(data_short$stream)) {
     }
     ## 3. Slope changes (+/0, -/0, 0/+, 0/-) without full inflection point (+/-, -/+)
     if(TRUE %in% is.na(sizer_info$pos_to_neg) & TRUE %in% is.na(sizer_info$neg_to_pos)){
-      demo_plot <- HERON::sizer_ggplot(raw_data = data_sub,
+      demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "changes",
@@ -195,7 +195,7 @@ for(place in unique(data_short$stream)) {
   message("Wrangling SiZer data...")
   
   # Modify the columns in the provided sizer dataframes
-  sizer_export <- data_sub %>%
+  sizer_export <- data_info %>%
     dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
     dplyr::mutate(bandwidth_h = bandwidth,
                   site = place, 
@@ -209,7 +209,7 @@ for(place in unique(data_short$stream)) {
   message("Fit regressions...")
   
   # Extract statistics/estimates from linear models
-  lm_obj <- HERON::sizer_lm(data = data_sub, x = explanatory_var,
+  lm_obj <- HERON::sizer_lm(data = data_info, x = explanatory_var,
                             y = response_var, group_col = "groups") %>%
     # Then add column for bandwidth
     purrr::map(.f = mutate, bandwidth_h = bandwidth,
