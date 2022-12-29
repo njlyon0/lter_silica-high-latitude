@@ -113,8 +113,8 @@ data_short <- data %>%
   dplyr::filter(chemical == element)
 
 # Loop through sites and extract information
-# for(place in unique(data_short$stream)) {
-for(place in c("Yukon")) {
+for(place in unique(data_short$stream)) {
+# for(place in c("Yukon", "Site 7")) {
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
