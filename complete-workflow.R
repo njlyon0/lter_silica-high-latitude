@@ -146,46 +146,72 @@ for(place in "Yukon") { # good test for inflection pts
   # Identify inflection points/slope changes
   sizer_info <- HERON::sizer_slice(sizer_object = e, bandwidth = bandwidth)
   
-  # Loop - Identify Slope Changes ----
-  message("Find slope changes...")
-  
-  # Identify changes in the slope
-  data_info <- HERON::id_slope_changes(raw_data = data_sub,
-                                      sizer_data = sizer_info,
-                                      x = explanatory_var,
-                                      y = response_var)
-  
-  # Loop - Plotting ----
-  message("Making plots...")
-  
-  # Handle three possible types of changes
-  ## 1. No inflection point
+  # Loop - No Changes Workflow ----
+  ## If no slope changes are found:
   if(nrow(sizer_info) == 0){
+    
+    # Message this status
+    message("No slope changes/inflections found; Proceeding...")
+    
+    # Migrate "groups" over 
+    data_info <- HERON::id_slope_changes(raw_data = data_sub,
+                                         sizer_data = sizer_info,
+                                         x = explanatory_var,
+                                         y = response_var)
+    
+    # Make plot
     demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                      sizer_data = sizer_info,
                                      x = explanatory_var, y = response_var,
                                      trendline = 'sharp', vline = "none",
-                                     sharp_colors = c("#bbbbbb", 'purple')) +
+                                     sharp_colors = c("#bbbbbb", 'green')) +
       ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
+    
   } else {
-    ## 2. Full inflection point(s) (+/-, -/+) found
-    if(!TRUE %in% is.na(sizer_info$pos_to_neg) | !TRUE %in% is.na(sizer_info$neg_to_pos)){
+    
+    # If there are changes and/or inflections, find inflections
+    inflects_raw <- c(sizer_info$neg_to_pos, sizer_info$pos_to_neg)
+    inflects <- inflects_raw[!is.na(inflects_raw)]
+    
+    # Loop - Inflection Point Workflow ----
+    # If any inflections *are* found:
+    if(length(inflects > 0)){
+      
+      # Message to this effect
+      message("Inflections found; Proceeding...")
+      
+      # Migrate groups over
+      data_info <- HERON::id_inflections(raw_data = data_sub,
+                                         sizer_data = sizer_info,
+                                         x = explanatory_var,
+                                         y = response_var) 
+      
+      # Make plot
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "inflections",
-                                       sharp_colors = c("#bbbbbb", 'purple')) +
+                                       sharp_colors = c("#bbbbbb", 'green')) +
         ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
-    }
-    ## 3. Slope changes (+/0, -/0, 0/+, 0/-) without full inflection point (+/-, -/+)
-    if(TRUE %in% is.na(sizer_info$pos_to_neg) & TRUE %in% is.na(sizer_info$neg_to_pos)){
+      
+    } else {
+      # Loop - Slope Change Workflow ----
+      
+      # Message
+      message("Slope changes found but no inflections; Proceeding...")
+      
+      # Strip group assignments
+      data_info <- HERON::id_slope_changes(raw_data = data_sub, sizer_data = sizer_info,
+                                           x = explanatory_var, y = response_var)
+     
+      # Plot 
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "changes",
-                                       sharp_colors = c("#bbbbbb", 'purple')) +
+                                       sharp_colors = c("#bbbbbb", 'green')) +
         ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
-    } }
+    } } # Close tri-partite workflow splits
   
   # Export whichever graph got made
   ggplot2::ggsave(filename = file.path(export_folder, 
