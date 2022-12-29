@@ -114,7 +114,8 @@ data_short <- data %>%
 
 # Loop through sites and extract information
 # for(place in unique(data_short$stream)) {
-  for(place in "Site 7"){
+# for(place in "Site 7"){ # good test for slope change w/o inflection
+for(place in "Yukon") { # good test for inflection pts
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
