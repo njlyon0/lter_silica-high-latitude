@@ -114,8 +114,7 @@ data_short <- data %>%
 
 # Loop through sites and extract information
 # for(place in unique(data_short$stream)) {
-# for(place in "Site 7"){ # good test for slope change w/o inflection
-for(place in "Yukon") { # good test for inflection pts
+for(place in c("Yukon", "Site 7")) {
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
@@ -163,8 +162,7 @@ for(place in "Yukon") { # good test for inflection pts
     demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                      sizer_data = sizer_info,
                                      x = explanatory_var, y = response_var,
-                                     trendline = 'sharp', vline = "none",
-                                     sharp_colors = c("#bbbbbb", 'green')) +
+                                     trendline = 'sharp', vline = "none") +
       ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
     
   } else {
@@ -191,7 +189,7 @@ for(place in "Yukon") { # good test for inflection pts
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "inflections",
-                                       sharp_colors = c("#bbbbbb", 'green')) +
+                                       sharp_colors = c("green", "green")) +
         ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
       
     } else {
@@ -209,7 +207,7 @@ for(place in "Yukon") { # good test for inflection pts
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
                                        trendline = 'sharp', vline = "changes",
-                                       sharp_colors = c("#bbbbbb", 'green')) +
+                                       sharp_colors = c("#bbbbbb", "green")) +
         ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
     } } # Close tri-partite workflow splits
   
