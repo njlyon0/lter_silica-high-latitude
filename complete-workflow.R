@@ -31,24 +31,37 @@ ids %>%
 data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
 
 # Now subset to sites of interest
-data <- data_v0 %>%
+data_sub <- data_v0 %>%
   # Keep only polar sites
   dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
   # But drop one site that is technically polar
-  dplyr::filter(stream != "Site 69038")
+  dplyr::filter(!stream %in% c("Site 69038")) %>%
+  # Convert 10^-6 xx to just xx
+  dplyr::mutate(Flux_kg_yr = (Flux_10_6kg_yr * 10^6),
+                FNFlux_kg_yr = (FNFlux_10_6kg_yr * 10^6),
+                Flux_kmol_yr = (Flux_10_6kmol_yr * 10^6),
+                FNFlux_kmol_yr = (FNFlux_10_6kmol_yr * 10^6),
+                Yield_kmol_yr_km2 = (Yield_10_6kmol_yr_km2 * 10^6),
+                FNYield_kmol_yr_km2 = (FNYield_10_6kmol_yr_km2 * 10^6)) %>%
+  # Drop old columns
+  dplyr::select(-dplyr::contains("_10_6"))
 
 # Take a look!
-dplyr::glimpse(data)
+dplyr::glimpse(data_sub)
+
+# Check lost/gained columns
+setdiff(x = names(data_v0), y = names(data_sub)) # lost
+setdiff(y = names(data_v0), x = names(data_sub)) # gained
 
 # Clean up environment
-rm(list = setdiff(ls(), c("data")))
+rm(list = setdiff(ls(), c("data_sub")))
 
 ## ----------------------------------------- ##
           # Pre-Loop Preparation ----
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "Flux_10_6kmol_yr"
+response_var <- "Flux_kmol_yr"
 ## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
 
@@ -57,18 +70,25 @@ element <- "Si:P"
 ## DSi, Si:DIN, Si:P
 
 # Do a quick typo check
-if(!response_var %in% names(data)) {
+if(!response_var %in% names(data_sub)) {
   message("Response not found in data! Check spelling.") } else {
     message("Response variable looks good!") }
-if(!explanatory_var %in% names(data)) {
+if(!explanatory_var %in% names(data_sub)) {
   message("Explanatory not found in data! Check spelling.") } else {
     message("Explanatory variable looks good!") }
-if(!element %in% data$chemical) {
+if(!element %in% data_sub$chemical) {
   message("Chemical not found in data! Check spelling.") } else {
     message("Chemical looks good!") }
 
 # Identify the bandwidth to use with SiZer
 bandwidth <- 5
+
+# Carve data down to only needed bits
+data <- data_sub %>%
+  dplyr::select(LTER:chemical, dplyr::starts_with(response_var))
+
+# Check that out
+dplyr::glimpse(data)
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
