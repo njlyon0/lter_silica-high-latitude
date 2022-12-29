@@ -35,7 +35,8 @@ data_sub <- data_v0 %>%
   # Keep only polar sites
   dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
   # But drop one site that is technically polar
-  dplyr::filter(!stream %in% c("Site 69038")) %>%
+  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001", 
+                               "Kymijoki Kokonkoski 014")) %>%
   # Convert 10^-6 xx to just xx
   dplyr::mutate(Flux_kg_yr = (Flux_10_6kg_yr * 10^6),
                 FNFlux_kg_yr = (FNFlux_10_6kg_yr * 10^6),
@@ -61,12 +62,12 @@ rm(list = setdiff(ls(), c("data_sub")))
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "Flux_kmol_yr"
+response_var <- "Yield_kmol_yr_km2"
 ## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "Si:P"
+element <- "DSi"
 ## DSi, Si:DIN, Si:P
 
 # Do a quick typo check
