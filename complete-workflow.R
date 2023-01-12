@@ -38,15 +38,30 @@ data_simp <- data_v0 %>%
   dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001", 
                                "Kymijoki Kokonkoski 014")) %>%
   # Convert 10^-6 xx to just xx
-  dplyr::mutate(Flux_kg_yr = (Flux_10_6kg_yr * 10^6),
-                FNFlux_kg_yr = (FNFlux_10_6kg_yr * 10^6),
-                Flux_kmol_yr = (Flux_10_6kmol_yr * 10^6),
-                FNFlux_kmol_yr = (FNFlux_10_6kmol_yr * 10^6),
-                Yield_kmol_yr_km2 = (Yield_10_6kmol_yr_km2 * 10^6),
-                FNYield_kmol_yr_km2 = (FNYield_10_6kmol_yr_km2 * 10^6)) %>%
-  # Drop old columns
-  dplyr::select(-dplyr::contains("_10_6"))
-
+  dplyr::mutate(Flux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                    yes = (Flux_10_6kg_yr * 10^6),
+                                    no = NA),
+                FNFlux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                      yes = (FNFlux_10_6kg_yr * 10^6),
+                                      no = NA),
+                Flux_kmol_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                      yes = (Flux_10_6kmol_yr * 10^6),
+                                      no = NA),
+                FNFlux_kmol_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                        yes = (FNFlux_10_6kmol_yr * 10^6),
+                                        no = NA),
+                Yield_kmol_yr_km2 = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                           yes = (Yield_10_6kmol_yr_km2 * 10^6),
+                                           no = NA),
+                FNYield_kmol_yr_km2 = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                             yes = (FNYield_10_6kmol_yr_km2 * 10^6),
+                                             no = NA)) %>%
+  # Tweak chemical names to exclude `:` in ratio
+  dplyr::mutate(chemical = dplyr::case_when(
+    chemical == "Si:DIN" ~ "Si_DIN",
+    chemical == "Si:P" ~ "Si_P",
+    TRUE ~ chemical))
+  
 # Take a look!
 dplyr::glimpse(data_simp)
 
@@ -67,8 +82,8 @@ response_var <- "Yield_kmol_yr_km2"
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "DSi"
-## DSi, Si:DIN, Si:P
+element <- "Si_DIN"
+## DSi, Si_DIN, Si_P
 
 # Do a quick typo check
 if(!response_var %in% names(data_simp)) {
@@ -85,11 +100,14 @@ if(!element %in% data_simp$chemical) {
 bandwidth <- 5
 
 # Carve data down to only needed bits
-data <- data_simp %>%
-  dplyr::select(LTER:chemical, dplyr::starts_with(response_var))
+data_short <- data_simp %>%
+  ## Keep only needed columns
+  dplyr::select(LTER:chemical, dplyr::starts_with(response_var)) %>%
+  ## And only chemical of interest
+  dplyr::filter(chemical == element)
 
 # Check that out
-dplyr::glimpse(data)
+dplyr::glimpse(data_short)
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
@@ -107,10 +125,6 @@ j <- 1
 ## ----------------------------------------- ##
       # Loop Extract of SiZer Data ----
 ## ----------------------------------------- ##
-
-# Subset the data to only streams that have the chemical of interest
-data_short <- data %>%
-  dplyr::filter(chemical == element)
 
 # Loop through sites and extract information
 for(place in unique(data_short$stream)) {
