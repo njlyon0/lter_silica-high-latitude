@@ -15,8 +15,11 @@ librarian::shelf(broom, cowplot, googledrive, SiZer, tidyverse, lter/HERON)
 rm(list = ls())
 
 # Identify files in Drive folder
-ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/folders/1842KSgp48k_DwvNeYbmz-_b4PSH-vrxg"))
-
+## Standard results
+# ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk"))
+## Experimental results
+ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1bm2a-rBkvbFXECGXmZ-pLDtoTomtFLYI"))
+  
 # Create a folder to save to
 dir.create(path = "data", showWarnings = F)
 
