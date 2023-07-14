@@ -23,18 +23,18 @@ Scripts in this repository are described below:
 See below for a “tree” of this repository’s content:
 
 ``` r
-supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", 
-                      exclude = "_deprecated")
+supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", exclude = "_deprecated")
 ```
 
     ##                  levelName
     ## 1 .                       
     ## 2  ¦--.gitignore          
-    ## 3  ¦--README.md           
-    ## 4  ¦--_deprecated         
-    ## 5  ¦   °--4 excluded items
-    ## 6  ¦--complete-workflow.R 
-    ## 7  °--sizer-report.Rmd
+    ## 3  ¦--README.Rmd          
+    ## 4  ¦--README.md           
+    ## 5  ¦--_deprecated         
+    ## 6  ¦   °--4 excluded items
+    ## 7  ¦--complete-workflow.R 
+    ## 8  °--sizer-report.Rmd
 
 ## Related Repositories
 

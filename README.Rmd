@@ -28,8 +28,7 @@ library(supportR)
 ```
 
 ```{r github-tree, message = F, warning = F}
-supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", 
-                      exclude = "_deprecated")
+supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", exclude = "_deprecated")
 ```
 
 ## Related Repositories
