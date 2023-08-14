@@ -294,7 +294,7 @@ for(place in unique(data_short$stream)) {
 } # Close loop
 
 ## ----------------------------------------- ##
-# Unlist and Export Looped Data ----
+    # Unlist and Export Looped Data ----
 ## ----------------------------------------- ##
 
 # Check out what is in our huge list
@@ -309,7 +309,7 @@ for(data_type in c("data", "stats", "estimates")){
     purrr::keep(.p = stringr::str_detect(string = names(.),
                                          pattern = data_type)) %>%
     # Unlist by selecting all columns of each list element
-    purrr::map_dfr(.f = dplyr::select, dplyr::everything())
+    purrr::list_rbind()
   
   # Now save the CSV
   write_csv(x = list_sub, na = "",
