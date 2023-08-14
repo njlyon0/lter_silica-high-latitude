@@ -319,4 +319,73 @@ for(data_type in c("data", "stats", "estimates")){
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
 
+
+
+
+# BASEMENT ----
+## "basement" = storage area for code that is related to but not integral to the workflow preceding it
+
+#import SiZer Output
+Data_estimates<-readr::read_csv('_slope-change_estimates_exported.csv') #has slopes and pvalue
+Data_stats<-readr::read_csv('_slope-change_stats_exported.csv') #has r2
+Data_years<-readr::read_csv('_slope-change_data_exported.csv') #has start and end years for calc time periods and LTER name
+
+#let's get rid of rows with "intercept" b/c we're just interested in slopes and then remove "term" column completely
+Data_estimates<-Data_estimates %>%
+  dplyr::filter(term %in% c("data[[x]]")) %>%
+  dplyr::select(-c(term)) 
+
+#names(Data_stats) #many un-needed columns to remove
+Data_stats<-Data_stats %>%
+  dplyr::select(-c(sigma, statistic, p.value, df, logLik, deviance, df.residual, nobs)) 
+
+Data2<-merge(Data_estimates, Data_stats, by=c("site", "bandwidth_h", "section")) 
+
+#keep columns we want and rename "groups" as "section" for merging
+Data_years<-Data_years %>%
+  dplyr::select(c(site, LTER, groups, start, end, slope_type, chemical)) %>%
+  rename(section=groups) %>%
+  distinct(.keep_all = TRUE)
+
+Data_years[Data_years == '(-Inf, Inf]'] <- 'No inflection points'
+Data_years$duration<-Data_years$end - Data_years$start
+
+Data3<-merge(Data2, Data_years, by=c("site", "section")) 
+names(Data3)
+
+#filter for only significant slopes. remove pipe to see how many sign, then add in to see if lose any w/ r.square threshold
+Data4<-Data3 %>%
+  dplyr::filter(as.numeric(p.value)<0.05) %>%
+  dplyr::filter(as.numeric(r.squared)>0.30) %>%
+  arrange(LTER, site)
+
+#lost two sign regressions for DSi yield and discharge and P conc, DIN yield
+#lost 1 sign regression Si_DIN conc ratio (Oxyx), DIP yield
+#lose zero sign regressions for DSi conc, Si_DIN ratios of fluxes and , Si_P ratios fluxes and conc, DIN conc
+
+write.csv(Data4, file="SignificantSlopeswStats.csv", row.names=FALSE)
+
+##plotting results
+#this new column allows one to have boxplots sorted by lter, then stream
+Data4$LTER_Site<-paste0(stringr::str_sub(Data4$LTER,1,3),"_",Data4$site) 
+
+Data4<-Data4 %>%
+  mutate(across (8:11, round, 2))
+
+#changing the R2 text sizing and position for each output file - no room for it for Conc
+#yield geom_text: hjust = -.25, vjust= 1.5, size=3.5
+#need to change size of saved file too - height of conc = 8, yield = 6
+ggplot(Data4) +
+  geom_col(aes(x=estimate, y=LTER_Site, fill=duration)) +
+  geom_errorbar(aes(xmin=estimate - std.error, xmax=estimate + std.error, y=LTER_Site), width=0.2, size=0.75, color="gray")+
+  #geom_text(aes(label= r.squared, estimate, y= LTER_Site), hjust = -.25, vjust= 1.5, size=3.5) +
+  theme_bw()+
+  #geom_text(aes(label= start, estimate, y= LTERSite), hjust = -2, vjust= 2)
+  ggtitle("Significant changes in DIN yield")
+ggsave(paste0("Barchart SiZer Significnat change DIN conc",Sys.Date(),".png"), width=6, height=8)
+
+
+
+
+
 # End ----
