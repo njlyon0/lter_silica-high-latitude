@@ -70,8 +70,7 @@ data_simp <- data_v0 %>%
 dplyr::glimpse(data_simp)
 
 # Check lost/gained columns
-setdiff(x = names(data_v0), y = names(data_simp)) # lost
-setdiff(y = names(data_v0), x = names(data_simp)) # gained
+supportR::diff_check(old = names(data_v0), new = names(data_simp))
 
 # Clean up environment
 rm(list = setdiff(ls(), c("data_simp")))
