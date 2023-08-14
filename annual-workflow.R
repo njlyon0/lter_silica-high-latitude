@@ -294,11 +294,14 @@ for(place in unique(data_short$stream)) {
 } # Close loop
 
 ## ----------------------------------------- ##
-    # Unlist and Export Looped Data ----
+          # Process Loop Outputs ----
 ## ----------------------------------------- ##
 
 # Check out what is in our huge list
 names(giant_list)
+
+# Make a new list to store simplified outputs in
+result_list <- list()
 
 # Now (ironically) we'll use a loop to unlist what the first loop made
 for(data_type in c("data", "stats", "estimates")){
@@ -311,13 +314,32 @@ for(data_type in c("data", "stats", "estimates")){
     # Unlist by selecting all columns of each list element
     purrr::list_rbind()
   
-  # Now save the CSV
+  # Export each type of output in its 'raw' form for posterity
   write_csv(x = list_sub, na = "",
             file = file.path(export_folder,
                              paste0("_slope-change_", data_type, "_exported.csv")))
   
+  # Add this to the simpler results list
+  result_list[[data_type]] <- list_sub
+  
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
+
+# Clear environment except for that result list
+rm(list = setdiff(ls(), c("result_list")))
+
+# Check out the simplified results list we're left with
+names(result_list)
+dplyr::glimpse(result_list)
+
+# Grab each bit as a dataframe for ease of further modification
+estimates <- result_list[["estimates"]]
+stats <- result_list[["stats"]]
+years <- result_list[["data"]]
+
+## ----------------------------------------- ##
+# Create Summary Outputs ----
+## ----------------------------------------- ##
 
 
 
