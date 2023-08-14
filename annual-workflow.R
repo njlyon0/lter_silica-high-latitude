@@ -325,61 +325,98 @@ for(data_type in c("data", "stats", "estimates")){
   # And print a message
   message("Dataframe for ", data_type, " exported.") }
 
-# Clear environment except for that result list
-rm(list = setdiff(ls(), c("result_list")))
-
 # Check out the simplified results list we're left with
 names(result_list)
 dplyr::glimpse(result_list)
+
+# Clear environment except for that result list
+rm(list = setdiff(ls(), c("result_list")))
+
+## ----------------------------------------- ##
+        # Create Summary Outputs ----
+## ----------------------------------------- ##
 
 # Grab each bit as a dataframe for ease of further modification
 estimates <- result_list[["estimates"]]
 stats <- result_list[["stats"]]
 years <- result_list[["data"]]
 
-## ----------------------------------------- ##
-# Create Summary Outputs ----
-## ----------------------------------------- ##
+# Wrangle estimate part
+est_v2 <- estimates %>%
+  # Remove intercept information
+  dplyr::filter(term != "(Intercept)") %>%
+  # Drop term column now that it's all "data[[x]]"
+  dplyr::select(-term) %>%
+  # Rename columns with periods in names to use underscores
+  dplyr::rename(std_error = std.error,
+                p_value = p.value)
 
+# Check structure
+dplyr::glimpse(est_v2)
 
+# Wrangle statistics part
+stats_v2 <- stats %>%
+  # Pare down to only desired columns (implicitly removes non-specified columns)
+  dplyr::select(site, bandwidth_h, section, r.squared, adj.r.squared, AIC, BIC) %>%
+  # Rename period columns to use underscores
+  dplyr::rename(r_squared = r.squared,
+                adj_r_squared = adj.r.squared)
+
+# Check structure
+dplyr::glimpse(stats_v2)
+
+# Merge estimates and statistics data
+combo_v1 <- dplyr::left_join(x = est_v2, y = stats_v2, by = c("site", "bandwidth_h", "section"))
+
+# Check structure
+dplyr::glimpse(combo_v1)
+
+# Wrangle source data ('years')
+years_v2 <- years %>%
+  # Tweak the '-Inf to Inf' entry for consistency with other dataframes and rename column
+  dplyr::mutate(section = ifelse(groups == "(-Inf, Inf]",
+                                 yes = "No inflection points", no = groups), 
+                .after = LTER) %>%
+  # Pare down to only some columns
+  dplyr::select(site, LTER, section, start, end, slope_type, chemical) %>%
+  # Make end/start actually numbers and calculate duration of group
+  dplyr::mutate(start = as.numeric(start),
+                end = as.numeric(end),
+                duration = end - start,
+                .after = end)
+
+# Check structure
+dplyr::glimpse(years_v2)
+
+# Attach that modified years object to the other combined dataframe
+combo_v2 <- dplyr::left_join(combo_v1, years_v2, by = c("site", "section"))
+
+# Check structure
+dplyr::glimpse(combo_v2)
+
+# Now we can wrangle all three types of data in a single object
+combo_v3 <- combo_v2 %>%
+  # Move grouping columns over to the left
+  dplyr::relocate(LTER, .before = site) %>%
+  dplyr::relocate(chemical, section, start, end, duration, slope_type, .after = site) %>%
+  # Make several columns actually be numeric
+  dplyr::mutate( dplyr::across(.cols = bandwidth_h:BIC, .fns = as.numeric)) %>%
+  # Keep only p values that are significant
+  dplyr::filter(p_value < 0.05) %>%
+  # And only R squareds that are 'pretty good'
+  dplyr::filter(r_squared >= 0.30) %>%
+  # Arrange by LTER and site
+  arrange(LTER, site)
+
+# Double check structure
+dplyr::glimpse(combo_v3)
 
 
 # BASEMENT ----
 ## "basement" = storage area for code that is related to but not integral to the workflow preceding it
 
-#import SiZer Output
-Data_estimates<-readr::read_csv('_slope-change_estimates_exported.csv') #has slopes and pvalue
-Data_stats<-readr::read_csv('_slope-change_stats_exported.csv') #has r2
-Data_years<-readr::read_csv('_slope-change_data_exported.csv') #has start and end years for calc time periods and LTER name
-
-#let's get rid of rows with "intercept" b/c we're just interested in slopes and then remove "term" column completely
-Data_estimates<-Data_estimates %>%
-  dplyr::filter(term %in% c("data[[x]]")) %>%
-  dplyr::select(-c(term)) 
-
-#names(Data_stats) #many un-needed columns to remove
-Data_stats<-Data_stats %>%
-  dplyr::select(-c(sigma, statistic, p.value, df, logLik, deviance, df.residual, nobs)) 
-
-Data2<-merge(Data_estimates, Data_stats, by=c("site", "bandwidth_h", "section")) 
-
-#keep columns we want and rename "groups" as "section" for merging
-Data_years<-Data_years %>%
-  dplyr::select(c(site, LTER, groups, start, end, slope_type, chemical)) %>%
-  rename(section=groups) %>%
-  distinct(.keep_all = TRUE)
-
-Data_years[Data_years == '(-Inf, Inf]'] <- 'No inflection points'
-Data_years$duration<-Data_years$end - Data_years$start
-
-Data3<-merge(Data2, Data_years, by=c("site", "section")) 
-names(Data3)
 
 #filter for only significant slopes. remove pipe to see how many sign, then add in to see if lose any w/ r.square threshold
-Data4<-Data3 %>%
-  dplyr::filter(as.numeric(p.value)<0.05) %>%
-  dplyr::filter(as.numeric(r.squared)>0.30) %>%
-  arrange(LTER, site)
 
 #lost two sign regressions for DSi yield and discharge and P conc, DIN yield
 #lost 1 sign regression Si_DIN conc ratio (Oxyx), DIP yield
