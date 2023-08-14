@@ -85,7 +85,7 @@ response_var <- "Yield_kmol_yr_km2"
 explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
-element <- "Si_DIN"
+element <- "DSi"
 ## DSi, Si_DIN, Si_P
 
 # Do a quick typo check
@@ -112,6 +112,11 @@ data_short <- data_simp %>%
 # Check that out
 dplyr::glimpse(data_short)
 
+# Make sure there are some non-NAs for the selected response/explanatory/chemical
+if(all(is.na(data_short[[response_var]])) == T){
+  message("No non-NA response values found in this subset of the data")
+} else { message("Data subset looks good!") }
+
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
 (export_folder <- paste0("export_", response_var, "_",
@@ -131,7 +136,7 @@ j <- 1
 
 # Loop through sites and extract information
 for(place in unique(data_short$stream)) {
-# for(place in c("Yukon", "Site 7")) {
+  # for(place in c("Yukon", "Site 7")) {
   
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
@@ -222,7 +227,7 @@ for(place in unique(data_short$stream)) {
       data_info <- HERON::id_slope_changes(raw_data = data_sub, sizer_data = sizer_info,
                                            x = explanatory_var, y = response_var,
                                            group_dig = 5)
-     
+      
       # Plot 
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
@@ -286,7 +291,7 @@ for(place in unique(data_short$stream)) {
 } # Close loop
 
 ## ----------------------------------------- ##
-      # Unlist and Export Looped Data ----
+# Unlist and Export Looped Data ----
 ## ----------------------------------------- ##
 
 # Check out what is in our huge list
