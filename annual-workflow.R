@@ -7,6 +7,9 @@
               # Housekeeping ----
 ## ----------------------------------------- ##
 
+# Need to force an install of HERON to get an updated version?
+# devtools::install_github("lter/HERON", force = T)
+
 # Load libraries
 # install.packages("librarian")
 librarian::shelf(broom, cowplot, googledrive, SiZer, tidyverse, lter/HERON, supportR)
