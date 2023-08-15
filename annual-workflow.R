@@ -383,7 +383,9 @@ years_v2 <- years %>%
   dplyr::mutate(start = as.numeric(start),
                 end = as.numeric(end),
                 duration = end - start,
-                .after = end)
+                .after = end) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(years_v2)
