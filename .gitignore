@@ -42,8 +42,10 @@ vignettes/*.pdf
 *.Rproj
 
 # Misc. folders
-export_*/
 data/
+export_*/
+annual_*/
 
 # Ignore knit .Rmd files
 *.pdf
+*.html
