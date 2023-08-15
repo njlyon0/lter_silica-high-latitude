@@ -3,6 +3,10 @@
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
+# Purpose:
+## Run SiZer workflow on *seasonal* data produced by WRTDS
+## WRTDS = Weighted Regressions on Time, Discharge, and Season
+
 ## ----------------------------------------- ##
               # Housekeeping ----
 ## ----------------------------------------- ##
