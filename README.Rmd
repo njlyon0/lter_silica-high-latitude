@@ -16,6 +16,9 @@ This repository contains the code needed for one sub-project created by the Long
 
 Scripts in this repository are described below:
 
+- **`annual-workflow.R`** - Runs SiZer workflow to identify changes in slope for _annual_ WRTDS data
+
+- **`seasonal-workflow.R`** - Runs SiZer workflow to identify changes in slope for _seasonal_ WRTDS data. Note that "seasonal" data are derived by averaging across sub-season temporal columns in the monthly data.
 
 ## Repository Content
 

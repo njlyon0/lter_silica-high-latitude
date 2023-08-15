@@ -18,6 +18,13 @@ multi-biome synthesis investigating the controls on river Si exports”**
 
 Scripts in this repository are described below:
 
+- **`annual-workflow.R`** - Runs SiZer workflow to identify changes in
+  slope for *annual* WRTDS data
+
+- **`seasonal-workflow.R`** - Runs SiZer workflow to identify changes in
+  slope for *seasonal* WRTDS data. Note that “seasonal” data are derived
+  by averaging across sub-season temporal columns in the monthly data.
+
 ## Repository Content
 
 See below for a “tree” of this repository’s content:
@@ -33,8 +40,9 @@ supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere"
     ## 4  ¦--README.md           
     ## 5  ¦--_deprecated         
     ## 6  ¦   °--4 excluded items
-    ## 7  ¦--complete-workflow.R 
-    ## 8  °--sizer-report.Rmd
+    ## 7  ¦--annual-workflow.R   
+    ## 8  ¦--seasonal-workflow.R 
+    ## 9  °--sizer-report.Rmd
 
 ## Related Repositories
 
