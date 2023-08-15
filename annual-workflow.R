@@ -134,7 +134,7 @@ giant_list <- list()
 j <- 1
 
 ## ----------------------------------------- ##
-      # Loop Extract of SiZer Data ----
+           # Extract SiZer Data ----
 ## ----------------------------------------- ##
 
 # Loop through sites and extract information
@@ -315,9 +315,8 @@ for(data_type in c("data", "stats", "estimates")){
     purrr::list_rbind()
   
   # Export each type of output in its 'raw' form for posterity
-  write_csv(x = list_sub, na = "",
-            file = file.path(export_folder,
-                             paste0("_slope-change_", data_type, "_exported.csv")))
+  write.csv(x = list_sub, na = "", row.names = F,
+            file = file.path(export_folder, paste0("_ANNUAL_", data_type, ".csv")))
   
   # Add this to the simpler results list
   result_list[[data_type]] <- list_sub
@@ -329,8 +328,8 @@ for(data_type in c("data", "stats", "estimates")){
 names(result_list)
 dplyr::glimpse(result_list)
 
-# Clear environment except for that result list
-rm(list = setdiff(ls(), c("result_list")))
+# Clear environment except for that result list, export folder, and file prefix
+rm(list = setdiff(ls(), c("result_list", "export_folder")))
 
 ## ----------------------------------------- ##
         # Create Summary Outputs ----
@@ -398,9 +397,10 @@ dplyr::glimpse(combo_v2)
 combo_v3 <- combo_v2 %>%
   # Move grouping columns over to the left
   dplyr::relocate(LTER, .before = site) %>%
-  dplyr::relocate(chemical, section, start, end, duration, slope_type, .after = site) %>%
+  dplyr::relocate(chemical, section, start, end, duration, 
+                  bandwidth_h, slope_type, .after = site) %>%
   # Make several columns actually be numeric
-  dplyr::mutate( dplyr::across(.cols = bandwidth_h:BIC, .fns = as.numeric)) %>%
+  dplyr::mutate( dplyr::across(.cols = estimate:BIC, .fns = as.numeric)) %>%
   # Keep only p values that are significant
   dplyr::filter(p_value < 0.05) %>%
   # And only R squareds that are 'pretty good'
@@ -411,18 +411,21 @@ combo_v3 <- combo_v2 %>%
 # Double check structure
 dplyr::glimpse(combo_v3)
 
+## ----------------------------------------- ##
+                  # Export ----
+## ----------------------------------------- ##
+
+# Export that combination object locally
+write.csv(x = combo_v3, na = "", row.names = F,
+          file = file.path(export_folder, paste0("_ANNUAL_significant-slopes.csv")))
+
+## ----------------------------------------- ##
+# Exploratory Graph ----
+## ----------------------------------------- ##
 
 # BASEMENT ----
 ## "basement" = storage area for code that is related to but not integral to the workflow preceding it
 
-
-#filter for only significant slopes. remove pipe to see how many sign, then add in to see if lose any w/ r.square threshold
-
-#lost two sign regressions for DSi yield and discharge and P conc, DIN yield
-#lost 1 sign regression Si_DIN conc ratio (Oxyx), DIP yield
-#lose zero sign regressions for DSi conc, Si_DIN ratios of fluxes and , Si_P ratios fluxes and conc, DIN conc
-
-write.csv(Data4, file="SignificantSlopeswStats.csv", row.names=FALSE)
 
 ##plotting results
 #this new column allows one to have boxplots sorted by lter, then stream
