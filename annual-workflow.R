@@ -122,7 +122,7 @@ if(all(is.na(data_short[[response_var]])) == T){
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("export_", response_var, "_",
+(export_folder <- paste0("annual_", response_var, "_",
                          element, "_bw", bandwidth,
                          "_", Sys.Date()))
 dir.create(path = export_folder, showWarnings = FALSE)
@@ -328,9 +328,6 @@ for(data_type in c("data", "stats", "estimates")){
 names(result_list)
 dplyr::glimpse(result_list)
 
-# Clear environment except for that result list, export folder, and file prefix
-rm(list = setdiff(ls(), c("result_list", "export_folder")))
-
 ## ----------------------------------------- ##
         # Create Summary Outputs ----
 ## ----------------------------------------- ##
@@ -420,34 +417,41 @@ write.csv(x = combo_v3, na = "", row.names = F,
           file = file.path(export_folder, paste0("_ANNUAL_significant-slopes.csv")))
 
 ## ----------------------------------------- ##
-# Exploratory Graph ----
+          # Exploratory Plotting ----
 ## ----------------------------------------- ##
 
-# BASEMENT ----
-## "basement" = storage area for code that is related to but not integral to the workflow preceding it
+# Tweak the combination object in preparation for an exploratory plot
+combo_v4 <- combo_v3 %>%
+  # Abbreviate LTER name if needed
+  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
+                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
+                                     no = LTER), .after = LTER)
 
+# Check structure
+sort(unique(combo_v4$LTER_abbrev))
+dplyr::glimpse(combo_v4)
 
-##plotting results
-#this new column allows one to have boxplots sorted by lter, then stream
-Data4$LTER_Site<-paste0(stringr::str_sub(Data4$LTER,1,3),"_",Data4$site) 
+# Break off the first bit of the response variable (i.e., drop units)
+## Ugly code but it works!
+(response_simp <- tidyr::separate_wider_delim(data = data.frame(response_var = response_var), 
+                                             cols = response_var, delim = "_", 
+                                             too_few = "align_start",
+                                             names = c("want", paste0(rep("junk", times = 10), 
+                                                                      1:10))) %>%
+    dplyr::pull(want))
 
-Data4<-Data4 %>%
-  mutate(across (8:11, round, 2))
+# Make the exploratory graph
+ggplot(combo_v4, aes(x = estimate, y = LTER_abbrev, fill = duration)) +
+  geom_col() +
+  geom_errorbar(aes(xmax = estimate + std_error, xmin = estimate - std_error), 
+                width = 0.2, linewidth = 0.75, color = "gray66") +
+  labs(title = paste("Significant Changes in", element, response_simp),
+       x = "Estimate", y = "LTER Abbreviation") +
+  theme_bw()
 
-#changing the R2 text sizing and position for each output file - no room for it for Conc
-#yield geom_text: hjust = -.25, vjust= 1.5, size=3.5
-#need to change size of saved file too - height of conc = 8, yield = 6
-ggplot(Data4) +
-  geom_col(aes(x=estimate, y=LTER_Site, fill=duration)) +
-  geom_errorbar(aes(xmin=estimate - std.error, xmax=estimate + std.error, y=LTER_Site), width=0.2, size=0.75, color="gray")+
-  #geom_text(aes(label= r.squared, estimate, y= LTER_Site), hjust = -.25, vjust= 1.5, size=3.5) +
-  theme_bw()+
-  #geom_text(aes(label= start, estimate, y= LTERSite), hjust = -2, vjust= 2)
-  ggtitle("Significant changes in DIN yield")
-ggsave(paste0("Barchart SiZer Significnat change DIN conc",Sys.Date(),".png"), width=6, height=8)
-
-
-
-
+# Export this graph
+ggsave(filename = file.path(export_folder, 
+                            paste0("_ANNUAL_sig-sizer-barplot_", Sys.Date(), ".png")),
+       width = 6, height = 8, units = "in")
 
 # End ----
