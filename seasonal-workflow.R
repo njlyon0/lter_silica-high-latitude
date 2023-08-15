@@ -24,7 +24,7 @@ rm(list = ls())
 # Identify files in Drive folder
 ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk")) %>%
   # Filter to desired data files
-  dplyr::filter(name %in% c("Full_Results_ResultsTable_GFN_WRTDS.csv"))
+  dplyr::filter(name %in% c("Full_Results_Monthly_GFN_WRTDS.csv"))
 
 # Check that includes all desired data files
 ids
@@ -39,12 +39,12 @@ purrr::walk2(.x = ids$id, .y = ids$name,
                                                 overwrite = T))
 
 # Load data
-data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
+data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_Monthly_GFN_WRTDS.csv"))
 
 # Now subset to sites of interest
 data_simp <- data_v0 %>%
   # Keep only polar sites
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute", "NIVA") | stream %in% c("Site 7")) %>%
   # But drop one site that is technically polar
   dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001", 
                                "Kymijoki Kokonkoski 014")) %>%
@@ -71,7 +71,19 @@ data_simp <- data_v0 %>%
   dplyr::mutate(chemical = dplyr::case_when(
     chemical == "Si:DIN" ~ "Si_DIN",
     chemical == "Si:P" ~ "Si_P",
-    TRUE ~ chemical))
+    TRUE ~ chemical)) %>%
+  # Remove all instances where season info is missing
+  dplyr::filter(!is.na(season)) %>%
+  # Flip to long format to get all response variables into a single column
+  tidyr::pivot_longer(cols = Discharge_cms:FNYield_kmol_yr_km2,
+                      names_to = "var",
+                      values_to = "value") %>%
+  # Group by everything *except month* and average response values
+  dplyr::group_by(LTER, stream, drainSqKm, season, Year, chemical, var) %>%
+  dplyr::summarize(value = mean(value, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Flip back to wide format
+  tidyr::pivot_wider(names_from = var, values_from = value)
   
 # Take a look!
 dplyr::glimpse(data_simp)
@@ -79,21 +91,22 @@ dplyr::glimpse(data_simp)
 # Check lost/gained columns
 supportR::diff_check(old = names(data_v0), new = names(data_simp))
 
-# Clean up environment
-rm(list = setdiff(ls(), c("data_simp")))
-
 ## ----------------------------------------- ##
           # Pre-Loop Preparation ----
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
 response_var <- "Yield_kmol_yr_km2"
-## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
+names(data_simp)
 
 # Identify which chemical you want to analyze
 element <- "DSi"
-## DSi, Si_DIN, Si_P
+unique(data_simp$chemical)
+
+# Identify season to analyze within
+focal_season <- "winter"
+unique(data_simp$season)
 
 # Do a quick typo check
 if(!response_var %in% names(data_simp)) {
@@ -105,6 +118,9 @@ if(!explanatory_var %in% names(data_simp)) {
 if(!element %in% data_simp$chemical) {
   message("Chemical not found in data! Check spelling.") } else {
     message("Chemical looks good!") }
+if(!focal_season %in% unique(data_simp$season)) {
+  message("Season not found in data! Check spelling.") } else {
+    message("Season looks good!") }
 
 # Identify the bandwidth to use with SiZer
 bandwidth <- 5
@@ -114,7 +130,9 @@ data_short <- data_simp %>%
   ## Keep only needed columns
   dplyr::select(LTER:chemical, dplyr::starts_with(response_var)) %>%
   ## And only chemical of interest
-  dplyr::filter(chemical == element)
+  dplyr::filter(chemical == element) %>%
+  ## And only season of interest
+  dplyr::filter(season == focal_season)
 
 # Check that out
 dplyr::glimpse(data_short)
@@ -126,7 +144,7 @@ if(all(is.na(data_short[[response_var]])) == T){
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("annual_", response_var, "_",
+(export_folder <- paste0("seasonal_", response_var, "_",
                          element, "_bw", bandwidth,
                          "_", Sys.Date()))
 dir.create(path = export_folder, showWarnings = FALSE)
@@ -320,7 +338,7 @@ for(data_type in c("data", "stats", "estimates")){
   
   # Export each type of output in its 'raw' form for posterity
   write.csv(x = list_sub, na = "", row.names = F,
-            file = file.path(export_folder, paste0("_ANNUAL_", data_type, ".csv")))
+            file = file.path(export_folder, paste0("_SEASONAL_", data_type, ".csv")))
   
   # Add this to the simpler results list
   result_list[[data_type]] <- list_sub
@@ -383,7 +401,9 @@ years_v2 <- years %>%
   dplyr::mutate(start = as.numeric(start),
                 end = as.numeric(end),
                 duration = end - start,
-                .after = end)
+                .after = end) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(years_v2)
@@ -418,7 +438,7 @@ dplyr::glimpse(combo_v3)
 
 # Export that combination object locally
 write.csv(x = combo_v3, na = "", row.names = F,
-          file = file.path(export_folder, paste0("_ANNUAL_significant-slopes.csv")))
+          file = file.path(export_folder, paste0("_SEASONAL_significant-slopes.csv")))
 
 ## ----------------------------------------- ##
           # Exploratory Plotting ----
@@ -455,7 +475,7 @@ ggplot(combo_v4, aes(x = estimate, y = LTER_abbrev, fill = duration)) +
 
 # Export this graph
 ggsave(filename = file.path(export_folder, 
-                            paste0("_ANNUAL_sig-sizer-barplot_", Sys.Date(), ".png")),
+                            paste0("_SEASONAL_sig-sizer-barplot_", Sys.Date(), ".png")),
        width = 6, height = 8, units = "in")
 
 # End ----
