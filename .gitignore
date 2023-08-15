@@ -45,6 +45,7 @@ vignettes/*.pdf
 data/
 export_*/
 annual_*/
+seasonal_*/
 
 # Ignore knit .Rmd files
 *.pdf
