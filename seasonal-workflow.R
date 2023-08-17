@@ -472,8 +472,15 @@ combo_v3 <- combo_v2 %>%
                                      no = site),
     stream = paste0(LTER_abbrev, "_", site_abbrev), .after = site) %>%
   # Drop intermediary columns needed to make that abbreviation simply
-  dplyr::select(-dplyr::ends_with("_abbrev"))
-
+  dplyr::select(-dplyr::ends_with("_abbrev")) %>%
+  # Calculate relative response so sites with very different absolute totals can be directly compared
+  ## Calculate average 'response' per SiZer section
+  dplyr::group_by() %>%
+  dplyr::mutate() %>%
+  dplyr::ungroup() %>%
+  # Divide average by slope estimate and convert into percent change
+  dplyr::mutate()
+  
 # Make sure the new 'stream' column is as unique as raw LTER + stream
 length(unique(paste0(combo_v3$LTER, combo_v3$site)))
 length(unique(combo_v3$stream))
