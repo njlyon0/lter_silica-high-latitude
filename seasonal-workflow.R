@@ -49,6 +49,8 @@ data_simp <- data_v0 %>%
   # But drop problem sites that are otherwise retained
   dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001",
                                "Kymijoki Kokonkoski 014")) %>%
+  # Drop McMurdo in the winter
+  dplyr::filter(LTER != "MCM" | (LTER == "MCM" & season != "winter")) %>%
   # Calculate number of years
   dplyr::group_by(LTER, stream) %>%
   dplyr::mutate(num_years = length(unique(Year)), .after = Year) %>%
@@ -96,6 +98,12 @@ data_simp <- data_v0 %>%
   
 # Take a look!
 dplyr::glimpse(data_simp)
+
+# Take a look at LTERs / streams
+data_simp %>%
+  dplyr::group_by(LTER) %>%
+  dplyr::summarize(stream_ct = length(unique(stream)),
+                   season_ct = length(unique(season)))
 
 # Check lost/gained columns
 supportR::diff_check(old = names(data_v0), new = names(data_simp))
