@@ -121,10 +121,6 @@ names(data_simp)
 element <- "DSi"
 unique(data_simp$chemical)
 
-# Identify season to analyze within
-focal_season <- "winter"
-unique(data_simp$season)
-
 # Do a quick typo check
 if(!response_var %in% names(data_simp)) {
   message("Response not found in data! Check spelling.") } else {
@@ -135,9 +131,6 @@ if(!explanatory_var %in% names(data_simp)) {
 if(!element %in% data_simp$chemical) {
   message("Chemical not found in data! Check spelling.") } else {
     message("Chemical looks good!") }
-if(!focal_season %in% unique(data_simp$season)) {
-  message("Season not found in data! Check spelling.") } else {
-    message("Season looks good!") }
 
 # Identify the bandwidth to use with SiZer
 bandwidth <- 5
@@ -147,9 +140,7 @@ data_short <- data_simp %>%
   ## Keep only needed columns
   dplyr::select(LTER:chemical, dplyr::starts_with(response_var)) %>%
   ## And only chemical of interest
-  dplyr::filter(chemical == element) %>%
-  ## And only season of interest
-  dplyr::filter(season == focal_season)
+  dplyr::filter(chemical == element)
 
 # Check that out
 dplyr::glimpse(data_short)
@@ -161,9 +152,7 @@ if(all(is.na(data_short[[response_var]])) == T){
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("seasonal_", response_var, "_",
-                         element, "_bw", bandwidth,
-                         "_", Sys.Date()))
+(export_folder <- paste0("seasonal_", response_var, "_", element, "_bw", bandwidth))
 dir.create(path = export_folder, showWarnings = FALSE)
 
 # Make an empty list to store all of our extracted information
@@ -178,8 +167,7 @@ j <- 1
 
 # Loop through sites and extract information
 for(place in unique(data_short$stream)) {
-  # for(place in c("Yukon", "Site 7")) {
-  
+
   # Start with a message!
   message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
   
@@ -188,141 +176,151 @@ for(place in unique(data_short$stream)) {
     dplyr::filter(stream == place) %>%
     as.data.frame()
   
-  # Loop - Get SiZer Object ----
-  message("Run SiZer...")
-  
-  # Invoke the SiZer::SiZer function
-  e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
-                    y = data_sub[[response_var]],
-                    h = c(2, 10), degree = 1,
-                    derv = 1, grid.length = 100)
-  
-  # Make a shorter place name
-  place_short <- stringr::str_sub(string = place, start = 1, end = 8)
-  
-  # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")),
-      width = 5, height = 5, res = 720, units = 'in')
-  HERON::sizer_plot(sizer_object = e,
-                    bandwidth_vec = c(bandwidth))
-  dev.off()
-  
-  # Identify inflection points/slope changes
-  sizer_info <- HERON::sizer_slice(sizer_object = e, bandwidth = bandwidth)
-  
-  # Loop - No Changes Workflow ----
-  ## If no slope changes are found:
-  if(nrow(sizer_info) == 0){
+  # Loop across seasons
+  for(focal_season in unique(data_sub$season)){
     
-    # Message this status
-    message("No slope changes/inflections found; Proceeding...")
+    # Processing message
+    message("Working on season: ", focal_season)
     
-    # Migrate "groups" over 
-    data_info <- HERON::id_slope_changes(raw_data = data_sub,
-                                         sizer_data = sizer_info,
-                                         x = explanatory_var,
-                                         y = response_var,
-                                         group_dig = 5)
+    # Filter the data to just that season
+    data_sub2 <- data_sub %>%
+      dplyr::filter(season == focal_season) %>%
+      as.data.frame()
     
-    # Make plot
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
-                                     sizer_data = sizer_info,
-                                     x = explanatory_var, y = response_var,
-                                     trendline = 'sharp', vline = "none") +
-      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
+    # Loop - Get SiZer Object ----
+    message("Run SiZer...")
     
-  } else {
+    # Invoke the SiZer::SiZer function
+    e <- SiZer::SiZer(x = data_sub2[[explanatory_var]],
+                      y = data_sub2[[response_var]],
+                      h = c(2, 10), degree = 1,
+                      derv = 1, grid.length = 100)
     
-    # If there are changes and/or inflections, find inflections
-    inflects_raw <- c(sizer_info$neg_to_pos, sizer_info$pos_to_neg)
-    inflects <- inflects_raw[!is.na(inflects_raw)]
+    # Make a shorter place name
+    place_short <- stringr::str_sub(string = place, start = 1, end = 8)
     
-    # Loop - Inflection Point Workflow ----
-    # If any inflections *are* found:
-    if(length(inflects > 0)){
+    # Plot (and export) the SiZer object with horizontal lines of interest
+    png(filename = file.path(export_folder, paste0(place_short, "_", focal_season, "_SiZer-plot.png")),
+        width = 5, height = 5, res = 720, units = 'in')
+    HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(bandwidth))
+    dev.off()
+    
+    # Identify inflection points/slope changes
+    sizer_info <- HERON::sizer_slice(sizer_object = e, bandwidth = bandwidth)
+    
+    # Loop - No Changes Workflow ----
+    ## If no slope changes are found:
+    if(nrow(sizer_info) == 0){
       
-      # Message to this effect
-      message("Inflections found; Proceeding...")
+      # Message this status
+      message("No slope changes found. Proceeding...")
       
-      # Migrate groups over
-      data_info <- HERON::id_inflections(raw_data = data_sub,
-                                         sizer_data = sizer_info,
-                                         x = explanatory_var,
-                                         y = response_var,
-                                         group_dig = 5)
+      # Migrate "groups" over 
+      data_info <- HERON::id_slope_changes(raw_data = data_sub2, sizer_data = sizer_info,
+                                           x = explanatory_var, y = response_var,
+                                           group_dig = 5)
       
       # Make plot
       demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
                                        sizer_data = sizer_info,
                                        x = explanatory_var, y = response_var,
-                                       trendline = 'sharp', vline = "inflections",
-                                       sharp_colors = c("#bbbbbb", "green")) +
-        ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
+                                       trendline = 'sharp', vline = "none") +
+        ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
       
     } else {
-      # Loop - Slope Change Workflow ----
       
-      # Message
-      message("Slope changes found but no inflections; Proceeding...")
+      # If there are changes and/or inflections, find inflections
+      inflects_raw <- c(sizer_info$neg_to_pos, sizer_info$pos_to_neg)
+      inflects <- inflects_raw[!is.na(inflects_raw)]
       
-      # Strip group assignments
-      data_info <- HERON::id_slope_changes(raw_data = data_sub, sizer_data = sizer_info,
+      # Loop - Inflection Point Workflow ----
+      # If any inflections *are* found:
+      if(length(inflects) > 0){
+        
+        # Message to this effect
+        message("Inflections found. Proceeding...")
+        
+        # Migrate groups over
+        data_info <- HERON::id_inflections(raw_data = data_sub2, sizer_data = sizer_info,
                                            x = explanatory_var, y = response_var,
                                            group_dig = 5)
-      
-      # Plot 
-      demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
-                                       sizer_data = sizer_info,
-                                       x = explanatory_var, y = response_var,
-                                       trendline = 'sharp', vline = "changes",
-                                       sharp_colors = c("#bbbbbb", "green")) +
-        ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
-    } } # Close tri-partite workflow splits
-  
-  # Export whichever graph got made
-  ggplot2::ggsave(filename = file.path(export_folder, 
-                                       paste0(place_short, "_ggplot.png")),
-                  height = 8, width = 8)
-  
-  # Loop - Wrangle SiZer Data ----
-  message("Wrangling SiZer data...")
-  
-  # Modify the columns in the provided sizer dataframes
-  sizer_export <- data_info %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(bandwidth_h = bandwidth,
-                  site = place, 
-                  .before = dplyr::everything()) %>%
-    as.data.frame()
-  
-  # Add this tidied dataframe to our export list
-  giant_list[[paste0("data_", j)]] <- sizer_export
-  
-  # Loop - Fit Linear Models ----
-  message("Fit regressions...")
-  
-  # Extract statistics/estimates from linear models
-  lm_obj <- HERON::sizer_lm(data = data_info, x = explanatory_var,
-                            y = response_var, group_col = "groups") %>%
-    # Then add column for bandwidth
-    purrr::map(.f = mutate, bandwidth_h = bandwidth,
-               .before = dplyr::everything())
-  
-  # Final dataframe processing for *statistics*
-  stat_df <- lm_obj[[1]] %>%
-    # Make all columns characters
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    # Add a site column
-    dplyr::mutate(site = place, .before = dplyr::everything())
-  
-  # Final dataframe processing for *estimates*
-  est_df <- lm_obj[[2]] %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(site = place, .before = dplyr::everything())
-  
-  # Add this information to their respective lists
-  giant_list[[paste0("stats_", j)]] <- stat_df
-  giant_list[[paste0("estimates_", j)]] <- est_df
+        
+        # Make plot
+        demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
+                                         sizer_data = sizer_info,
+                                         x = explanatory_var, y = response_var,
+                                         trendline = 'sharp', vline = "inflections",
+                                         sharp_colors = c("#bbbbbb", "green")) +
+          ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
+        
+      } else {
+        # Loop - Slope Change Workflow ----
+        
+        # Message
+        message("Slope changes found but no inflections. Proceeding...")
+        
+        # Strip group assignments
+        data_info <- HERON::id_slope_changes(raw_data = data_sub2, sizer_data = sizer_info,
+                                             x = explanatory_var, y = response_var,
+                                             group_dig = 5)
+        
+        # Plot 
+        demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
+                                         sizer_data = sizer_info,
+                                         x = explanatory_var, y = response_var,
+                                         trendline = 'sharp', vline = "changes",
+                                         sharp_colors = c("#bbbbbb", "green")) +
+          ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
+      } } # Close tri-partite workflow splits
+    
+    # Export whichever graph got made
+    ggplot2::ggsave(plot = demo_plot, height = 8, width = 8, units = "in",
+                    filename = file.path(export_folder, paste0(place_short, "_", focal_season, "_ggplot.png")))
+    
+    # Loop - Wrangle SiZer Data ----
+    message("Wrangling SiZer data...")
+    
+    # Modify the columns in the provided sizer dataframes
+    sizer_export <- data_info %>%
+      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+      dplyr::mutate(bandwidth_h = bandwidth,
+                    site = place, 
+                    season = focal_season,
+                    .before = dplyr::everything()) %>%
+      as.data.frame()
+    
+    # Add this tidied dataframe to our export list
+    giant_list[[paste0("data_", focal_season, "_", j)]] <- sizer_export
+    
+    # Loop - Fit Linear Models ----
+    message("Fit regressions...")
+    
+    # Extract statistics/estimates from linear models
+    lm_obj <- HERON::sizer_lm(data = data_info, x = explanatory_var,
+                              y = response_var, group_col = "groups") %>%
+      # Then add column for bandwidth
+      purrr::map(.f = mutate, bandwidth_h = bandwidth,
+                 .before = dplyr::everything())
+    
+    # Final dataframe processing for *statistics*
+    stat_df <- lm_obj[[1]] %>%
+      # Make all columns characters
+      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+      # Add a site/season column
+      dplyr::mutate(site = place,
+                    season = focal_season,
+                    .before = dplyr::everything())
+    
+    # Final dataframe processing for *estimates*
+    est_df <- lm_obj[[2]] %>%
+      dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+      dplyr::mutate(site = place, season = focal_season, .before = dplyr::everything())
+    
+    # Add this information to their respective lists
+    giant_list[[paste0("stats_", focal_season, "_", j)]] <- stat_df
+    giant_list[[paste0("estimates_", focal_season, "_", j)]] <- est_df
+    
+  } # Close season loop
   
   # Increase the counter by 1 (for the next iteration of the loop)
   j <- j + 1
@@ -330,7 +328,7 @@ for(place in unique(data_short$stream)) {
   # Return a "finished" message!
   message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
   
-} # Close loop
+} # Close stream loop
 
 ## ----------------------------------------- ##
           # Process Loop Outputs ----
