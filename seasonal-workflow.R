@@ -372,9 +372,10 @@ est_v2 <- estimates %>%
   dplyr::filter(term != "(Intercept)") %>%
   # Drop term column now that it's all "data[[x]]"
   dplyr::select(-term) %>%
-  # Rename columns with periods in names to use underscores
+  # Rename some columns for clarity
   dplyr::rename(std_error = std.error,
-                p_value = p.value) %>%
+                term_statistic = statistic,
+                term_p_value = p.value) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -388,6 +389,9 @@ stats_v2 <- stats %>%
                 r_squared = r.squared,
                 adj_r_squared = adj.r.squared,
                 df_residual = df.residual) %>%
+  # Rename ambiguously named columns
+  dplyr::rename(F_statistic = statistic,
+                test_p_value = p_value) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -420,8 +424,7 @@ combo_v1 <- years_v2 %>%
   # Attach statistical information to response data
   dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, site, section, season)) %>%
   # Attach estimate information to response data
-  ## Can also join by estimate and p value columns from stats dataframe
-  dplyr::left_join(est_v2, by = join_by(bandwidth_h, site, section, season, statistic, p_value))
+  dplyr::left_join(est_v2, by = join_by(bandwidth_h, site, section, season))
 
 # Check structure
 dplyr::glimpse(combo_v1)
@@ -442,55 +445,31 @@ combo_v2 <- combo_v1 %>%
   # Fix column class issues
   dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
                 Year = as.numeric(Year)) %>%
-  dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric))
+  dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric)) %>%
+  # Reorder statistical columns more informatively
+  dplyr::relocate(F_statistic, test_p_value, r_squared, adj_r_squared, sigma, 
+                  df, df_residual, nobs, logLik, AIC, BIC, deviance, 
+                  .after = sizer_slope) %>%
+  dplyr::relocate(estimate, std_error, term_statistic, term_p_value, 
+                  .after = dplyr::everything()) %>%
+  # Rename slope estimate column more clearly
+  dplyr::rename(slope_estimate = estimate,
+                slope_std_error = std_error)
 
 # Check structure
 dplyr::glimpse(combo_v2)
-
-
-
-
-
-
-# Merge estimates and statistics data
-combo_v1 <- dplyr::left_join(x = est_v2, y = stats_v2, by = c("site", "bandwidth_h", "section"))
-
-# Check structure
-dplyr::glimpse(combo_v1)
-
-
-
-# Attach that modified years object to the other combined dataframe
-combo_v2 <- dplyr::left_join(combo_v1, years_v2, by = c("site", "section"))
-
-# Check structure
-dplyr::glimpse(combo_v2)
-
-# Now we can wrangle all three types of data in a single object
-combo_v3 <- combo_v2 %>%
-  # Move grouping columns over to the left
-  dplyr::relocate(LTER, .before = site) %>%
-  dplyr::relocate(chemical, section, start, end, duration, 
-                  bandwidth_h, slope_type, .after = site) %>%
-  # Make several columns actually be numeric
-  dplyr::mutate( dplyr::across(.cols = estimate:BIC, .fns = as.numeric)) %>%
-  # Keep only p values that are significant
-  dplyr::filter(p_value < 0.05) %>%
-  # And only R squareds that are 'pretty good'
-  dplyr::filter(r_squared >= 0.30) %>%
-  # Arrange by LTER and site
-  arrange(LTER, site)
-
-# Double check structure
-dplyr::glimpse(combo_v3)
 
 ## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
+# Create folder to export this type of output too
+dir.create(path = file.path("sizer_outs"), showWarnings = F)
+
 # Export that combination object locally
-write.csv(x = combo_v3, na = "", row.names = F,
-          file = file.path(export_folder, paste0("_SEASONAL_significant-slopes.csv")))
+## Can use special folder name as *file name* to ensure informative naming conventions
+write.csv(x = combo_v2, na = "", row.names = F,
+          file = file.path("sizer_outs", paste0(export_folder, ".csv")))
 
 ## ----------------------------------------- ##
           # Exploratory Plotting ----
