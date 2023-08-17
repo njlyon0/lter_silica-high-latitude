@@ -459,6 +459,28 @@ combo_v2 <- combo_v1 %>%
 # Check structure
 dplyr::glimpse(combo_v2)
 
+# Calculate / create some other desired columns
+combo_v3 <- combo_v2 %>%
+  # Simplify river names slightly
+  dplyr::mutate(site = gsub(pattern = " at", replacement = " ", x = site)) %>%
+  # Create a column that combines LTER and stream names
+  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
+                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
+                                     no = LTER),
+                site_abbrev = ifelse(nchar(site) > 14,
+                                     yes = stringr::str_sub(string = site, start = 1, end = 14),
+                                     no = site),
+    stream = paste0(LTER_abbrev, "_", site_abbrev), .after = site) %>%
+  # Drop intermediary columns needed to make that abbreviation simply
+  dplyr::select(-dplyr::ends_with("_abbrev"))
+
+# Make sure the new 'stream' column is as unique as raw LTER + stream
+length(unique(paste0(combo_v3$LTER, combo_v3$site)))
+length(unique(combo_v3$stream))
+
+# Check structure yet again
+dplyr::glimpse(combo_v3)
+
 ## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
