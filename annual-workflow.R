@@ -104,7 +104,7 @@ explanatory_var <- "Year"
 
 # Identify which chemical you want to analyze
 element <- "DSi"
-## DSi, Si_DIN, Si_P
+unique(data_simp$chemical)
 
 # Do a quick typo check
 if(!response_var %in% names(data_simp)) {
@@ -137,9 +137,7 @@ if(all(is.na(data_short[[response_var]])) == T){
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("annual_", response_var, "_",
-                         element, "_bw", bandwidth,
-                         "_", Sys.Date()))
+(export_folder <- paste0("annual_", response_var, "_", element, "_bw", bandwidth))
 dir.create(path = export_folder, showWarnings = FALSE)
 
 # Make an empty list to store all of our extracted information
