@@ -327,15 +327,11 @@ for(data_type in c("data", "stats", "estimates")){
     # Unlist by selecting all columns of each list element
     purrr::list_rbind()
   
-  # Export each type of output in its 'raw' form for posterity
-  write.csv(x = list_sub, na = "", row.names = F,
-            file = file.path(export_folder, paste0("_ANNUAL_", data_type, ".csv")))
-  
   # Add this to the simpler results list
   result_list[[data_type]] <- list_sub
   
   # And print a message
-  message("Dataframe for ", data_type, " exported.") }
+  message("Dataframe for ", data_type, " extracted") }
 
 # Check out the simplified results list we're left with
 names(result_list)
