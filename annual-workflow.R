@@ -337,10 +337,6 @@ for(data_type in c("data", "stats", "estimates")){
 names(result_list)
 dplyr::glimpse(result_list)
 
-## ----------------------------------------- ##
-        # Create Summary Outputs ----
-## ----------------------------------------- ##
-
 # Grab each bit as a dataframe for ease of further modification
 estimates <- result_list[["estimates"]]
 stats <- result_list[["stats"]]
@@ -352,29 +348,31 @@ est_v2 <- estimates %>%
   dplyr::filter(term != "(Intercept)") %>%
   # Drop term column now that it's all "data[[x]]"
   dplyr::select(-term) %>%
-  # Rename columns with periods in names to use underscores
+  # Rename some columns for clarity
   dplyr::rename(std_error = std.error,
-                p_value = p.value)
+                term_statistic = statistic,
+                term_p_value = p.value) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(est_v2)
 
 # Wrangle statistics part
 stats_v2 <- stats %>%
-  # Pare down to only desired columns (implicitly removes non-specified columns)
-  dplyr::select(site, bandwidth_h, section, r.squared, adj.r.squared, AIC, BIC) %>%
   # Rename period columns to use underscores
-  dplyr::rename(r_squared = r.squared,
-                adj_r_squared = adj.r.squared)
+  dplyr::rename(p_value = p.value,
+                r_squared = r.squared,
+                adj_r_squared = adj.r.squared,
+                df_residual = df.residual) %>%
+  # Rename ambiguously named columns
+  dplyr::rename(F_statistic = statistic,
+                test_p_value = p_value) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(stats_v2)
-
-# Merge estimates and statistics data
-combo_v1 <- dplyr::left_join(x = est_v2, y = stats_v2, by = c("site", "bandwidth_h", "section"))
-
-# Check structure
-dplyr::glimpse(combo_v1)
 
 # Wrangle source data ('years')
 years_v2 <- years %>%
@@ -382,87 +380,71 @@ years_v2 <- years %>%
   dplyr::mutate(section = ifelse(groups == "(-Inf, Inf]",
                                  yes = "No inflection points", no = groups), 
                 .after = LTER) %>%
-  # Pare down to only some columns
-  dplyr::select(site, LTER, section, start, end, slope_type, chemical) %>%
   # Make end/start actually numbers and calculate duration of group
   dplyr::mutate(start = as.numeric(start),
                 end = as.numeric(end),
                 duration = end - start,
                 .after = end) %>%
+  # Make bandwidth a character
+  dplyr::mutate(bandwidth_h = as.character(bandwidth_h)) %>%
+  # Drop 'stream' and 'groups' columns (redundant with 'site', and 'section' respectively)
+  dplyr::select(-stream, -groups) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(years_v2)
 
-# Attach that modified years object to the other combined dataframe
-combo_v2 <- dplyr::left_join(combo_v1, years_v2, by = c("site", "section"))
+# Combine these data files
+combo_v1 <- years_v2 %>%
+  # Attach statistical information to response data
+  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, site, section)) %>%
+  # Attach estimate information to response data
+  dplyr::left_join(est_v2, by = join_by(bandwidth_h, site, section))
+
+# Check structure
+dplyr::glimpse(combo_v1)
+## view(combo_v1)
+
+# Let's process this to be a little friendlier for later use
+combo_v2 <- combo_v1 %>%
+  # Reorder 'site information' (i.e., grouping columns) columns to the left
+  dplyr::relocate(bandwidth_h, LTER, site, drainSqKm, chemical, 
+                  Year, dplyr::contains(response_var),
+                  section, start, end, duration, .before = dplyr::everything()) %>%
+  # Rename columns as needed
+  dplyr::rename(sizer_bandwidth = bandwidth_h,
+                section_start = start,
+                section_end = end,
+                section_duration = duration,
+                sizer_slope = slope_type) %>%
+  # Fix column class issues
+  dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
+                Year = as.numeric(Year)) %>%
+  dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric)) %>%
+  # Reorder statistical columns more informatively
+  dplyr::relocate(F_statistic, test_p_value, r_squared, adj_r_squared, sigma, 
+                  df, df_residual, nobs, logLik, AIC, BIC, deviance, 
+                  .after = sizer_slope) %>%
+  dplyr::relocate(estimate, std_error, term_statistic, term_p_value, 
+                  .after = dplyr::everything()) %>%
+  # Rename slope estimate column more clearly
+  dplyr::rename(slope_estimate = estimate,
+                slope_std_error = std_error)
 
 # Check structure
 dplyr::glimpse(combo_v2)
 
-# Now we can wrangle all three types of data in a single object
-combo_v3 <- combo_v2 %>%
-  # Move grouping columns over to the left
-  dplyr::relocate(LTER, .before = site) %>%
-  dplyr::relocate(chemical, section, start, end, duration, 
-                  bandwidth_h, slope_type, .after = site) %>%
-  # Make several columns actually be numeric
-  dplyr::mutate( dplyr::across(.cols = estimate:BIC, .fns = as.numeric)) %>%
-  # Keep only p values that are significant
-  dplyr::filter(p_value < 0.05) %>%
-  # And only R squareds that are 'pretty good'
-  dplyr::filter(r_squared >= 0.30) %>%
-  # Arrange by LTER and site
-  arrange(LTER, site)
-
-# Double check structure
-dplyr::glimpse(combo_v3)
-
 ## ----------------------------------------- ##
-                  # Export ----
+                # Export ----
 ## ----------------------------------------- ##
+
+# Create folder to export this type of output too
+dir.create(path = file.path("sizer_outs"), showWarnings = F)
 
 # Export that combination object locally
-write.csv(x = combo_v3, na = "", row.names = F,
-          file = file.path(export_folder, paste0("_ANNUAL_significant-slopes.csv")))
-
-## ----------------------------------------- ##
-          # Exploratory Plotting ----
-## ----------------------------------------- ##
-
-# Tweak the combination object in preparation for an exploratory plot
-combo_v4 <- combo_v3 %>%
-  # Abbreviate LTER name if needed
-  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
-                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
-                                     no = LTER), .after = LTER)
-
-# Check structure
-sort(unique(combo_v4$LTER_abbrev))
-dplyr::glimpse(combo_v4)
-
-# Break off the first bit of the response variable (i.e., drop units)
-## Ugly code but it works!
-(response_simp <- tidyr::separate_wider_delim(data = data.frame(response_var = response_var), 
-                                             cols = response_var, delim = "_", 
-                                             too_few = "align_start",
-                                             names = c("want", paste0(rep("junk", times = 10), 
-                                                                      1:10))) %>%
-    dplyr::pull(want))
-
-# Make the exploratory graph
-ggplot(combo_v4, aes(x = estimate, y = LTER_abbrev, fill = duration)) +
-  geom_col() +
-  geom_errorbar(aes(xmax = estimate + std_error, xmin = estimate - std_error), 
-                width = 0.2, linewidth = 0.75, color = "gray66") +
-  labs(title = paste("Significant Changes in", element, response_simp),
-       x = "Estimate", y = "LTER Abbreviation") +
-  theme_bw()
-
-# Export this graph
-ggsave(filename = file.path(export_folder, 
-                            paste0("_ANNUAL_sig-sizer-barplot_", Sys.Date(), ".png")),
-       width = 6, height = 8, units = "in")
+## Can use special folder name as *file name* to ensure informative naming conventions
+write.csv(x = combo_v2, na = "", row.names = F,
+          file = file.path("sizer_outs", paste0(export_folder, ".csv")))
 
 # End ----
