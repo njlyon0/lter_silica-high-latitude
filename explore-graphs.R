@@ -1,12 +1,48 @@
-# dplyr::filter(p_value < 0.05) %>%
-#   # And only R squareds that are 'pretty good'
-#   dplyr::filter(r_squared >= 0.30) %>%
-#   # Arrange by LTER and site
-#   arrange(LTER, site)
+## ------------------------------------------------------- ##
+                  # Exploratory Graphing
+## ------------------------------------------------------- ##
+# Written by: Nick J Lyon & Joanna Carey
 
+# PURPOSE:
+## Make exploratory data visualizations
+## "Exploratory" in that they may not be publication quality but are still useful tools
 
 ## ----------------------------------------- ##
-# Exploratory Plotting ----
+              # Housekeeping ----
+## ----------------------------------------- ##
+
+# Load libraries
+# install.packages("librarian")
+librarian::shelf(tidyverse, googledrive, cowplot)
+
+# Clear environment
+rm(list = ls())
+
+# Grab the desired data file
+big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv"))
+
+# Check its structure
+dplyr::glimpse(big_df)
+
+## ----------------------------------------- ##
+    # Filter SiZer Output Information ----
+## ----------------------------------------- ##
+
+# We likely don't want all of the information output by the SiZer workflows
+## Need to take special steps to only keep values we care about
+
+# Make one object that is only significant information
+sig_only <- big_df %>%
+  dplyr::filter(test_p_value < 0.05) %>%
+  # Also put in a minimum cutoff for R squareds
+  dplyr::filter(r_squared >= 0.30) %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, site) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+## ----------------------------------------- ##
+          # Exploratory Plotting ----
 ## ----------------------------------------- ##
 
 # Tweak the combination object in preparation for an exploratory plot
