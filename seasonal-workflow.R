@@ -361,10 +361,6 @@ for(data_type in c("data", "stats", "estimates")){
 names(result_list)
 dplyr::glimpse(result_list)
 
-## ----------------------------------------- ##
-        # Create Summary Outputs ----
-## ----------------------------------------- ##
-
 # Grab each bit as a dataframe for ease of further modification
 estimates <- result_list[["estimates"]]
 stats <- result_list[["stats"]]
@@ -378,27 +374,25 @@ est_v2 <- estimates %>%
   dplyr::select(-term) %>%
   # Rename columns with periods in names to use underscores
   dplyr::rename(std_error = std.error,
-                p_value = p.value)
+                p_value = p.value) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(est_v2)
 
 # Wrangle statistics part
 stats_v2 <- stats %>%
-  # Pare down to only desired columns (implicitly removes non-specified columns)
-  dplyr::select(site, bandwidth_h, section, r.squared, adj.r.squared, AIC, BIC) %>%
   # Rename period columns to use underscores
-  dplyr::rename(r_squared = r.squared,
-                adj_r_squared = adj.r.squared)
+  dplyr::rename(p_value = p.value,
+                r_squared = r.squared,
+                adj_r_squared = adj.r.squared,
+                df_residual = df.residual) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(stats_v2)
-
-# Merge estimates and statistics data
-combo_v1 <- dplyr::left_join(x = est_v2, y = stats_v2, by = c("site", "bandwidth_h", "section"))
-
-# Check structure
-dplyr::glimpse(combo_v1)
 
 # Wrangle source data ('years')
 years_v2 <- years %>%
@@ -406,18 +400,65 @@ years_v2 <- years %>%
   dplyr::mutate(section = ifelse(groups == "(-Inf, Inf]",
                                  yes = "No inflection points", no = groups), 
                 .after = LTER) %>%
-  # Pare down to only some columns
-  dplyr::select(site, LTER, section, start, end, slope_type, chemical) %>%
   # Make end/start actually numbers and calculate duration of group
   dplyr::mutate(start = as.numeric(start),
                 end = as.numeric(end),
                 duration = end - start,
                 .after = end) %>%
+  # Make bandwidth a character
+  dplyr::mutate(bandwidth_h = as.character(bandwidth_h)) %>%
+  # Drop 'stream' and 'groups' columns (redundant with 'site', and 'section' respectively)
+  dplyr::select(-stream, -groups) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(years_v2)
+
+# Combine these data files
+combo_v1 <- years_v2 %>%
+  # Attach statistical information to response data
+  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, site, section, season)) %>%
+  # Attach estimate information to response data
+  ## Can also join by estimate and p value columns from stats dataframe
+  dplyr::left_join(est_v2, by = join_by(bandwidth_h, site, section, season, statistic, p_value))
+
+# Check structure
+dplyr::glimpse(combo_v1)
+## view(combo_v1)
+
+# Let's process this to be a little friendlier for later use
+combo_v2 <- combo_v1 %>%
+  # Reorder 'site information' (i.e., grouping columns) columns to the left
+  dplyr::relocate(bandwidth_h, LTER, site, drainSqKm, season, chemical, 
+                  Year, dplyr::contains(response_var),
+                  section, start, end, duration, .before = dplyr::everything()) %>%
+  # Rename columns as needed
+  dplyr::rename(sizer_bandwidth = bandwidth_h,
+                section_start = start,
+                section_end = end,
+                section_duration = duration,
+                sizer_slope = slope_type) %>%
+  # Fix column class issues
+  dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
+                Year = as.numeric(Year)) %>%
+  dplyr::mutate(dplyr::across(.cols = dplyr::all_of(r_squared:std_error), .fns = as.numeric))
+
+# Check structure
+dplyr::glimpse(combo_v2)
+
+
+
+
+
+
+# Merge estimates and statistics data
+combo_v1 <- dplyr::left_join(x = est_v2, y = stats_v2, by = c("site", "bandwidth_h", "section"))
+
+# Check structure
+dplyr::glimpse(combo_v1)
+
+
 
 # Attach that modified years object to the other combined dataframe
 combo_v2 <- dplyr::left_join(combo_v1, years_v2, by = c("site", "section"))
