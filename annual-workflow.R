@@ -85,11 +85,13 @@ data_simp <- data_v0 %>%
 # Take a look!
 dplyr::glimpse(data_simp)
 
+# Take a look at LTERs / streams
+data_simp %>%
+  dplyr::group_by(LTER) %>%
+  dplyr::summarize(stream_ct = length(unique(stream)))
+
 # Check lost/gained columns
 supportR::diff_check(old = names(data_v0), new = names(data_simp))
-
-# Clean up environment
-rm(list = setdiff(ls(), c("data_simp")))
 
 ## ----------------------------------------- ##
           # Pre-Loop Preparation ----
