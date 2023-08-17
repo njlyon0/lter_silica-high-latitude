@@ -442,7 +442,7 @@ combo_v2 <- combo_v1 %>%
   # Fix column class issues
   dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
                 Year = as.numeric(Year)) %>%
-  dplyr::mutate(dplyr::across(.cols = dplyr::all_of(r_squared:std_error), .fns = as.numeric))
+  dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric))
 
 # Check structure
 dplyr::glimpse(combo_v2)
