@@ -43,10 +43,19 @@ data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_Monthly_GFN_WR
 
 # Now subset to sites of interest
 data_simp <- data_v0 %>%
-  # Keep only polar sites
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute", "NIVA") | stream %in% c("Site 7")) %>%
-  # But drop one site that is technically polar
-  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001", 
+  # Calculate number of years
+  dplyr::group_by(LTER, stream, Year) %>%
+  dplyr::mutate(num_years = dplyr::n(), .after = Year) %>%
+  dplyr::ungroup() %>%
+  # Filter to only more than some threshold years
+  dplyr::filter(num_years > 20) %>%
+  # Drop that column now that we've used it
+  dplyr::select(-num_years) %>%
+  # Keep only cryosphere LTERs
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "NIVA", "Krycklan",
+                            "Finnish Environmental Institute")) %>%
+  # But drop problem sites that are otherwise retained
+  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001",
                                "Kymijoki Kokonkoski 014")) %>%
   # Convert 10^-6 xx to just xx
   dplyr::mutate(Flux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
@@ -449,7 +458,9 @@ combo_v4 <- combo_v3 %>%
   # Abbreviate LTER name if needed
   dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
                                      yes = stringr::str_sub(string = LTER, start = 1, end = 4),
-                                     no = LTER), .after = LTER)
+                                     no = LTER), .after = LTER) %>%
+  # Make a combination LTER + site information column
+  dplyr::mutate(LTER_site = paste0(LTER_abbrev, "_", site), .before = LTER)
 
 # Check structure
 sort(unique(combo_v4$LTER_abbrev))
@@ -465,7 +476,7 @@ dplyr::glimpse(combo_v4)
     dplyr::pull(want))
 
 # Make the exploratory graph
-ggplot(combo_v4, aes(x = estimate, y = LTER_abbrev, fill = duration)) +
+ggplot(combo_v4, aes(x = estimate, y = LTER_site, fill = duration)) +
   geom_col() +
   geom_errorbar(aes(xmax = estimate + std_error, xmin = estimate - std_error), 
                 width = 0.2, linewidth = 0.75, color = "gray66") +

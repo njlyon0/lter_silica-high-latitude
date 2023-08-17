@@ -43,10 +43,19 @@ data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_G
 
 # Now subset to sites of interest
 data_simp <- data_v0 %>%
-  # Keep only polar sites
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "Finnish Environmental Institute","NIVA") | stream %in% c("Site 7")) %>%
-  # But drop one site that is technically polar
-  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001", 
+  # Calculate number of years
+  dplyr::group_by(LTER, stream, Year) %>%
+  dplyr::mutate(num_years = dplyr::n(), .after = Year) %>%
+  dplyr::ungroup() %>%
+  # Filter to only more than some threshold years
+  dplyr::filter(num_years > 20) %>%
+  # Drop that column now that we've used it
+  dplyr::select(-num_years) %>%
+  # Keep only cryosphere LTERs
+  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "NIVA", "Krycklan",
+                            "Finnish Environmental Institute")) %>%
+  # But drop problem sites that are otherwise retained
+  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001",
                                "Kymijoki Kokonkoski 014")) %>%
   # Convert 10^-6 xx to just xx
   dplyr::mutate(Flux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
