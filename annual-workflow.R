@@ -213,7 +213,7 @@ for(place in unique(data_short$stream)) {
     
     # Loop - Inflection Point Workflow ----
     # If any inflections *are* found:
-    if(length(inflects > 0)){
+    if(length(inflects) > 0){
       
       # Message to this effect
       message("Inflections found; Proceeding...")
