@@ -481,8 +481,8 @@ combo_v3 <- combo_v2 %>%
                 sd_response = sd(.data[[response_var]], na.rm = T),
                 .before = section) %>%
   dplyr::ungroup() %>%
-  # Divide average by slope estimate and convert into percent change
-  dplyr::mutate(percent_change = (mean_response / slope_estimate) * 100,
+  # Express slope as a percent change of average response
+  dplyr::mutate(percent_change = (slope_estimate / mean_response) * 100,
                 .after = sd_response)
   
 # Make sure the new 'stream' column is as unique as raw LTER + stream
@@ -502,7 +502,7 @@ dir.create(path = file.path("sizer_outs"), showWarnings = F)
 
 # Export that combination object locally
 ## Can use special folder name as *file name* to ensure informative naming conventions
-write.csv(x = combo_v2, na = "", row.names = F,
+write.csv(x = combo_v3, na = "", row.names = F,
           file = file.path("sizer_outs", paste0(export_folder, ".csv")))
 
 # End ----
