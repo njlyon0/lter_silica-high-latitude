@@ -27,6 +27,9 @@ rm(list = ls())
 
 # Grab the desired data file
 full_df <- read.csv(file = file.path("sizer_outs", "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+  # Factor season to get the order how we want it
+  dplyr::mutate(season = factor(season, 
+                                levels = c("winter", "snowmelt", "growing season", "fall"))) %>%
   # Combine section with stream
   dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
   # Categorize P values
