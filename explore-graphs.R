@@ -25,18 +25,56 @@ rm(list = ls())
 big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
   # Categorize P values
   dplyr::mutate(significance = dplyr::case_when(
-    test_p_value < 0.05 ~ "significant",
-    test_p_value >= 0.05 & test_p_value <= 0.1 ~ "marginal",
+    is.na(test_p_value) ~ "NA",
+    test_p_value < 0.05 ~ "sig",
+    test_p_value >= 0.05 & test_p_value <= 0.1 ~ "marg",
     test_p_value > 0.1 ~ "NS"), .after = test_p_value) %>%
   # Categorize R2 too
   dplyr::mutate(line_fit = dplyr::case_when(
+    is.na(r_squared) ~ "NA",
     r_squared < 0.3 ~ "bad",
     r_squared >= 0.3 & r_squared < 0.65 ~ "fine",
     r_squared >= 0.65 & r_squared < 0.8 ~ "good",
-    r_squared >= 0.8 ~ "great"), .after = r_squared)
+    r_squared >= 0.8 ~ "great"), .after = r_squared) %>%
+  # Identify direction of slope
+  dplyr::mutate(slope_direction = dplyr::case_when(
+    is.na(slope_estimate) ~ "NA",
+    slope_estimate < 0 ~ "neg",
+    slope_estimate == 0 ~ "none",
+    slope_estimate > 0 ~ "pos"),
+    .before = slope_estimate) %>%
+  # Make combinations of direction + sig. and direction + line fit
+  dplyr::mutate(dir_sig = dplyr::case_when(
+    slope_direction == "NA" | significance == "NA" ~ "NA",
+    significance == "NS" ~ "NS",
+    T ~ paste0(slope_direction, "-", significance))) %>%
+  dplyr::mutate(dir_fit = dplyr::case_when(
+    slope_direction == "NA" | line_fit == "NA" ~ "NA",
+    significance == "NS" ~ "NS",
+    T ~ paste0(slope_direction, "-", line_fit)))
 
 # Check its structure
 dplyr::glimpse(big_df)
+
+# Pick a missing and non significant color
+na_col <- "#f8f9fa"
+nonsig_col <- "#adb5bd"
+
+# Define color palettes
+p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
+r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
+             "good" = "#1a759f",  "great" = "#184e77")
+dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
+                "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
+                "neg-pos" = "#03045e", "neg-marg" = "#00b4d8")
+dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
+                  "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
+                  "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
+                  "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
+                  "neg-good" = "#722e9a", "neg-great" = "#47297b")
+
+unique(big_df$dir_sig)
+unique(big_df$dir_fit)
 
 ## ----------------------------------------- ##
             # Full Visualization ----
@@ -47,12 +85,19 @@ core_df <- big_df %>%
   dplyr::arrange(LTER, site) %>%
   # Pare down to only needed columns
   dplyr::select(LTER, site, stream, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
+                F_statistic:line_fit, slope_estimate:slope_std_error,
+                dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
-  dplyr::distinct() 
+  dplyr::distinct() %>%
+  # Combine section with stream
+  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything())
 
 # Check structure
 dplyr::glimpse(core_df)
+
+# Make a graph showing the slope direction and significance for all streams
+ggplot(core_df, aes(x = Year, y = stream)) +
+  geom_path(aes(group = sizer_groups), lwd = 1, lineend = 'square')
 
 
 
