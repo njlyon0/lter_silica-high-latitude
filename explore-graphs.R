@@ -19,13 +19,24 @@ librarian::shelf(tidyverse, googledrive, cowplot)
 rm(list = ls())
 
 # Grab the desired data file
-big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv"))
+big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+  # Categorize P values
+  dplyr::mutate(significance = dplyr::case_when(
+    test_p_value < 0.05 ~ "significant",
+    test_p_value >= 0.05 & test_p_value <= 0.1 ~ "marginal",
+    test_p_value > 0.1 ~ "NS"), .after = test_p_value) %>%
+  # Categorize R2 too
+  dplyr::mutate(line_fit = dplyr::case_when(
+    r_squared < 0.3 ~ "bad",
+    r_squared >= 0.3 & r_squared < 0.65 ~ "fine",
+    r_squared >= 0.65 & r_squared < 0.8 ~ "good",
+    r_squared >= 0.8 ~ "great"), .after = r_squared)
 
 # Check its structure
 dplyr::glimpse(big_df)
 
 ## ----------------------------------------- ##
-    # Filter SiZer Output Information ----
+        # Data Subset Preparation ----
 ## ----------------------------------------- ##
 
 # We likely don't want all of the information output by the SiZer workflows
@@ -33,39 +44,41 @@ dplyr::glimpse(big_df)
 
 # Make one object that is only significant information
 sig_only <- big_df %>%
-  dplyr::filter(test_p_value < 0.05) %>%
+  # Keep only significant slopes
+  dplyr::filter(test_p_value <= 0.05) %>%
   # Also put in a minimum cutoff for R squareds
   dplyr::filter(r_squared >= 0.30) %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
+  # Pare down to only needed columns
+  dplyr::select(LTER, site, stream, chemical, section:section_duration, 
+                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
-## ----------------------------------------- ##
-          # Exploratory Plotting ----
-## ----------------------------------------- ##
+# Check it out
+dplyr::glimpse(sig_only)
 
-# Tweak the combination object in preparation for an exploratory plot
-combo_v4 <- combo_v3 %>%
-  # Abbreviate LTER name if needed
-  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
-                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
-                                     no = LTER), .after = LTER) %>%
-  # Make a combination LTER + site information column
-  dplyr::mutate(LTER_site = paste0(LTER_abbrev, "_", site), .before = LTER)
+# Make another that drops columns but doesn't filter out non-sig rows
+core_df <- big_df %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, site) %>%
+  # Pare down to only needed columns
+  dplyr::select(LTER, site, stream, chemical:section_duration, 
+                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
+  # Drop non-unique rows
+  dplyr::distinct() 
 
 # Check structure
-sort(unique(combo_v4$LTER_abbrev))
-dplyr::glimpse(combo_v4)
+dplyr::glimpse(core_df)
 
-# Break off the first bit of the response variable (i.e., drop units)
-## Ugly code but it works!
-(response_simp <- tidyr::separate_wider_delim(data = data.frame(response_var = response_var), 
-                                              cols = response_var, delim = "_", 
-                                              too_few = "align_start",
-                                              names = c("want", paste0(rep("junk", times = 10), 
-                                                                       1:10))) %>%
-    dplyr::pull(want))
+## ----------------------------------------- ##
+        # Sig Only Visualization ----
+## ----------------------------------------- ##
+
+# Make an exploratory graph of duration for only significant line chunks
+ggplot(sig_only, aes(x = slope_estimate))
+
 
 # Make the exploratory graph
 ggplot(combo_v4, aes(x = estimate, y = LTER_site, fill = duration)) +
