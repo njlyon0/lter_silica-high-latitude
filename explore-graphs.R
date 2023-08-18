@@ -39,11 +39,26 @@ big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_
 dplyr::glimpse(big_df)
 
 ## ----------------------------------------- ##
-        # Data Subset Preparation ----
+            # Full Visualization ----
 ## ----------------------------------------- ##
+# Make a data object with only the columns that we'll want
+core_df <- big_df %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, site) %>%
+  # Pare down to only needed columns
+  dplyr::select(LTER, site, stream, chemical:section_duration, 
+                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
+  # Drop non-unique rows
+  dplyr::distinct() 
 
-# We likely don't want all of the information output by the SiZer workflows
-## Need to take special steps to only keep values we care about
+# Check structure
+dplyr::glimpse(core_df)
+
+
+
+## ----------------------------------------- ##
+        # Sig Only Visualization ----
+## ----------------------------------------- ##
 
 # Make one object that is only significant information
 sig_only <- big_df %>%
@@ -62,22 +77,6 @@ sig_only <- big_df %>%
 # Check it out
 dplyr::glimpse(sig_only)
 
-# Make another that drops columns but doesn't filter out non-sig rows
-core_df <- big_df %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, site) %>%
-  # Pare down to only needed columns
-  dplyr::select(LTER, site, stream, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
-  # Drop non-unique rows
-  dplyr::distinct() 
-
-# Check structure
-dplyr::glimpse(core_df)
-
-## ----------------------------------------- ##
-        # Sig Only Visualization ----
-## ----------------------------------------- ##
 
 # Grab information needed to make informative title for this graph
 (chem <- unique(sig_only$chemical))
