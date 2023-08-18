@@ -409,7 +409,7 @@ dplyr::glimpse(combo_v1)
 # Let's process this to be a little friendlier for later use
 combo_v2 <- combo_v1 %>%
   # Reorder 'site information' (i.e., grouping columns) columns to the left
-  dplyr::relocate(bandwidth_h, LTER, site, drainSqKm, chemical, 
+  dplyr::relocate(bandwidth_h, LTER, site, drainSqKm, season, chemical, 
                   Year, dplyr::contains(response_var),
                   section, start, end, duration, .before = dplyr::everything()) %>%
   # Rename columns as needed
@@ -422,6 +422,7 @@ combo_v2 <- combo_v1 %>%
   dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
                 Year = as.numeric(Year)) %>%
   dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric)) %>%
+  dplyr::mutate(dplyr::across(.cols = dplyr::contains(response_var), .fns = as.numeric)) %>%
   # Reorder statistical columns more informatively
   dplyr::relocate(F_statistic, test_p_value, r_squared, adj_r_squared, sigma, 
                   df, df_residual, nobs, logLik, AIC, BIC, deviance, 
@@ -448,7 +449,17 @@ combo_v3 <- combo_v2 %>%
                                      no = site),
                 stream = paste0(LTER_abbrev, "_", site_abbrev), .after = site) %>%
   # Drop intermediary columns needed to make that abbreviation simply
-  dplyr::select(-dplyr::ends_with("_abbrev"))
+  dplyr::select(-dplyr::ends_with("_abbrev")) %>%
+  # Calculate relative response so sites with very different absolute totals can be directly compared
+  ## Calculate average 'response' per SiZer section
+  dplyr::group_by(sizer_bandwidth, stream, season, chemical, section) %>%
+  dplyr::mutate(mean_response = mean(.data[[response_var]], na.rm = T),
+                sd_response = sd(.data[[response_var]], na.rm = T),
+                .before = section) %>%
+  dplyr::ungroup() %>%
+  # Divide average by slope estimate and convert into percent change
+  dplyr::mutate(percent_change = (mean_response / slope_estimate) * 100,
+                .after = sd_response)
 
 # Make sure the new 'stream' column is as unique as raw LTER + stream
 length(unique(paste0(combo_v3$LTER, combo_v3$site)))
@@ -456,6 +467,7 @@ length(unique(combo_v3$stream))
 
 # Check structure yet again
 dplyr::glimpse(combo_v3)
+## view(combo_v3)
 
 ## ----------------------------------------- ##
                 # Export ----
