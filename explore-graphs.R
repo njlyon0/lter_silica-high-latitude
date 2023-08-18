@@ -22,7 +22,7 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 rm(list = ls())
 
 # Grab the desired data file
-big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
   # Categorize P values
   dplyr::mutate(significance = dplyr::case_when(
     is.na(test_p_value) ~ "NA",
@@ -54,7 +54,7 @@ big_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_
     T ~ paste0(slope_direction, "-", line_fit)))
 
 # Check its structure
-dplyr::glimpse(big_df)
+dplyr::glimpse(full_df)
 
 # Pick a missing and non significant color
 na_col <- "#f8f9fa"
@@ -66,21 +66,18 @@ r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893",
              "good" = "#1a759f",  "great" = "#184e77")
 dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
                 "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
-                "neg-pos" = "#03045e", "neg-marg" = "#00b4d8")
+                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8")
 dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
                   "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
                   "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
-unique(big_df$dir_sig)
-unique(big_df$dir_fit)
-
 ## ----------------------------------------- ##
             # Full Visualization ----
 ## ----------------------------------------- ##
 # Make a data object with only the columns that we'll want
-core_df <- big_df %>%
+core_df <- full_df %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
   # Pare down to only needed columns
@@ -95,27 +92,51 @@ core_df <- big_df %>%
 # Check structure
 dplyr::glimpse(core_df)
 
-# Make a graph showing the slope direction and significance for all streams
-ggplot(core_df, aes(x = Year, y = stream)) +
-  geom_path(aes(group = sizer_groups), lwd = 1, lineend = 'square')
+# Count numbers of each LTER
+core_df %>%
+  dplyr::select(LTER, stream) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(LTER) %>%
+  dplyr::summarize(stream_ct = dplyr::n())
 
+# Grab useful information for informative file name
+(chem <- unique(core_df$chemical))
+(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
+              replacement = "", x = names(full_df)[8]))
+
+# Make a graph showing the slope direction and significance for all streams
+ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
+  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
+  scale_color_manual(values = dir_p_palt) +
+  # Put in horizontal lines between LTERs
+  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
+  geom_hline(yintercept = 1.5) + # ARC
+  geom_hline(yintercept = 22.5) + # Finnish
+  geom_hline(yintercept = 28.5) + # GRO
+  geom_hline(yintercept = 29.5) + # Kyrcklan
+  geom_hline(yintercept = 37.5) + # MCM
+  # Customize theme / formatting elements
+  labs(x = "Year", y = "Stream") +
+  theme_bw() +
+  theme(legend.title = element_blank())
+
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_sig-slope-direction-series.png")),
+       height = 8, width = 5, units = "in")
 
 
 ## ----------------------------------------- ##
         # Sig Only Visualization ----
 ## ----------------------------------------- ##
 
-# Make one object that is only significant information
-sig_only <- big_df %>%
+# Filter the simplified data object to only significant rivers with a good fit
+sig_only <- core_df %>%
   # Keep only significant slopes
   dplyr::filter(test_p_value <= 0.05) %>%
   # Also put in a minimum cutoff for R squareds
   dplyr::filter(r_squared >= 0.30) %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
-  # Pare down to only needed columns
-  dplyr::select(LTER, site, stream, chemical, section:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -126,7 +147,7 @@ dplyr::glimpse(sig_only)
 # Grab information needed to make informative title for this graph
 (chem <- unique(sig_only$chemical))
 (resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(big_df)[8]))
+              replacement = "", x = names(full_df)[8]))
 ## Note response identification is dependent upon column order!
 
 # Make an exploratory graph of duration for only significant line chunks
