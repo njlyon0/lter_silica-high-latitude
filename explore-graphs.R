@@ -23,6 +23,8 @@ rm(list = ls())
 
 # Grab the desired data file
 full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+  # Combine section with stream
+  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
   # Categorize P values
   dplyr::mutate(significance = dplyr::case_when(
     is.na(test_p_value) ~ "NA",
@@ -51,14 +53,26 @@ full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi
   dplyr::mutate(dir_fit = dplyr::case_when(
     slope_direction == "NA" | line_fit == "NA" ~ "NA",
     significance == "NS" ~ "NS",
-    T ~ paste0(slope_direction, "-", line_fit)))
+    T ~ paste0(slope_direction, "-", line_fit))) %>%
+  # Make both 'direction + X' columns into factors so we can pick an informative order
+  dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
+                                                     "neg-marg", "neg-sig", "NA", "NS")),
+                dir_fit = factor(dir_fit, 
+                                 levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
+                                            "neg-great", "neg-good", "neg-fine", "neg-bad",
+                                            "NA", "NS")))
 
 # Check its structure
 dplyr::glimpse(full_df)
 
+# Grab useful information for informative file names for these graphs
+(chem <- unique(full_df$chemical))
+(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
+              replacement = "", x = names(full_df)[9]))
+
 # Pick a missing and non significant color
-na_col <- "#f8f9fa"
-nonsig_col <- "#adb5bd"
+na_col <- "#e5e5e5"
+nonsig_col <- "#6c757d"
 
 # Define color palettes
 p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
@@ -81,13 +95,11 @@ core_df <- full_df %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
   # Pare down to only needed columns
-  dplyr::select(LTER, site, stream, chemical:section_duration, 
+  dplyr::select(sizer_groups, LTER, site, stream, chemical:section_duration, 
                 F_statistic:line_fit, slope_estimate:slope_std_error,
                 dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
-  dplyr::distinct() %>%
-  # Combine section with stream
-  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything())
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(core_df)
@@ -98,11 +110,6 @@ core_df %>%
   dplyr::distinct() %>%
   dplyr::group_by(LTER) %>%
   dplyr::summarize(stream_ct = dplyr::n())
-
-# Grab useful information for informative file name
-(chem <- unique(core_df$chemical))
-(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(full_df)[8]))
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
@@ -122,8 +129,7 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
 
 # Export this graph
 ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_sig-slope-direction-series.png")),
-       height = 8, width = 5, units = "in")
-
+       height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
         # Sig Only Visualization ----
@@ -143,11 +149,6 @@ sig_only <- core_df %>%
 # Check it out
 dplyr::glimpse(sig_only)
 
-
-# Grab information needed to make informative title for this graph
-(chem <- unique(sig_only$chemical))
-(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(full_df)[8]))
 ## Note response identification is dependent upon column order!
 
 # Make an exploratory graph of duration for only significant line chunks
