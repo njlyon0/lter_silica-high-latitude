@@ -47,6 +47,7 @@ sizer_outs/*.csv
 export_*/
 annual_*/
 seasonal_*/
+graphs/
 
 # Ignore knit .Rmd files
 *.pdf

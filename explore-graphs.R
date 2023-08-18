@@ -15,6 +15,9 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, googledrive, cowplot)
 
+# Make a folder for exporting graphs
+dir.create(path = file.path("graphs"), showWarnings = F)
+
 # Clear environment
 rm(list = ls())
 
@@ -76,23 +79,24 @@ dplyr::glimpse(core_df)
         # Sig Only Visualization ----
 ## ----------------------------------------- ##
 
+# Grab information needed to make informative title for this graph
+(chem <- unique(sig_only$chemical))
+(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
+              replacement = "", x = names(big_df)[8]))
+## Note response identification is dependent upon column order!
+
 # Make an exploratory graph of duration for only significant line chunks
-ggplot(sig_only, aes(x = slope_estimate))
-
-
-# Make the exploratory graph
-ggplot(combo_v4, aes(x = estimate, y = LTER_site, fill = duration)) +
+ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   geom_col() +
-  geom_errorbar(aes(xmax = estimate + std_error, xmin = estimate - std_error), 
+  geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
+                    xmin = slope_estimate - slope_std_error),
                 width = 0.2, linewidth = 0.75, color = "gray66") +
-  labs(title = paste("Significant Changes in", element, response_simp),
-       x = "Estimate", y = "LTER Abbreviation") +
+  labs(title = paste("Significant changes in", chem, resp),
+       x = "Slope Estimate", y = "Stream") +
   theme_bw()
 
-# Export this graph
-ggsave(filename = file.path(export_folder, 
-                            paste0("_SEASONAL_sig-sizer-barplot_", Sys.Date(), ".png")),
+# Export this graph!
+ggsave(filename = file.path("graphs", paste0("sig-sizer-barplot_", chem, "_", resp, ".png")),
        width = 6, height = 8, units = "in")
-
 
 # End ----
