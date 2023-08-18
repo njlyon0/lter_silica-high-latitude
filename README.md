@@ -18,12 +18,18 @@ multi-biome synthesis investigating the controls on river Si exports”**
 
 Scripts in this repository are described below:
 
-- **`annual-workflow.R`** - Runs SiZer workflow to identify changes in
-  slope for *annual* WRTDS data
+- **`...-workflow.R`** - Runs SiZer workflow to identify changers in
+  slope for WRTDS time series. Temporal granularity of source data is
+  specified in file prefix (“seasonal” or “annual”). Note that
+  “seasonal” data are derived by averaging across sub-season temporal
+  columns in the monthly data.
 
-- **`seasonal-workflow.R`** - Runs SiZer workflow to identify changes in
-  slope for *seasonal* WRTDS data. Note that “seasonal” data are derived
-  by averaging across sub-season temporal columns in the monthly data.
+- **`...-explore-graphs.R`** - Makes exploratory (i.e., not necessarily
+  publication-quality) graphs of extracted SiZer information. Temporal
+  granularity of source data is specified in file prefix (“seasonal” or
+  “annual”). Note that these scripts expect that the corresponding
+  `...-workflow.R` script has been run and its outputs are available for
+  use in graphing.
 
 ## Repository Content
 
@@ -33,16 +39,17 @@ See below for a “tree” of this repository’s content:
 supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", exclude = "_deprecated")
 ```
 
-    ##                  levelName
-    ## 1 .                       
-    ## 2  ¦--.gitignore          
-    ## 3  ¦--README.Rmd          
-    ## 4  ¦--README.md           
-    ## 5  ¦--_deprecated         
-    ## 6  ¦   °--4 excluded items
-    ## 7  ¦--annual-workflow.R   
-    ## 8  ¦--seasonal-workflow.R 
-    ## 9  °--sizer-report.Rmd
+    ##                        levelName
+    ## 1  .                            
+    ## 2   ¦--.gitignore               
+    ## 3   ¦--README.Rmd               
+    ## 4   ¦--README.md                
+    ## 5   ¦--_deprecated              
+    ## 6   ¦   °--5 excluded items     
+    ## 7   ¦--annual-explore-graphs.R  
+    ## 8   ¦--annual-workflow.R        
+    ## 9   ¦--seasonal-explore-graphs.R
+    ## 10  °--seasonal-workflow.R
 
 ## Related Repositories
 
