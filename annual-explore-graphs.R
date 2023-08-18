@@ -1,10 +1,10 @@
 ## ------------------------------------------------------- ##
-                  # Exploratory Graphing
+          # Annual Data - Exploratory Graphing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
 # PURPOSE:
-## Make exploratory data visualizations
+## Make exploratory data visualizations for *annual* data
 ## "Exploratory" in that they may not be publication quality but are still useful tools
 
 ## ----------------------------------------- ##
@@ -22,7 +22,7 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# Data Prep ----
+              # Data Prep ----
 ## ----------------------------------------- ##
 
 # Grab the desired data file
@@ -153,7 +153,7 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("full", file_prefix, "sig-bookmark.png")),
+ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "sig-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 # Make the same graph for r2 + slope direction
@@ -170,7 +170,7 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("full", file_prefix, "fit-bookmark.png")),
+ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "fit-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
@@ -199,7 +199,7 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "sig-bookmark.png")),
+ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "sig-bookmark.png")),
        height = 5, width = 6, units = "in")
 
 # Make the same graph for r2 + slope direction
@@ -214,7 +214,7 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "fit-bookmark.png")),
+ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "fit-bookmark.png")),
        height = 5, width = 6, units = "in")
 
 ## ----------------------------------------- ##
@@ -233,7 +233,7 @@ ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "duration-barplot.png")),
+ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "duration-barplot.png")),
        width = 6, height = 8, units = "in")
 
 # End ----
