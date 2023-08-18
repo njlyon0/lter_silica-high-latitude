@@ -21,6 +21,10 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 # Clear environment
 rm(list = ls())
 
+## ----------------------------------------- ##
+# Data Prep ----
+## ----------------------------------------- ##
+
 # Grab the desired data file
 full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
   # Combine section with stream
@@ -65,10 +69,43 @@ full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi
 # Check its structure
 dplyr::glimpse(full_df)
 
+# Make a data object with only the columns that we'll want
+core_df <- full_df %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, site) %>%
+  # Pare down to only needed columns
+  dplyr::select(sizer_groups, LTER, site, stream, chemical:section_duration, 
+                F_statistic:line_fit, slope_estimate:slope_std_error,
+                dplyr::starts_with("dir_")) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(core_df)
+
+# Filter the simplified data object to only significant rivers with a good fit
+sig_only <- core_df %>%
+  # Keep only significant slopes
+  dplyr::filter(test_p_value <= 0.05) %>%
+  # Also put in a minimum cutoff for R squareds
+  dplyr::filter(r_squared >= 0.30) %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, site) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# Check it out
+dplyr::glimpse(sig_only)
+
+## ----------------------------------------- ##
+            # Plotting Prep ----
+## ----------------------------------------- ##
+
 # Grab useful information for informative file names for these graphs
 (chem <- unique(full_df$chemical))
 (resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
               replacement = "", x = names(full_df)[9]))
+## Note response identification is dependent upon column order!
 
 # Pick a missing and non significant color
 na_col <- "#e5e5e5"
@@ -88,21 +125,13 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 ## ----------------------------------------- ##
+     # 'Bookmark Graphs' - Full Data ----
+## ----------------------------------------- ##
+
+
+## ----------------------------------------- ##
             # Full Visualization ----
 ## ----------------------------------------- ##
-# Make a data object with only the columns that we'll want
-core_df <- full_df %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, site) %>%
-  # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, site, stream, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error,
-                dplyr::starts_with("dir_")) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# Check structure
-dplyr::glimpse(core_df)
 
 # Count numbers of each LTER
 core_df %>%
@@ -155,21 +184,7 @@ ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_fit-slope-direct
         # Sig Only Visualization ----
 ## ----------------------------------------- ##
 
-# Filter the simplified data object to only significant rivers with a good fit
-sig_only <- core_df %>%
-  # Keep only significant slopes
-  dplyr::filter(test_p_value <= 0.05) %>%
-  # Also put in a minimum cutoff for R squareds
-  dplyr::filter(r_squared >= 0.30) %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, site) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
 
-# Check it out
-dplyr::glimpse(sig_only)
-
-## Note response identification is dependent upon column order!
 
 # Make an exploratory graph of duration for only significant line chunks
 ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
