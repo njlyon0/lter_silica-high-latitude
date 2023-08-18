@@ -91,6 +91,7 @@ ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
                     xmin = slope_estimate - slope_std_error),
                 width = 0.2, linewidth = 0.75, color = "gray66") +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(title = paste("Significant changes in", chem, resp),
        x = "Slope Estimate", y = "Stream") +
   theme_bw()
