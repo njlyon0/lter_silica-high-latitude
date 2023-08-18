@@ -446,6 +446,7 @@ combo_v2 <- combo_v1 %>%
   dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
                 Year = as.numeric(Year)) %>%
   dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric)) %>%
+  dplyr::mutate(dplyr::across(.cols = dplyr::contains(response_var), .fns = as.numeric)) %>%
   # Reorder statistical columns more informatively
   dplyr::relocate(F_statistic, test_p_value, r_squared, adj_r_squared, sigma, 
                   df, df_residual, nobs, logLik, AIC, BIC, deviance, 
@@ -475,11 +476,12 @@ combo_v3 <- combo_v2 %>%
   dplyr::select(-dplyr::ends_with("_abbrev")) %>%
   # Calculate relative response so sites with very different absolute totals can be directly compared
   ## Calculate average 'response' per SiZer section
-  dplyr::group_by() %>%
-  dplyr::mutate() %>%
+  dplyr::group_by(dplyr::across(c(-.data[[response_var]]))) %>%
+  dplyr::mutate(mean_response = mean(.data[[response_var]], na.rm = T),
+                .before = section) %>%
   dplyr::ungroup() %>%
   # Divide average by slope estimate and convert into percent change
-  dplyr::mutate()
+  dplyr::mutate(test = mean_response / slope_estimate)
   
 # Make sure the new 'stream' column is as unique as raw LTER + stream
 length(unique(paste0(combo_v3$LTER, combo_v3$site)))
