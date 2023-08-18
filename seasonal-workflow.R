@@ -476,12 +476,14 @@ combo_v3 <- combo_v2 %>%
   dplyr::select(-dplyr::ends_with("_abbrev")) %>%
   # Calculate relative response so sites with very different absolute totals can be directly compared
   ## Calculate average 'response' per SiZer section
-  dplyr::group_by(dplyr::across(c(-.data[[response_var]]))) %>%
+  dplyr::group_by(sizer_bandwidth, stream, season, chemical, section) %>%
   dplyr::mutate(mean_response = mean(.data[[response_var]], na.rm = T),
+                sd_response = sd(.data[[response_var]], na.rm = T),
                 .before = section) %>%
   dplyr::ungroup() %>%
   # Divide average by slope estimate and convert into percent change
-  dplyr::mutate(test = mean_response / slope_estimate)
+  dplyr::mutate(percent_change = (mean_response / slope_estimate) * 100,
+                .after = sd_response)
   
 # Make sure the new 'stream' column is as unique as raw LTER + stream
 length(unique(paste0(combo_v3$LTER, combo_v3$site)))
@@ -489,6 +491,7 @@ length(unique(combo_v3$stream))
 
 # Check structure yet again
 dplyr::glimpse(combo_v3)
+## view(combo_v3)
 
 ## ----------------------------------------- ##
                   # Export ----
