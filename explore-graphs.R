@@ -59,7 +59,7 @@ full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi
                                                      "neg-marg", "neg-sig", "NA", "NS")),
                 dir_fit = factor(dir_fit, 
                                  levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
-                                            "neg-great", "neg-good", "neg-fine", "neg-bad",
+                                            "neg-bad", "neg-fine", "neg-good", "neg-great", 
                                             "NA", "NS")))
 
 # Check its structure
@@ -129,6 +129,26 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
 
 # Export this graph
 ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_sig-slope-direction-series.png")),
+       height = 8, width = 7, units = "in")
+
+# Make the same graph for r2 + slope direction
+ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
+  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
+  scale_color_manual(values = dir_fit_palt) +
+  # Put in horizontal lines between LTERs
+  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
+  geom_hline(yintercept = 1.5) + # ARC
+  geom_hline(yintercept = 22.5) + # Finnish
+  geom_hline(yintercept = 28.5) + # GRO
+  geom_hline(yintercept = 29.5) + # Kyrcklan
+  geom_hline(yintercept = 37.5) + # MCM
+  # Customize theme / formatting elements
+  labs(x = "Year", y = "Stream") +
+  theme_bw() +
+  theme(legend.title = element_blank())
+
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_fit-slope-direction-series.png")),
        height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
