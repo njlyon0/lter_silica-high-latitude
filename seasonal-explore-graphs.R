@@ -1,10 +1,10 @@
 ## ------------------------------------------------------- ##
-                  # Exploratory Graphing
+       # Seasonal Data - Exploratory Graphing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
 # PURPOSE:
-## Make exploratory data visualizations
+## Make exploratory data visualizations for *seasonal* data
 ## "Exploratory" in that they may not be publication quality but are still useful tools
 
 ## ----------------------------------------- ##
@@ -22,11 +22,11 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# Data Prep ----
+                # Data Prep ----
 ## ----------------------------------------- ##
 
 # Grab the desired data file
-full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+full_df <- read.csv(file = file.path("sizer_outs", "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
   # Combine section with stream
   dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
   # Categorize P values
@@ -71,10 +71,10 @@ dplyr::glimpse(full_df)
 
 # Make a data object with only the columns that we'll want
 core_df <- full_df %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, site) %>%
+  # Arrange by LTER, site, and season
+  dplyr::arrange(LTER, site, season) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, site, stream, chemical:section_duration, 
+  dplyr::select(sizer_groups, LTER, site, stream, season, chemical:section_duration, 
                 F_statistic:line_fit, slope_estimate:slope_std_error,
                 dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
@@ -138,6 +138,8 @@ core_df %>%
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
+  # Facet by season
+  facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
@@ -153,11 +155,12 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("full", file_prefix, "sig-bookmark.png")),
-       height = 8, width = 7, units = "in")
+ggsave(filename = file.path("graphs", paste0("seasonal_full", file_prefix, "sig-bookmark.png")),
+       height = 8, width = 15, units = "in")
 
 # Make the same graph for r2 + slope direction
 ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
+  facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
   geom_hline(yintercept = 1.5) + # ARC
@@ -170,8 +173,8 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("full", file_prefix, "fit-bookmark.png")),
-       height = 8, width = 7, units = "in")
+ggsave(filename = file.path("graphs", paste0("seasonal_full", file_prefix, "fit-bookmark.png")),
+       height = 8, width = 15, units = "in")
 
 ## ----------------------------------------- ##
     # 'Bookmark Graphs' - Sig. Only ----
@@ -186,6 +189,7 @@ sig_only %>%
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
+  facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
@@ -199,11 +203,12 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "sig-bookmark.png")),
-       height = 5, width = 6, units = "in")
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "sig-bookmark.png")),
+       height = 5, width = 12, units = "in")
 
 # Make the same graph for r2 + slope direction
 ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
+  facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
   geom_hline(yintercept = 8.5) + # Finnish
@@ -214,8 +219,8 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "fit-bookmark.png")),
-       height = 5, width = 6, units = "in")
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "fit-bookmark.png")),
+       height = 5, width = 12, units = "in")
 
 ## ----------------------------------------- ##
       # Slope + Duration - Sig. Only ----
@@ -223,6 +228,7 @@ ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "fit-bookm
 
 # Make an exploratory graph of duration for only significant line chunks
 ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
+  facet_grid(. ~ season) +
   geom_col() +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
                     xmin = slope_estimate - slope_std_error),
@@ -233,7 +239,7 @@ ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "duration-barplot.png")),
-       width = 6, height = 8, units = "in")
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "duration-barplot.png")),
+       height = 8, width = 12, units = "in")
 
 # End ----
