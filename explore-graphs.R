@@ -86,9 +86,7 @@ dplyr::glimpse(core_df)
 # Filter the simplified data object to only significant rivers with a good fit
 sig_only <- core_df %>%
   # Keep only significant slopes
-  dplyr::filter(test_p_value <= 0.05) %>%
-  # Also put in a minimum cutoff for R squareds
-  dplyr::filter(r_squared >= 0.30) %>%
+  dplyr::filter(significance %in% c("sig", "marg")) %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
   # Drop non-unique rows
@@ -102,10 +100,13 @@ dplyr::glimpse(sig_only)
 ## ----------------------------------------- ##
 
 # Grab useful information for informative file names for these graphs
-(chem <- unique(full_df$chemical))
-(resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(full_df)[9]))
+chem <- unique(full_df$chemical)
+resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
+              replacement = "", x = names(full_df)[9])
 ## Note response identification is dependent upon column order!
+
+# Assemble this into a file prefix
+(file_prefix <- paste0("_", chem, "_", resp, "_"))
 
 # Pick a missing and non significant color
 na_col <- "#e5e5e5"
@@ -128,12 +129,7 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
      # 'Bookmark Graphs' - Full Data ----
 ## ----------------------------------------- ##
 
-
-## ----------------------------------------- ##
-            # Full Visualization ----
-## ----------------------------------------- ##
-
-# Count numbers of each LTER
+# Count numbers of streams at each LTER
 core_df %>%
   dplyr::select(LTER, stream) %>%
   dplyr::distinct() %>%
@@ -157,34 +153,73 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_sig-slope-direction-series.png")),
+ggsave(filename = file.path("graphs", paste0("full", file_prefix, "sig-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 # Make the same graph for r2 + slope direction
 ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
-  # Put in horizontal lines between LTERs
-  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
   geom_hline(yintercept = 1.5) + # ARC
   geom_hline(yintercept = 22.5) + # Finnish
   geom_hline(yintercept = 28.5) + # GRO
   geom_hline(yintercept = 29.5) + # Kyrcklan
   geom_hline(yintercept = 37.5) + # MCM
+  labs(x = "Year", y = "Stream") +
+  theme_bw() +
+  theme(legend.title = element_blank())
+
+# Export this graph too
+ggsave(filename = file.path("graphs", paste0("full", file_prefix, "fit-bookmark.png")),
+       height = 8, width = 7, units = "in")
+
+## ----------------------------------------- ##
+    # 'Bookmark Graphs' - Sig. Only ----
+## ----------------------------------------- ##
+
+# Count numbers of streams at each LTER
+sig_only %>%
+  dplyr::select(LTER, stream) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(LTER) %>%
+  dplyr::summarize(stream_ct = dplyr::n())
+
+# Make a graph showing the slope direction and significance for all streams
+ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
+  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
+  scale_color_manual(values = dir_p_palt) +
+  # Put in horizontal lines between LTERs
+  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
+  geom_hline(yintercept = 8.5) + # Finnish
+  geom_hline(yintercept = 12.5) + # GRO
+  geom_hline(yintercept = 13.5) + # MCM
   # Customize theme / formatting elements
   labs(x = "Year", y = "Stream") +
   theme_bw() +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(chem, "_", resp, "_fit-slope-direction-series.png")),
-       height = 8, width = 7, units = "in")
+ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "sig-bookmark.png")),
+       height = 5, width = 6, units = "in")
+
+# Make the same graph for r2 + slope direction
+ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
+  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
+  scale_color_manual(values = dir_fit_palt) +
+  geom_hline(yintercept = 8.5) + # Finnish
+  geom_hline(yintercept = 12.5) + # GRO
+  geom_hline(yintercept = 13.5) + # MCM
+  labs(x = "Year", y = "Stream") +
+  theme_bw() +
+  theme(legend.title = element_blank())
+
+# Export this graph too
+ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "fit-bookmark.png")),
+       height = 5, width = 6, units = "in")
 
 ## ----------------------------------------- ##
-        # Sig Only Visualization ----
+      # Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
-
-
 
 # Make an exploratory graph of duration for only significant line chunks
 ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
@@ -198,7 +233,7 @@ ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("sig-sizer-barplot_", chem, "_", resp, ".png")),
+ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "duration-barplot.png")),
        width = 6, height = 8, units = "in")
 
 # End ----
