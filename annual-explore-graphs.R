@@ -27,6 +27,8 @@ rm(list = ls())
 
 # Grab the desired data file
 full_df <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+  # Drop ARC streams
+  dplyr::filter(LTER != "ARC") %>%
   # Combine section with stream
   dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
   # Categorize P values
@@ -87,6 +89,8 @@ dplyr::glimpse(core_df)
 sig_only <- core_df %>%
   # Keep only significant slopes
   dplyr::filter(significance %in% c("sig", "marg")) %>%
+  # Keep only certain durations of trends
+  dplyr::filter(section_duration >= 5) %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, site) %>%
   # Drop non-unique rows
