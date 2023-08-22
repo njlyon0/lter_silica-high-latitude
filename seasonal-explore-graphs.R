@@ -247,7 +247,61 @@ ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "duration-barplot.png")),
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "slope-duration-barplot.png")),
        height = 8, width = 12, units = "in")
+
+## ----------------------------------------- ##
+  # Perc. Change + Duration - Sig. Only ----
+## ----------------------------------------- ##
+
+# Pare down to needed columns and unique rows
+sig_simp <- sig_only %>%
+  dplyr::select(stream, season, section_duration, percent_change) %>%
+  dplyr::distinct()
+
+# Make an exploratory graph of duration for only significant line chunks
+ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
+  facet_grid(. ~ season) +
+  geom_col() +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
+  labs(title = paste("Significant changes in", chem, resp),
+       x = "Slope Estimate", y = "Stream") +
+  theme_bw()
+
+# Export this graph!
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "perc-change-duration-barplot.png")),
+       height = 8, width = 12, units = "in")
+
+## ----------------------------------------- ##
+# Bonus Graphs ----
+## ----------------------------------------- ##
+
+
+
+
+ggplot(sig_only, aes(season,slope_estimate, fill=LTER))+
+  geom_boxplot()+
+  geom_hline(yintercept=0, color="gray")+
+  theme_bw()+
+  facet_wrap(~LTER, scales="free_y", nrow=5, strip.position = "right")+
+  theme_classic()+
+  theme(strip.background = element_blank())+
+  #theme(strip.text.y = element_blank())+
+  ylab("Slope")+xlab("Season")+
+  theme(legend.position="none")+
+  ggtitle("Seasonal changes at each LTER - concentration")
+
+
+ggplot(sig_only, aes(season,percent_change, fill=LTER))+
+  geom_boxplot()+
+  geom_hline(yintercept=0, color="gray")+
+  theme_bw()+
+  facet_wrap(~LTER, scales="free_y", nrow=5, strip.position = "right")+
+  theme_classic()+
+  theme(strip.background = element_blank())+
+  #theme(strip.text.y = element_blank())+
+  ylab("Percent Change")+xlab("Season")+
+  theme(legend.position="none")+
+  ggtitle("Seasonal percent change at each LTER - concentration")
 
 # End ----

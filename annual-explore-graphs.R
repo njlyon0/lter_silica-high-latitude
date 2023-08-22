@@ -238,7 +238,30 @@ ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "duration-barplot.png")),
+ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "slope-duration-barplot.png")),
        width = 6, height = 8, units = "in")
+
+## ----------------------------------------- ##
+  # Perc. Change + Duration - Sig. Only ----
+## ----------------------------------------- ##
+
+# Pare down to needed columns and unique rows
+sig_simp <- sig_only %>%
+  dplyr::select(stream, section_duration, percent_change) %>%
+  dplyr::distinct()
+
+# Make an exploratory graph of duration for only significant line chunks
+# Make an exploratory graph of duration percent change for only significant line chunks
+ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
+  geom_col() +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
+  labs(title = paste("Significant changes in", chem, resp),
+       x = "Percent Change", y = "Stream") +
+  theme_bw()
+
+# Export this graph!
+ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "perc-change-duration-barplot.png")),
+       width = 6, height = 8, units = "in")
+
 
 # End ----
