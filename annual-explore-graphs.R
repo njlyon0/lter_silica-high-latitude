@@ -221,8 +221,13 @@ ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "fi
       # Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
+# Pare down to needed columns and unique rows
+sig_simp <- sig_only %>%
+  dplyr::select(stream, section_duration, slope_estimate, slope_std_error) %>%
+  dplyr::distinct()
+
 # Make an exploratory graph of duration for only significant line chunks
-ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
+ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   geom_col() +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
                     xmin = slope_estimate - slope_std_error),
