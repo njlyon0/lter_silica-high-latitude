@@ -273,35 +273,57 @@ ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "
        height = 8, width = 12, units = "in")
 
 ## ----------------------------------------- ##
-# Bonus Graphs ----
+            # Slope Boxplots ----
 ## ----------------------------------------- ##
 
+# Pare down the data to only needed information
+sig_simp <- sig_only %>%
+  dplyr::select(LTER, stream, season, slope_estimate) %>%
+  dplyr::distinct()
 
-
-
-ggplot(sig_only, aes(season,slope_estimate, fill=LTER))+
-  geom_boxplot()+
-  geom_hline(yintercept=0, color="gray")+
-  theme_bw()+
-  facet_wrap(~LTER, scales="free_y", nrow=5, strip.position = "right")+
+# Make graph
+ggplot(sig_simp, aes(x = season, y = slope_estimate, fill = LTER)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
+  geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
+  # Facet by LTER
+  facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
+  # Custom theming / labels
+  labs(x = "Season", y = "Slope",
+       title = paste("Significant seasonal changes in", chem, resp)) +
   theme_classic()+
-  theme(strip.background = element_blank())+
-  #theme(strip.text.y = element_blank())+
-  ylab("Slope")+xlab("Season")+
-  theme(legend.position="none")+
-  ggtitle("Seasonal changes at each LTER - concentration")
+  theme(legend.position = "none",
+        strip.background = element_blank())
+  
+# Export it
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "slope-boxplot.png")),
+       height = 8, width = 12, units = "in")
 
+## ----------------------------------------- ##
+        # Percent Change Boxplots ----
+## ----------------------------------------- ##
 
-ggplot(sig_only, aes(season,percent_change, fill=LTER))+
-  geom_boxplot()+
-  geom_hline(yintercept=0, color="gray")+
-  theme_bw()+
-  facet_wrap(~LTER, scales="free_y", nrow=5, strip.position = "right")+
+# Pare down the data to only needed information
+sig_simp <- sig_only %>%
+  dplyr::select(LTER, stream, season, percent_change) %>%
+  dplyr::distinct()
+
+# Make graph
+ggplot(sig_simp, aes(x = season, y = percent_change, fill = LTER)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
+  geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
+  # Facet by LTER
+  facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
+  # Custom theming / labels
+  labs(x = "Season", y = "Percent Change (%)",
+       title = paste("Significant seasonal changes in", chem, resp)) +
   theme_classic()+
-  theme(strip.background = element_blank())+
-  #theme(strip.text.y = element_blank())+
-  ylab("Percent Change")+xlab("Season")+
-  theme(legend.position="none")+
-  ggtitle("Seasonal percent change at each LTER - concentration")
+  theme(legend.position = "none",
+        strip.background = element_blank())
+
+# Export it
+ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "perc-change-boxplot.png")),
+       height = 8, width = 12, units = "in")
 
 # End ----
