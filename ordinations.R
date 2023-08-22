@@ -13,7 +13,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, cowplot, supportR)
+librarian::shelf(tidyverse, googledrive, cowplot, supportR, vegan, ape)
 
 # Make a folder for local preservation of data / graphs
 dir.create(path = file.path("data"), showWarnings = F)
@@ -63,7 +63,7 @@ dplyr::glimpse(seas_full)
 
 # Choose grouping columns and only desired basin characteristics / climatic drivers
 year_actual <- year_full %>%
-  dplyr::select(sizer_bandwidth:Year, test_p_value, r_squared, slope_estimate,
+  dplyr::select(sizer_bandwidth:chemical, test_p_value, r_squared, slope_estimate,
                 ## "Comment out" climatic groups that *are not* desired
                 ## Unspecified comments are dropped implicitly
                 dplyr::starts_with("snow_"),
@@ -74,14 +74,20 @@ year_actual <- year_full %>%
                 dplyr::starts_with("land_"),
                 dplyr::starts_with("soil_"),
                 dplyr::starts_with("rocks_"),
-                dplyr::starts_with("elevation_"))
+                dplyr::starts_with("elevation_")) %>%
+  # Need to drop McMurdo because we have no basin characteristic information for this LTER
+  dplyr::filter(LTER != "MCM") %>%
+  # Keep only non-missing slope estimates too
+  dplyr::filter(is.na(slope_estimate) != TRUE) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check what remains
 names(year_actual)
 
 # Do the same for seasonal data
 seas_actual <- seas_full %>%
-  dplyr::select(sizer_bandwidth:Year, test_p_value, r_squared, slope_estimate,
+  dplyr::select(sizer_bandwidth:chemical, test_p_value, r_squared, slope_estimate,
                 ## "Comment out" climatic groups that *are not* desired
                 ## Unspecified comments are dropped implicitly
                 dplyr::starts_with("snow_"),
@@ -92,17 +98,52 @@ seas_actual <- seas_full %>%
                 dplyr::starts_with("land_"),
                 dplyr::starts_with("soil_"),
                 dplyr::starts_with("rocks_"),
-                dplyr::starts_with("elevation_"))
+                dplyr::starts_with("elevation_")) %>%
+  # Need to drop McMurdo because we have no basin characteristic information for this LTER
+  dplyr::filter(LTER != "MCM") %>%
+  # Keep only non-missing slope estimates too
+  dplyr::filter(is.na(slope_estimate) != TRUE) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
 # Check it out
 dplyr::glimpse(seas_actual)
 
+# Identify chemical / response variable for both temporal granularities
+## Annual data
+(year_chem <- unique(year_full$chemical))
+(year_respvar <- names(year_full[8]))
+## Seasonal data
+(seas_chem <- unique(seas_full$chemical))
+(seas_respvar <- names(seas_full[9]))
+
 ## ----------------------------------------- ##
-#  ----
+            # Annual - PCoA ----
 ## ----------------------------------------- ##
 
+# Strip off just the response columns
+year_resp <- year_actual %>%
+  dplyr::select(-sizer_bandwidth:-r_squared)
 
+# Check structure
+dplyr::glimpse(year_resp)
 
+# Get distance matrix
+year_dist <- vegan::vegdist(x = year_resp, method = "euclidean", na.rm = T)
 
+# Perform principal coordinates analysis on this matrix
+year_points <- ape::pcoa(D = year_dist)
+
+# Generate a nice file name for this graph
+(year_name <- paste0("annual_pcoa_", year_chem, "_", year_respvar, ".png"))
+
+# Create (and export) an ordination of these data
+png(file = file.path("graphs", year_name), width = 720, height = 720)
+
+supportR::pcoa_ord(mod = year_points, groupcol = year_actual$LTER,
+                   title = paste0("Annual PCoA of ", year_chem, " Time Series Slope and Basin Characteristics"),
+                   leg_pos = "bottomright", pt_size = 2)
+
+dev.off()
 
 # End ----
