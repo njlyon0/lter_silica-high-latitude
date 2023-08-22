@@ -265,7 +265,7 @@ ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
   geom_col() +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(title = paste("Significant changes in", chem, resp),
-       x = "Slope Estimate", y = "Stream") +
+       x = "Percent Change (%)", y = "Stream") +
   theme_bw()
 
 # Export this graph!
