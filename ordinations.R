@@ -146,4 +146,42 @@ supportR::pcoa_ord(mod = year_points, groupcol = year_actual$LTER,
 
 dev.off()
 
+## ----------------------------------------- ##
+            # Seasonal - PCoA ----
+## ----------------------------------------- ##
+
+# Do the same thing but this time, we'll loop across the seasons
+for(focal_season in unique(seas_actual$season)){
+  
+  # Print starting message
+  message("Making ordination for season: ", focal_season)
+  
+  # Filter to only that season
+  seas_sub <- seas_actual %>%
+    dplyr::filter(season == focal_season)
+  
+  # Generate a version with only response columns
+  seas_resp <-  seas_sub %>%
+    dplyr::select(-sizer_bandwidth:-r_squared)
+  
+  # Get distance matrix
+  seas_dist <- vegan::vegdist(x = seas_resp, method = "euclidean", na.rm = T)
+  
+  # Perform principal coordinates analysis on this matrix
+  seas_points <- ape::pcoa(D = seas_dist)
+  
+  # Generate a nice file name for this graph
+  seas_name <- paste0("seasonal_pcoa_", toupper(focal_season), "_", seas_chem, 
+                      "_", seas_respvar, ".png")
+  
+  # Create (and export) an ordination of these data
+  png(file = file.path("graphs", seas_name), width = 720, height = 720)
+  
+  supportR::pcoa_ord(mod = seas_points, groupcol = seas_sub$LTER,
+                     title = paste0("Seasonal PCoA of ", seas_chem, " Time Series Slope and Basin Characteristics"),
+                     leg_pos = "bottomright", pt_size = 2)
+  
+  dev.off() }
+
+
 # End ----
