@@ -20,6 +20,8 @@ Scripts in this repository are described below:
 
 - **`...-explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Temporal granularity of source data is specified in file prefix ("seasonal" or "annual"). Note that these scripts expect that the corresponding `...-workflow.R` script has been run and its outputs are available for use in graphing.
 
+- **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin characteristics and slope estimates of SiZer-identified time series chunks. Contains sections for both annual and seasonal data so there are not twin scripts for this component.
+
 ## Repository Content
 
 See below for a "tree" of this repository's content:

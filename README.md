@@ -31,6 +31,11 @@ Scripts in this repository are described below:
   `...-workflow.R` script has been run and its outputs are available for
   use in graphing.
 
+- **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin
+  characteristics and slope estimates of SiZer-identified time series
+  chunks. Contains sections for both annual and seasonal data so there
+  are not twin scripts for this component.
+
 ## Repository Content
 
 See below for a “tree” of this repository’s content:
@@ -48,8 +53,9 @@ supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere"
     ## 6   ¦   °--5 excluded items     
     ## 7   ¦--annual-explore-graphs.R  
     ## 8   ¦--annual-workflow.R        
-    ## 9   ¦--seasonal-explore-graphs.R
-    ## 10  °--seasonal-workflow.R
+    ## 9   ¦--ordinations.R            
+    ## 10  ¦--seasonal-explore-graphs.R
+    ## 11  °--seasonal-workflow.R
 
 ## Related Repositories
 
