@@ -229,8 +229,13 @@ ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "
       # Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
+# Pare down to needed columns and unique rows
+sig_simp <- sig_only %>%
+  dplyr::select(stream, season, section_duration, slope_estimate, slope_std_error) %>%
+  dplyr::distinct()
+
 # Make an exploratory graph of duration for only significant line chunks
-ggplot(sig_only, aes(x = slope_estimate, y = stream, fill = section_duration)) +
+ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   facet_grid(. ~ season) +
   geom_col() +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
