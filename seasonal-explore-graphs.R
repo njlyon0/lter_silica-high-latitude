@@ -105,7 +105,7 @@ dplyr::glimpse(sig_only)
 # Grab useful information for informative file names for these graphs
 chem <- unique(full_df$chemical)
 resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(full_df)[9])
+              replacement = "", x = names(full_df)[10])
 ## Note response identification is dependent upon column order!
 
 # Assemble this into a file prefix
