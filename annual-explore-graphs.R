@@ -140,6 +140,12 @@ core_df %>%
   dplyr::group_by(LTER) %>%
   dplyr::summarize(stream_ct = dplyr::n())
 
+
+# WORKING:
+## Want to flexibly identify number / placement of horizontal lines dividing LTERs
+## Maybe use script chunk above this note to identify counts?
+
+
 # Make a graph showing the slope direction and significance for all streams
 ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
