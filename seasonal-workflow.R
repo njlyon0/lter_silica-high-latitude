@@ -284,7 +284,7 @@ for(place in unique(data_short$stream)) {
     sizer_export <- data_info %>%
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
       dplyr::mutate(bandwidth_h = bandwidth,
-                    site = place, 
+                    Stream_Name = place, 
                     season = focal_season,
                     .before = dplyr::everything()) %>%
       as.data.frame()
@@ -307,14 +307,14 @@ for(place in unique(data_short$stream)) {
       # Make all columns characters
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
       # Add a site/season column
-      dplyr::mutate(site = place,
+      dplyr::mutate(Stream_Name = place,
                     season = focal_season,
                     .before = dplyr::everything())
     
     # Final dataframe processing for *estimates*
     est_df <- lm_obj[[2]] %>%
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(site = place, season = focal_season, .before = dplyr::everything())
+      dplyr::mutate(Stream_Name = place, season = focal_season, .before = dplyr::everything())
     
     # Add this information to their respective lists
     giant_list[[paste0("stats_", focal_season, "_", j)]] <- stat_df
@@ -411,7 +411,7 @@ years_v2 <- years %>%
                 .after = end) %>%
   # Make bandwidth a character
   dplyr::mutate(bandwidth_h = as.character(bandwidth_h)) %>%
-  # Drop 'stream' and 'groups' columns (redundant with 'site', and 'section' respectively)
+  # Drop 'stream' and 'groups' columns (redundant with 'Stream_Name', and 'section' respectively)
   dplyr::select(-stream, -groups) %>%
   # Drop non-unique rows
   dplyr::distinct()
@@ -422,9 +422,9 @@ dplyr::glimpse(years_v2)
 # Combine these data files
 combo_v1 <- years_v2 %>%
   # Attach statistical information to response data
-  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, site, section, season)) %>%
+  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, Stream_Name, section, season)) %>%
   # Attach estimate information to response data
-  dplyr::left_join(est_v2, by = join_by(bandwidth_h, site, section, season))
+  dplyr::left_join(est_v2, by = join_by(bandwidth_h, Stream_Name, section, season))
 
 # Check structure
 dplyr::glimpse(combo_v1)
@@ -433,7 +433,7 @@ dplyr::glimpse(combo_v1)
 # Let's process this to be a little friendlier for later use
 combo_v2 <- combo_v1 %>%
   # Reorder 'site information' (i.e., grouping columns) columns to the left
-  dplyr::relocate(bandwidth_h, LTER, site, drainSqKm, season, chemical, 
+  dplyr::relocate(bandwidth_h, LTER, Stream_Name, drainSqKm, season, chemical, 
                   Year, dplyr::contains(response_var),
                   section, start, end, duration, .before = dplyr::everything()) %>%
   # Rename columns as needed
@@ -463,17 +463,17 @@ dplyr::glimpse(combo_v2)
 # Calculate / create some other desired columns
 combo_v3 <- combo_v2 %>%
   # Simplify river names slightly
-  dplyr::mutate(site = gsub(pattern = " at", replacement = " ", x = site)) %>%
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>%
   # Create a column that combines LTER and stream names
   dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
                                      yes = stringr::str_sub(string = LTER, start = 1, end = 4),
                                      no = LTER),
-                site_abbrev = ifelse(nchar(site) > 14,
-                                     yes = stringr::str_sub(string = site, start = 1, end = 14),
-                                     no = site),
-    stream = paste0(LTER_abbrev, "_", site_abbrev), .after = site) %>%
+                site_abbrev = ifelse(nchar(site_simp) > 14,
+                                     yes = stringr::str_sub(string = site_simp, start = 1, end = 14),
+                                     no = site_simp),
+    stream = paste0(LTER_abbrev, "_", site_abbrev), .after = Stream_Name) %>%
   # Drop intermediary columns needed to make that abbreviation simply
-  dplyr::select(-dplyr::ends_with("_abbrev")) %>%
+  dplyr::select(-dplyr::ends_with("_abbrev"), -site_simp) %>%
   # Calculate relative response so sites with very different absolute totals can be directly compared
   ## Calculate average 'response' per SiZer section
   dplyr::group_by(sizer_bandwidth, stream, season, chemical, section) %>%
@@ -486,7 +486,7 @@ combo_v3 <- combo_v2 %>%
                 .after = sd_response)
   
 # Make sure the new 'stream' column is as unique as raw LTER + stream
-length(unique(paste0(combo_v3$LTER, combo_v3$site)))
+length(unique(paste0(combo_v3$LTER, combo_v3$Stream_Name)))
 length(unique(combo_v3$stream))
 
 # Check structure yet again
