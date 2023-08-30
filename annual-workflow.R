@@ -24,7 +24,7 @@ rm(list = ls())
 # Identify files in Drive folder
 ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk")) %>%
   # Filter to desired data files
-  dplyr::filter(name %in% c("Full_Results_ResultsTable_GFN_WRTDS.csv"))
+  dplyr::filter(name %in% c("Full_Results_WRTDS_annual.csv"))
 
 # Check that includes all desired data files
 ids
@@ -39,7 +39,7 @@ purrr::walk2(.x = ids$id, .y = ids$name,
                                                 overwrite = T))
 
 # Load data
-data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_ResultsTable_GFN_WRTDS.csv"))
+data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
 
 # Now subset to sites of interest
 data_simp <- data_v0 %>%
