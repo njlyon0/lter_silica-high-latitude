@@ -77,9 +77,9 @@ dplyr::glimpse(full_df)
 # Make a data object with only the columns that we'll want
 core_df <- full_df %>%
   # Arrange by LTER, site, and season
-  dplyr::arrange(LTER, site, season) %>%
+  dplyr::arrange(LTER, Stream_Name, season) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, site, stream, season, chemical:section_duration, 
+  dplyr::select(sizer_groups, LTER, Stream_Name, stream, season, chemical:section_duration, 
                 F_statistic:line_fit, slope_estimate:slope_std_error,
                 dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
@@ -95,7 +95,7 @@ sig_only <- core_df %>%
   # Keep only certain durations of trends
   dplyr::filter(section_duration >= 5) %>%
   # Arrange by LTER and site
-  dplyr::arrange(LTER, site) %>%
+  dplyr::arrange(LTER, Stream_Name) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
