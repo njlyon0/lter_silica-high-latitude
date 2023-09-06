@@ -17,7 +17,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, cowplot)
+librarian::shelf(tidyverse, googledrive, supportR)
 
 # Make a folder for combined data / downloading drivers
 dir.create(path = file.path("tidy_data"), showWarnings = F)
@@ -42,14 +42,20 @@ drivers_v1 <- read.csv(file = file.path("tidy_data", "all-data_si-extract.csv"))
 dplyr::glimpse(drivers_v1)
 
 # Split off the static driver information
-static <- drivers_v1 %>%
-  dplyr::select(LTER, Stream_Name, dplyr::starts_with("elevation_"), 
-                major_rock, dplyr::starts_with("rocks_"),
-                major_land, dplyr::starts_with("land_"),
-                major_soil, dplyr::starts_with("soil_"))
+static_v1 <- drivers_v1 %>%
+  dplyr::select(LTER, Stream_Name, 
+                elevation_mean_m,
+                # dplyr::starts_with("elevation_"), 
+                major_rock, 
+                # dplyr::starts_with("rocks_"),
+                major_land, 
+                # dplyr::starts_with("land_"),
+                major_soil
+                # dplyr::starts_with("soil_")
+                )
 
 # Check that out
-dplyr::glimpse(static)
+dplyr::glimpse(static_v1)
 
 # Now split off the dynamic drivers (they'll require more wrangling
 dynamic_v1 <- drivers_v1 %>%
@@ -97,11 +103,61 @@ dplyr::glimpse(dynamic_v2)
 ## ----------------------------------------- ##
 
 # Read in SiZer output data
-siz_v1 <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv"))
+sizer_v1 <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv"))
 
 # Check structure
-dplyr::glimpse(siz_v1)
+dplyr::glimpse(sizer_v1)
 
+## ----------------------------------------- ##
+            # Integration Prep ----
+## ----------------------------------------- ##
+
+# First, check which LTERs are not in the SiZer data but are in the basin data
+supportR::diff_check(old = unique(static_v1$LTER), new = unique(sizer_v1$LTER))
+supportR::diff_check(old = unique(dynamic_v2$LTER), new = unique(sizer_v1$LTER))
+
+# Drop any LTERs from the driver data that aren't in our SiZer data
+static_v2 <- dplyr::filter(static_v1, LTER %in% unique(sizer_v1$LTER))
+dynamic_v3 <- dplyr::filter(dynamic_v2, LTER %in% unique(sizer_v1$LTER))
+
+# Check that fixed the coarsest mismatch
+supportR::diff_check(old = unique(static_v2$LTER), new = unique(sizer_v1$LTER))
+supportR::diff_check(old = unique(dynamic_v3$LTER), new = unique(sizer_v1$LTER))
+
+# Next, check for any streams that are in drivers but not SiZer and vice versa
+## Waited 'til we dropped LTER mismatches to make this result easier to quickly scan
+supportR::diff_check(old = unique(static_v2$Stream_Name), new = unique(sizer_v1$Stream_Name))
+supportR::diff_check(old = unique(dynamic_v3$Stream_Name), new = unique(sizer_v1$Stream_Name))
+
+# Drop any mismatched streams from the basin data
+static_v3 <- dplyr::filter(static_v2, Stream_Name %in% sizer_v1$Stream_Name)
+dynamic_v4 <- dplyr::filter(dynamic_v3, Stream_Name %in% sizer_v1$Stream_Name)
+
+# Re-check stream mismatches (should just be McMurdo streams)
+supportR::diff_check(old = unique(static_v3$Stream_Name), new = unique(sizer_v1$Stream_Name))
+supportR::diff_check(old = unique(dynamic_v4$Stream_Name), new = unique(sizer_v1$Stream_Name))
+
+# Note that these steps aren't totally needed because we're going to do a "left" join
+## But still good to be explicit about what streams don't have driver data
+## So we're not caught unawares by some missing data they shouldn't be missing
+
+## ----------------------------------------- ##
+# Driver Integration ----
+## ----------------------------------------- ##
+
+# Combine the static driver data with the SiZer data!
+sizer_v2 <- sizer_v1 %>%
+  dplyr::left_join(y = static_v3, by = c("LTER", "Stream_Name"))
+
+# Check structure
+dplyr::glimpse(sizer_v2)
+
+# Attach the dynamic drivers too
+sizer_v3 <- sizer_v2 %>%
+  dplyr::left_join(y = dynamic_v4, by = c("LTER", "Stream_Name", "Year"))
+
+# Re-check structure
+dplyr::glimpse(sizer_v3)
 
 
 # End ----
