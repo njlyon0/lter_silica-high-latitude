@@ -31,15 +31,76 @@ googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/
 # Clear environment
 rm(list = ls())
 
+## ----------------------------------------- ##
+          # Driver Data Prep ----
+## ----------------------------------------- ##
 
+# Read in the driver data as it is
+drivers_v1 <- read.csv(file = file.path("tidy_data", "all-data_si-extract.csv"))
 
+# Check structure
+dplyr::glimpse(drivers_v1)
 
+# Split off the static driver information
+static <- drivers_v1 %>%
+  dplyr::select(LTER, Stream_Name, dplyr::starts_with("elevation_"), 
+                major_rock, dplyr::starts_with("rocks_"),
+                major_land, dplyr::starts_with("land_"),
+                major_soil, dplyr::starts_with("soil_"))
 
+# Check that out
+dplyr::glimpse(static)
 
+# Now split off the dynamic drivers (they'll require more wrangling
+dynamic_v1 <- drivers_v1 %>%
+  dplyr::select(LTER, Stream_Name, 
+                dplyr::starts_with("snow_"), dplyr::starts_with("evapotrans_"),
+                dplyr::starts_with("npp_"), dplyr::starts_with("precip")) %>%
+  # Drop monthly information of retained dynamic drivers
+  dplyr::select(-dplyr::contains("_jan_"), -dplyr::contains("_feb_"), -dplyr::contains("_mar_"),
+                -dplyr::contains("_apr_"), -dplyr::contains("_may_"), -dplyr::contains("_jun_"),
+                -dplyr::contains("_jul_"), -dplyr::contains("_aug_"), -dplyr::contains("_sep_"),
+                -dplyr::contains("_oct_"), -dplyr::contains("_nov_"), -dplyr::contains("_dec_"))
 
+# Check structure
+dplyr::glimpse(dynamic_v1)
 
+# Need to summarize this to join appropriately with the SiZer data
+dynamic_v2 <- dynamic_v1 %>%
+  # Reshape this data into long format for ease of wrangling
+  tidyr::pivot_longer(cols = -LTER:-Stream_Name) %>%
+  # Clean up the units part of the old column names
+  dplyr::mutate(name = gsub(pattern = "_num_days", replacement = "_num.days", x = name)) %>%
+  dplyr::mutate(name = gsub(pattern = "_mm_per_day", replacement = "_mm.per.day", x = name)) %>%
+  dplyr::mutate(name = gsub(pattern = "_kgC_m2_year", replacement = "_kg.C.m2.year", x = name)) %>%
+  dplyr::mutate(name = gsub(pattern = "_kg_m2", replacement = "_kg.m2", x = name)) %>%
+  dplyr::mutate(name = gsub(pattern = "_max_prop_area", replacement = "_max.prop.area", x = name)) %>%
+  # Break the old name column into its component parts
+  tidyr::separate_wider_delim(cols = name, delim = "_", names = c("driver", "Year", "units")) %>%
+  # Recombine the driver and units columns
+  dplyr::mutate(name_actual = paste(driver, units, sep = "_"), .before = driver) %>%
+  dplyr::select(-driver, -units) %>%
+  # Make "Year" numeric
+  dplyr::mutate(Year = as.numeric(Year)) %>%
+  # Average the values within our grouping variables
+  dplyr::group_by(dplyr::across(-c(value))) %>%
+  dplyr::summarize(value = mean(value, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  # Reshape back into wide format with the new name column!
+  tidyr::pivot_wider(names_from = name_actual, values_from = value, values_fill = NA)
 
+# Re-check structure
+dplyr::glimpse(dynamic_v2)
 
+## ----------------------------------------- ##
+          # SiZer Output Prep ----
+## ----------------------------------------- ##
+
+# Read in SiZer output data
+siz_v1 <- read.csv(file = file.path("sizer_outs", "annual_Yield_kmol_yr_km2_DSi_bw5.csv"))
+
+# Check structure
+dplyr::glimpse(siz_v1)
 
 
 
