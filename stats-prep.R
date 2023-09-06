@@ -20,13 +20,14 @@
 librarian::shelf(tidyverse, googledrive, supportR)
 
 # Make a folder for combined data / downloading drivers
+dir.create(path = file.path("drivers"), showWarnings = F)
 dir.create(path = file.path("tidy_data"), showWarnings = F)
 
 # Identify / download the driver data
 googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1Z-qlt9okoZ4eE-VVsbHiVVSu7V5nEkqK")) %>%
   dplyr::filter(name == "all-data_si-extract.csv") %>%
   googledrive::drive_download(file = .$id, overwrite = T,
-                              path = file.path("tidy_data", .$name))
+                              path = file.path("drivers", .$name))
 
 # Clear environment
 rm(list = ls())
@@ -36,7 +37,7 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Read in the driver data as it is
-drivers_v1 <- read.csv(file = file.path("tidy_data", "all-data_si-extract.csv"))
+drivers_v1 <- read.csv(file = file.path("drivers", "all-data_si-extract.csv"))
 
 # Check structure
 dplyr::glimpse(drivers_v1)
@@ -247,5 +248,14 @@ dplyr::glimpse(sizer_v5)
                   # Export ----
 ## ----------------------------------------- ##
 
+# Re-name this object
+stats_ready <- sizer_v5
+
+# Make a file name for this file
+(ready_filename <- paste0("stats-ready_", sizer_filename))
+
+# Save it locally
+write.csv(x = stats_ready, na = "", row.names = F,
+          file = file.path("tidy_data", ready_filename))
 
 # End ----

@@ -48,6 +48,7 @@ export_*/
 annual_*/
 seasonal_*/
 graphs/
+drivers/
 tidy_data/
 
 # Ignore knit .Rmd files
