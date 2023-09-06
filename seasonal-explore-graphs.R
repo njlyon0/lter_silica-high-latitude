@@ -26,43 +26,11 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Grab the desired data file
-full_df <- read.csv(file = file.path("sizer_outs", "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
-  # Drop ARC streams
-  dplyr::filter(LTER != "ARC") %>%
+full_df <- read.csv(file = file.path("tidy_data", 
+                                     "stats-ready_seasonal_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
   # Factor season to get the order how we want it
   dplyr::mutate(season = factor(season, 
                                 levels = c("winter", "snowmelt", "growing season", "fall"))) %>%
-  # Combine section with stream
-  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
-  # Categorize P values
-  dplyr::mutate(significance = dplyr::case_when(
-    is.na(test_p_value) ~ "NA",
-    test_p_value < 0.05 ~ "sig",
-    test_p_value >= 0.05 & test_p_value <= 0.1 ~ "marg",
-    test_p_value > 0.1 ~ "NS"), .after = test_p_value) %>%
-  # Categorize R2 too
-  dplyr::mutate(line_fit = dplyr::case_when(
-    is.na(r_squared) ~ "NA",
-    r_squared < 0.3 ~ "bad",
-    r_squared >= 0.3 & r_squared < 0.65 ~ "fine",
-    r_squared >= 0.65 & r_squared < 0.8 ~ "good",
-    r_squared >= 0.8 ~ "great"), .after = r_squared) %>%
-  # Identify direction of slope
-  dplyr::mutate(slope_direction = dplyr::case_when(
-    is.na(slope_estimate) ~ "NA",
-    slope_estimate < 0 ~ "neg",
-    slope_estimate == 0 ~ "none",
-    slope_estimate > 0 ~ "pos"),
-    .before = slope_estimate) %>%
-  # Make combinations of direction + sig. and direction + line fit
-  dplyr::mutate(dir_sig = dplyr::case_when(
-    slope_direction == "NA" | significance == "NA" ~ "NA",
-    significance == "NS" ~ "NS",
-    T ~ paste0(slope_direction, "-", significance))) %>%
-  dplyr::mutate(dir_fit = dplyr::case_when(
-    slope_direction == "NA" | line_fit == "NA" ~ "NA",
-    significance == "NS" ~ "NS",
-    T ~ paste0(slope_direction, "-", line_fit))) %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
   dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
                                                      "neg-marg", "neg-sig", "NA", "NS")),
