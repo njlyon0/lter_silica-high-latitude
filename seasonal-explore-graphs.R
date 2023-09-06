@@ -105,11 +105,13 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
-core_df %>%
+core_hlines <- core_df %>%
   dplyr::select(LTER, stream) %>%
   dplyr::distinct() %>%
   dplyr::group_by(LTER) %>%
-  dplyr::summarize(stream_ct = dplyr::n())
+  dplyr::summarize(stream_ct = dplyr::n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
@@ -119,11 +121,7 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
   ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
-  geom_hline(yintercept = 1.5) + # ARC
-  geom_hline(yintercept = 22.5) + # Finnish
-  geom_hline(yintercept = 28.5) + # GRO
-  geom_hline(yintercept = 29.5) + # Kyrcklan
-  geom_hline(yintercept = 37.5) + # MCM
+  geom_hline(yintercept = (core_hlines$stream_cumulative + 0.5)) +
   # Customize theme / formatting elements
   labs(x = "Year", y = "Stream") +
   theme_bw() +
@@ -138,11 +136,7 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
   facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
-  geom_hline(yintercept = 1.5) + # ARC
-  geom_hline(yintercept = 22.5) + # Finnish
-  geom_hline(yintercept = 28.5) + # GRO
-  geom_hline(yintercept = 29.5) + # Kyrcklan
-  geom_hline(yintercept = 37.5) + # MCM
+  geom_hline(yintercept = (core_hlines$stream_cumulative + 0.5)) +
   labs(x = "Year", y = "Stream") +
   theme_bw() +
   theme(legend.title = element_blank())
@@ -156,11 +150,13 @@ ggsave(filename = file.path("graphs", paste0("seasonal_full", file_prefix, "fit-
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
-sig_only %>%
+sig_hlines <- sig_only %>%
   dplyr::select(LTER, stream) %>%
   dplyr::distinct() %>%
   dplyr::group_by(LTER) %>%
-  dplyr::summarize(stream_ct = dplyr::n())
+  dplyr::summarize(stream_ct = dplyr::n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
@@ -168,10 +164,7 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
-  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
-  geom_hline(yintercept = 8.5) + # Finnish
-  geom_hline(yintercept = 12.5) + # GRO
-  geom_hline(yintercept = 13.5) + # MCM
+  geom_hline(yintercept = (sig_hlines$stream_cumulative + 0.5)) +
   # Customize theme / formatting elements
   labs(x = "Year", y = "Stream") +
   theme_bw() +
@@ -186,9 +179,7 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
   facet_grid(. ~ season) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
-  geom_hline(yintercept = 8.5) + # Finnish
-  geom_hline(yintercept = 12.5) + # GRO
-  geom_hline(yintercept = 13.5) + # MCM
+  geom_hline(yintercept = (sig_hlines$stream_cumulative + 0.5)) +
   labs(x = "Year", y = "Stream") +
   theme_bw() +
   theme(legend.title = element_blank())
