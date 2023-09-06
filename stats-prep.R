@@ -61,22 +61,16 @@ dplyr::glimpse(drivers_v1)
 # Split off the static driver information
 static_v1 <- drivers_v1 %>%
   dplyr::select(LTER, Stream_Name, 
-                elevation_mean_m,
-                # dplyr::starts_with("elevation_"), 
-                major_rock, 
-                # dplyr::starts_with("rocks_"),
-                major_land, 
-                # dplyr::starts_with("land_"),
-                major_soil
-                # dplyr::starts_with("soil_")
-                )
+                elevation_mean_m, major_rock, 
+                major_land, dplyr::starts_with("land_"),
+                major_soil)
 
 # Check that out
 dplyr::glimpse(static_v1)
 
 # Now split off the dynamic drivers (they'll require more wrangling
 dynamic_v1 <- drivers_v1 %>%
-  dplyr::select(LTER, Stream_Name, 
+  dplyr::select(LTER, Stream_Name, dplyr::starts_with("temp_"),
                 dplyr::starts_with("snow_"), dplyr::starts_with("evapotrans_"),
                 dplyr::starts_with("npp_"), dplyr::starts_with("precip")) %>%
   # Drop monthly information of retained dynamic drivers
@@ -238,6 +232,8 @@ if("season" %in% names(sizer_v4)){
                   sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
                   mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
                   sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
+                  mean_temp_degC = mean(temp_degC, na.rm = T),
+                  sd_temp_degC = sd(temp_degC, na.rm = T),
                   mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
                   sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
                   mean_snow_num.days = mean(snow_num.days, na.rm = T),
@@ -265,6 +261,8 @@ if("season" %in% names(sizer_v4)){
                   sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
                   mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
                   sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
+                  mean_temp_degC = mean(temp_degC, na.rm = T),
+                  sd_temp_degC = sd(temp_degC, na.rm = T),
                   mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
                   sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
                   mean_snow_num.days = mean(snow_num.days, na.rm = T),
