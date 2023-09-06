@@ -29,6 +29,12 @@ googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/
   googledrive::drive_download(file = .$id, overwrite = T,
                               path = file.path("drivers", .$name))
 
+# Identify / download site reference table (for latitude info)
+googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA")) %>%
+  dplyr::filter(name == "Site_Reference_Table") %>%
+  googledrive::drive_download(file = .$id, overwrite = T, type = "csv",
+                              path = file.path("drivers", .$name))
+
 # Clear environment
 rm(list = ls())
 
@@ -110,7 +116,7 @@ dynamic_v2 <- dynamic_v1 %>%
 dplyr::glimpse(dynamic_v2)
 
 ## ----------------------------------------- ##
-            # Integration Prep ----
+        # Driver Integration Prep ----
 ## ----------------------------------------- ##
 
 # First, check which LTERs are not in the SiZer data but are in the basin data
@@ -161,6 +167,48 @@ sizer_v3 <- sizer_v2 %>%
 dplyr::glimpse(sizer_v3)
 
 ## ----------------------------------------- ##
+# Latitude Integration ----
+## ----------------------------------------- ##
+
+# Read in the site reference table
+site_info_v1 <- read.csv(file = file.path("drivers", "Site_Reference_Table.csv")) %>%
+  # And subset to only LTERs in the SiZer data
+  dplyr::filter(LTER %in% sizer_v3$LTER)
+
+# Check structure
+dplyr::glimpse(site_info_v1)
+
+# Pare down the columns the bare minimum of needed information
+site_info_v2 <- site_info_v1 %>%
+  dplyr::select(LTER, Stream_Name, Latitude) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(site_info_v2)
+
+# Check mismatch of streams with what is in the SiZer data
+supportR::diff_check(old = unique(site_info_v2$Stream_Name), new = unique(sizer_v3$Stream_Name))
+
+# Drop unwanted streams
+site_info_v3 <- site_info_v2 %>%
+  dplyr::filter(Stream_Name %in% unique(sizer_v3$Stream_Name))
+
+# Any sites missing latitude?
+site_info_v3 %>%
+  dplyr::filter(is.na(Latitude))
+## Any sites appearing here need to be edited **in the GoogleSheet "Site_Reference_Table"**
+## See the Drive folder here: https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA
+
+# Attach this to the SiZer data
+sizer_v4 <- sizer_v3 %>%
+  dplyr::left_join(y = site_info_v3, by = c("LTER", "Stream_Name")) %>%
+  dplyr::relocate(Latitude, .after = term_p_value)
+
+# Re-check structure
+dplyr::glimpse(sizer_v4)
+
+## ----------------------------------------- ##
           # Quality of Life Tweaks ----
 ## ----------------------------------------- ##
 
@@ -168,7 +216,7 @@ dplyr::glimpse(sizer_v3)
 ## Mostly to have easy things to map graphing aesthetics to but there are other benefits!
 
 # Do desired wrangling
-sizer_v4 <- sizer_v3 %>%
+sizer_v5 <- sizer_v4 %>%
   # Drop ARC streams
   dplyr::filter(LTER != "ARC") %>%
   # Combine section with stream
@@ -204,7 +252,7 @@ sizer_v4 <- sizer_v3 %>%
     T ~ paste0(slope_direction, "-", line_fit)), .after = line_fit)
 
 # Re-check structure
-dplyr::glimpse(sizer_v4)
+dplyr::glimpse(sizer_v5)
 
 ## ----------------------------------------- ##
        # Summarize Dynamic Drivers ----
@@ -213,13 +261,13 @@ dplyr::glimpse(sizer_v4)
 # This step differs between annual and seasonal SiZer outputs
 ## (Slightly different grouping variables)
 
-if("season" %in% names(sizer_v4)){
+if("season" %in% names(sizer_v5)){
   
   # Message the choice
   message("Seasonal data detected. Summarizing dynamic drivers now")
   
   # Wrangle seasonal data
-  sizer_v5 <- sizer_v4 %>%
+  sizer_v6 <- sizer_v5 %>%
     # Group by sizer groups 
     dplyr::group_by(sizer_groups, season) %>%
     # Do some calculations
@@ -247,7 +295,7 @@ if("season" %in% names(sizer_v4)){
   message("Annual data detected. Summarizing dynamic drivers now")
   
   # Do wrangling for non-seasonal data
-  sizer_v5 <- sizer_v4 %>%
+  sizer_v6 <- sizer_v5 %>%
     # Group by sizer groups 
     ## (note that if this was seasonal data it would also need to group by season)
     dplyr::group_by(sizer_groups) %>%
@@ -273,14 +321,14 @@ if("season" %in% names(sizer_v4)){
 }
 
 # Look at what that makes
-dplyr::glimpse(sizer_v5)
+dplyr::glimpse(sizer_v6)
 
 ## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v5
+stats_ready <- sizer_v6
 
 # Make a file name for this file
 (ready_filename <- paste0("stats-ready_", sizer_filename))
