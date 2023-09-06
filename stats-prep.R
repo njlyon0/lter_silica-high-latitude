@@ -33,6 +33,22 @@ googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/
 rm(list = ls())
 
 ## ----------------------------------------- ##
+          # SiZer Output Selection ----
+## ----------------------------------------- ##
+
+# This script can handle either annual or seasonal data but you must make that choice here
+
+# Define file name
+# sizer_filename <- "annual_Yield_kmol_yr_km2_DSi_bw5.csv"
+sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
+
+# Read in SiZer output data
+sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
+
+# Check structure
+dplyr::glimpse(sizer_v1)
+
+## ----------------------------------------- ##
           # Driver Data Prep ----
 ## ----------------------------------------- ##
 
@@ -98,19 +114,6 @@ dynamic_v2 <- dynamic_v1 %>%
 
 # Re-check structure
 dplyr::glimpse(dynamic_v2)
-
-## ----------------------------------------- ##
-        # SiZer Output Retrieval ----
-## ----------------------------------------- ##
-
-# Define file name
-sizer_filename <- "annual_Yield_kmol_yr_km2_DSi_bw5.csv"
-
-# Read in SiZer output data
-sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
-
-# Check structure
-dplyr::glimpse(sizer_v1)
 
 ## ----------------------------------------- ##
             # Integration Prep ----
@@ -204,14 +207,8 @@ sizer_v4 <- sizer_v3 %>%
   dplyr::mutate(dir_fit = dplyr::case_when(
     slope_direction == "NA" | line_fit == "NA" ~ "NA",
     significance == "NS" ~ "NS",
-    T ~ paste0(slope_direction, "-", line_fit)), .after = line_fit) %>%
-  # Make both 'direction + X' columns into factors so we can pick an informative order
-  dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
-                                                     "neg-marg", "neg-sig", "NA", "NS")),
-                dir_fit = factor(dir_fit, 
-                                 levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
-                                            "neg-bad", "neg-fine", "neg-good", "neg-great", 
-                                            "NA", "NS")))
+    T ~ paste0(slope_direction, "-", line_fit)), .after = line_fit)
+
 # Re-check structure
 dplyr::glimpse(sizer_v4)
 
@@ -219,27 +216,63 @@ dplyr::glimpse(sizer_v4)
        # Summarize Dynamic Drivers ----
 ## ----------------------------------------- ##
 
-# We may want summarized variants of the dynamic drivers within sizer groups
-sizer_v5 <- sizer_v4 %>%
-  # Group by sizer groups 
-  ## (note that if this was seasonal data it would also need to group by season)
-  dplyr::group_by(sizer_groups) %>%
-  # Do some calculations
-  ## Get a 'relative Year' for each sizer group so all time series start at 1
-  dplyr::mutate(relative_Year = 1:length(unique(Year)) , .after = Year) %>%
-  ## Calculate average (and SD) dynamic drivers within sizer groups
-  dplyr::mutate(mean_evapotrans_kg.m2 = mean(evapotrans_kg.m2, na.rm = T),
-                sd_evapotrans_kg.m2 = sd(evapotrans_kg.m2, na.rm = T),
-                mean_npp_kg.C.m2.year = mean(npp_kg.C.m2.year, na.rm = T),
-                sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
-                mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
-                sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
-                mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
-                sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
-                mean_snow_num.days = mean(snow_num.days, na.rm = T),
-                sd_snow_num.days = sd(snow_num.days, na.rm = T)) %>%
-  # Remember to ungroup when done with these calculations
-  dplyr::ungroup()
+# This step differs between annual and seasonal SiZer outputs
+## (Slightly different grouping variables)
+
+if("season" %in% names(sizer_v4)){
+  
+  # Message the choice
+  message("Seasonal data detected. Summarizing dynamic drivers now")
+  
+  # Wrangle seasonal data
+  sizer_v5 <- sizer_v4 %>%
+    # Group by sizer groups 
+    dplyr::group_by(sizer_groups, season) %>%
+    # Do some calculations
+    ## Get a 'relative Year' for each sizer group so all time series start at 1
+    dplyr::mutate(relative_Year = 1:length(unique(Year)) , .after = Year) %>%
+    ## Calculate average (and SD) dynamic drivers within sizer groups
+    dplyr::mutate(mean_evapotrans_kg.m2 = mean(evapotrans_kg.m2, na.rm = T),
+                  sd_evapotrans_kg.m2 = sd(evapotrans_kg.m2, na.rm = T),
+                  mean_npp_kg.C.m2.year = mean(npp_kg.C.m2.year, na.rm = T),
+                  sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
+                  mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
+                  sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
+                  mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
+                  sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
+                  mean_snow_num.days = mean(snow_num.days, na.rm = T),
+                  sd_snow_num.days = sd(snow_num.days, na.rm = T)) %>%
+    # Remember to ungroup when done with these calculations
+    dplyr::ungroup()
+  
+} else {
+  
+  # Message this outcome
+  message("Annual data detected. Summarizing dynamic drivers now")
+  
+  # Do wrangling for non-seasonal data
+  sizer_v5 <- sizer_v4 %>%
+    # Group by sizer groups 
+    ## (note that if this was seasonal data it would also need to group by season)
+    dplyr::group_by(sizer_groups) %>%
+    # Do some calculations
+    ## Get a 'relative Year' for each sizer group so all time series start at 1
+    dplyr::mutate(relative_Year = 1:length(unique(Year)) , .after = Year) %>%
+    ## Calculate average (and SD) dynamic drivers within sizer groups
+    dplyr::mutate(mean_evapotrans_kg.m2 = mean(evapotrans_kg.m2, na.rm = T),
+                  sd_evapotrans_kg.m2 = sd(evapotrans_kg.m2, na.rm = T),
+                  mean_npp_kg.C.m2.year = mean(npp_kg.C.m2.year, na.rm = T),
+                  sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
+                  mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
+                  sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
+                  mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
+                  sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
+                  mean_snow_num.days = mean(snow_num.days, na.rm = T),
+                  sd_snow_num.days = sd(snow_num.days, na.rm = T)) %>%
+    # Remember to ungroup when done with these calculations
+    dplyr::ungroup()
+  
+}
 
 # Look at what that makes
 dplyr::glimpse(sizer_v5)
