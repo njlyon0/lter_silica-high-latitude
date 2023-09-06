@@ -24,12 +24,18 @@ Scripts in this repository are described below:
   “seasonal” data are derived by averaging across sub-season temporal
   columns in the monthly data.
 
+- **`stats-prep.R`** - Accepts outputs of *either* `...-workflow.R`
+  script and (1) attaches basin characteristics / climatic drivers
+  extracted elsewhere and (2) does some summarizing / wrangling needed
+  before stats / visualization.
+
 - **`...-explore-graphs.R`** - Makes exploratory (i.e., not necessarily
   publication-quality) graphs of extracted SiZer information. Temporal
   granularity of source data is specified in file prefix (“seasonal” or
-  “annual”). Note that these scripts expect that the corresponding
-  `...-workflow.R` script has been run and its outputs are available for
-  use in graphing.
+  “annual”). Note that these scripts expect that *both* the
+  corresponding `...-workflow.R` script and the `stats-prep.R` script
+  have been run and their outputs are in the correct (i.e., default)
+  folders.
 
 - **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin
   characteristics and slope estimates of SiZer-identified time series
@@ -55,7 +61,8 @@ supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere"
     ## 8   ¦--annual-workflow.R        
     ## 9   ¦--ordinations.R            
     ## 10  ¦--seasonal-explore-graphs.R
-    ## 11  °--seasonal-workflow.R
+    ## 11  ¦--seasonal-workflow.R      
+    ## 12  °--stats-prep.R
 
 ## Related Repositories
 
