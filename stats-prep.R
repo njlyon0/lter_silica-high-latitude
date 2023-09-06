@@ -99,7 +99,7 @@ dynamic_v2 <- dynamic_v1 %>%
 dplyr::glimpse(dynamic_v2)
 
 ## ----------------------------------------- ##
-          # SiZer Output Prep ----
+        # SiZer Output Retrieval ----
 ## ----------------------------------------- ##
 
 # Read in SiZer output data
@@ -158,6 +158,60 @@ sizer_v3 <- sizer_v2 %>%
 
 # Re-check structure
 dplyr::glimpse(sizer_v3)
+
+## ----------------------------------------- ##
+          # Quality of Life Tweaks ----
+## ----------------------------------------- ##
+
+# We'll want a few combination columns to exist for QoL purposes down the line
+## Mostly to have easy things to map graphing aesthetics to but there are other benefits!
+
+# Do desired wrangling
+sizer_v4 <- sizer_v3 %>%
+  # Drop ARC streams
+  dplyr::filter(LTER != "ARC") %>%
+  # Combine section with stream
+  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
+  # Categorize P values
+  dplyr::mutate(significance = dplyr::case_when(
+    is.na(test_p_value) ~ "NA",
+    test_p_value < 0.05 ~ "sig",
+    test_p_value >= 0.05 & test_p_value <= 0.1 ~ "marg",
+    test_p_value > 0.1 ~ "NS"), .after = test_p_value) %>%
+  # Categorize R2 too
+  dplyr::mutate(line_fit = dplyr::case_when(
+    is.na(r_squared) ~ "NA",
+    r_squared < 0.3 ~ "bad",
+    r_squared >= 0.3 & r_squared < 0.65 ~ "fine",
+    r_squared >= 0.65 & r_squared < 0.8 ~ "good",
+    r_squared >= 0.8 ~ "great"), .after = r_squared) %>%
+  # Identify direction of slope
+  dplyr::mutate(slope_direction = dplyr::case_when(
+    is.na(slope_estimate) ~ "NA",
+    slope_estimate < 0 ~ "neg",
+    slope_estimate == 0 ~ "zero",
+    slope_estimate > 0 ~ "pos"),
+    .before = slope_estimate) %>%
+  # Make combinations of direction + sig. and direction + line fit
+  dplyr::mutate(dir_sig = dplyr::case_when(
+    slope_direction == "NA" | significance == "NA" ~ "NA",
+    significance == "NS" ~ "NS",
+    T ~ paste0(slope_direction, "-", significance)), .after = significance) %>%
+  dplyr::mutate(dir_fit = dplyr::case_when(
+    slope_direction == "NA" | line_fit == "NA" ~ "NA",
+    significance == "NS" ~ "NS",
+    T ~ paste0(slope_direction, "-", line_fit)), .after = line_fit) %>%
+  # Make both 'direction + X' columns into factors so we can pick an informative order
+  dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
+                                                     "neg-marg", "neg-sig", "NA", "NS")),
+                dir_fit = factor(dir_fit, 
+                                 levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
+                                            "neg-bad", "neg-fine", "neg-good", "neg-great", 
+                                            "NA", "NS")))
+# Re-check structure
+dplyr::glimpse(sizer_v4)
+
+
 
 
 # End ----
