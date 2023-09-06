@@ -1,11 +1,11 @@
 ## ------------------------------------------------------- ##
-              # Data Integration - Drivers
+            # Statistics & Visualization Prep
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon
 
 # PURPOSE:
 ## Integrate basin characteristics / climatic "drivers" with the WRTDS data used in SiZer
-## Necessary for some of the analysis / visualization
+## Do general wrangling operations required for some statistics / visualization
 
 # Pre-Requisites:
 ## This script assumes you've run one of the "...-workflow.R" scripts
@@ -142,7 +142,7 @@ supportR::diff_check(old = unique(dynamic_v4$Stream_Name), new = unique(sizer_v1
 ## So we're not caught unawares by some missing data they shouldn't be missing
 
 ## ----------------------------------------- ##
-# Driver Integration ----
+          # Driver Integration ----
 ## ----------------------------------------- ##
 
 # Combine the static driver data with the SiZer data!
