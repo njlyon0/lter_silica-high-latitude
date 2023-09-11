@@ -98,7 +98,7 @@ supportR::diff_check(old = names(data_v0), new = names(data_simp))
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
-response_var <- "Yield_kmol_yr_km2"
+response_var <- "Conc_uM"
 ## Yield, Conc_uM, Discharge_cms
 explanatory_var <- "Year"
 
