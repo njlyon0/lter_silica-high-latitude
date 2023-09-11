@@ -167,7 +167,7 @@ sizer_v3 <- sizer_v2 %>%
 dplyr::glimpse(sizer_v3)
 
 ## ----------------------------------------- ##
-# Latitude Integration ----
+          # Latitude Integration ----
 ## ----------------------------------------- ##
 
 # Read in the site reference table
