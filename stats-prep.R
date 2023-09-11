@@ -324,6 +324,21 @@ if("season" %in% names(sizer_v5)){
 dplyr::glimpse(sizer_v6)
 
 ## ----------------------------------------- ##
+    # Calculate Dynamic Driver Slope ----
+## ----------------------------------------- ##
+
+# Make a test linear model object
+test_lm <- lm(evapotrans_kg.m2 ~ relative_Year, data = sizer_v6)
+
+# Check summary
+summary(test_lm)
+
+# Strip out slope
+broom::glance(test_lm)
+
+
+
+## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
