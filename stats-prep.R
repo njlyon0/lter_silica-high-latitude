@@ -45,8 +45,8 @@ rm(list = ls())
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-# sizer_filename <- "annual_Yield_kmol_yr_km2_DSi_bw5.csv"
-sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
+sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
+# sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
 
 # Read in SiZer output data
 sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
