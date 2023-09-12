@@ -327,25 +327,79 @@ dplyr::glimpse(sizer_v6)
     # Calculate Dynamic Driver Slope ----
 ## ----------------------------------------- ##
 
-# Make a test linear model object
-test_lm <- lm(evapotrans_kg.m2 ~ relative_Year, data = sizer_v6)
+# Make an empty list
+dynamic_list <- list()
 
-# Check summary
-summary(test_lm)
+# Loop to get slope of dynamic drivers
+for(chunk in unique(sizer_v6$sizer_groups)){
+  
+  # Message
+  message("Calculating dynamic driver change for ", chunk)
+  
+  # Subset data
+  sizer_sub <- dplyr::filter(sizer_v6, sizer_groups == chunk)
+  
+  # If there is more than one row in that subset
+  if(nrow(sizer_sub) > 1 & unique(sizer_sub$LTER) != "MCM"){
+    # Get slope of each dynamic driver within that sizer group
+    ## ET
+    et_slope <- as.data.frame(summary(lm(evapotrans_kg.m2 ~ relative_Year, 
+                                         data = sizer_sub))$coefficients)$Estimate[2]
+    ## NPP
+    npp_slope <- as.data.frame(summary(lm(npp_kg.C.m2.year ~ relative_Year, 
+                                          data = sizer_sub))$coefficients)$Estimate[2]
+    ## Precipitation
+    ppt_slope <- as.data.frame(summary(lm(precip_mm.per.day ~ relative_Year, 
+                                          data = sizer_sub))$coefficients)$Estimate[2]
+    ## Temperature
+    temp_slope <- as.data.frame(summary(lm(temp_degC ~ relative_Year, 
+                                           data = sizer_sub))$coefficients)$Estimate[2]
+    ## Snow Area
+    snow1_slope <- as.data.frame(summary(lm(snow_max.prop.area ~ relative_Year, 
+                                            data = sizer_sub))$coefficients)$Estimate[2]
+    ## Snow Days
+    snow2_slope <- as.data.frame(summary(lm(snow_num.days ~ relative_Year, 
+                                            data = sizer_sub))$coefficients)$Estimate[2]
+    
+    
+    # Assemble a dataframe of this and add to the list
+    dynamic_list[[chunk]] <- data.frame("sizer_groups" = chunk,
+                                        "slope_evapotrans_kg.m2" = et_slope,
+                                        "slope_npp_kg.C.m2.year" = npp_slope,
+                                        "slope_precip_mm.per.day" = ppt_slope,
+                                        "slope_temp_degC" = temp_slope,
+                                        "slope_snow_max.prop.area" = snow1_slope,
+                                        "slope_snow_num.days" = snow2_slope)
+  } }
 
-# Make summary object
-test_coef <- as.data.frame(summary(test_lm)$coefficients)
 
-# Strip out slope
-test_coef$Estimate[2]
+# Unlist that
+dynamic_slopes <- dynamic_list %>%
+  purrr::list_rbind(x = .)
 
+# Check structure
+dplyr::glimpse(dynamic_slopes)
+
+# Attach to data
+sizer_v7 <- sizer_v6 %>%
+  dplyr::left_join(y = dynamic_slopes, by = c("sizer_groups")) %>%
+  # Group dynamic drivers together
+  dplyr::relocate(dplyr::contains("snow_num.days"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("snow_max.prop.area"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("evapotrans_kg.m2"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("npp_kg.C.m2.year"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("precip_mm.per.day"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("temp_degC"), .after = major_soil)
+  
+# Re-check structure
+dplyr::glimpse(sizer_v7)
 
 ## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v6
+stats_ready <- sizer_v7
 
 # Make a file name for this file
 (ready_filename <- paste0("stats-ready_", sizer_filename))
