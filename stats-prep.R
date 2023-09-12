@@ -371,11 +371,38 @@ sizer_v7 <- sizer_v6 %>%
 dplyr::glimpse(sizer_v7)
 
 ## ----------------------------------------- ##
+        # Calculate 'Total Forest' ----
+## ----------------------------------------- ##
+
+# We want to calculate 'total forest' by summing relevant land cover categories
+sizer_v8 <- sizer_v7 %>%
+  # Flip land columns to long format
+  tidyr::pivot_longer(cols = dplyr::starts_with("land_")) %>%
+  # If the value is NA, replace with 0
+  dplyr::mutate(value = ifelse(is.na(value),
+                                yes = 0, no = value)) %>%
+  # Flip back to wide format
+  tidyr::pivot_wider(names_from = name, values_from = value) %>%
+  # Move land columns back after 'major X' columns
+  dplyr::relocate(dplyr::starts_with("land_"), 
+                  .after = dplyr::starts_with("major_")) %>%
+  # Sum forest columns into a 'total forest' column
+  dplyr::mutate(land_total_forest = land_evergreen_needleleaf_forest +
+                  land_evergreen_broadleaf_forest +
+                  land_deciduous_broadleaf_forest +
+                  land_deciduous_needleleaf_forest +
+                  land_mixed_forest,
+                .before = dplyr::starts_with("land_"))
+
+# Re-check structure
+dplyr::glimpse(sizer_v8)
+
+## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v7
+stats_ready <- sizer_v8
 
 # Make a file name for this file
 (ready_filename <- paste0("stats-ready_", sizer_filename))
