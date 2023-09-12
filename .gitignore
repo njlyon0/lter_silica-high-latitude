@@ -50,6 +50,7 @@ seasonal_*/
 graphs/
 drivers/
 tidy_data/
+stats_results/
 
 # Ignore knit .Rmd files
 *.pdf
