@@ -333,9 +333,11 @@ test_lm <- lm(evapotrans_kg.m2 ~ relative_Year, data = sizer_v6)
 # Check summary
 summary(test_lm)
 
-# Strip out slope
-broom::glance(test_lm)
+# Make summary object
+test_coef <- as.data.frame(summary(test_lm)$coefficients)
 
+# Strip out slope
+test_coef$Estimate[2]
 
 
 ## ----------------------------------------- ##
