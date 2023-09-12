@@ -402,7 +402,9 @@ dplyr::glimpse(sizer_v8)
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v8
+stats_ready <- sizer_v8 %>%
+  # And choose a minimum chunk duration for inclusion
+  dplyr::filter(section_duration >= 5)
 
 # Make a file name for this file
 (ready_filename <- paste0("stats-ready_", sizer_filename))
