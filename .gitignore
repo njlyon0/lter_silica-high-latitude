@@ -41,16 +41,12 @@ vignettes/*.pdf
 # R project
 *.Rproj
 
-# Misc. folders
-data/
-sizer_outs/*.csv
-export_*/
-annual_*/
-seasonal_*/
-graphs/
-drivers/
-tidy_data/
-stats_results/
+# Ignore all CSVs
+*.csv
+
+# Ignore all graphs
+*.png
+*.tiff
 
 # Ignore knit .Rmd files
 *.pdf
