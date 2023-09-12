@@ -20,20 +20,6 @@ Scripts in this repository are described below:
 
 - **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin characteristics and slope estimates of SiZer-identified time series chunks. Contains sections for both annual and seasonal data so there are not twin scripts for this component.
 
-## Repository Content
-
-See below for a "tree" of this repository's content:
-
-```{r pkg-load, include = F}
-# Load needed package
-# install.packages("supportR")
-library(supportR)
-```
-
-```{r github-tree, message = F, warning = F}
-supportR::github_tree(repo = "https://github.com/njlyon0/lter_silica-cryosphere", exclude = "_deprecated")
-```
-
 ## Related Repositories
 
 This working group has several repositories. All are linked and described (briefly) below.
