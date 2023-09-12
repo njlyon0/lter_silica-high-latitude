@@ -16,6 +16,8 @@ Scripts in this repository are described below:
 
 - **`stats-prep.R`** - Accepts outputs of _either_ `...-workflow.R` script and (1) attaches basin characteristics / climatic drivers extracted elsewhere and (2) does some summarizing / wrangling needed before stats / visualization.
 
+- **`stats.R`** - Do desired hypothesis testing. Requires `stats-prep.R` be run before.
+
 - **`...-explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Temporal granularity of source data is specified in file prefix ("seasonal" or "annual"). Note that these scripts expect that _both_ the corresponding `...-workflow.R` script and the `stats-prep.R` script have been run and their outputs are in the correct (i.e., default) folders.
 
 - **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin characteristics and slope estimates of SiZer-identified time series chunks. Contains sections for both annual and seasonal data so there are not twin scripts for this component.
