@@ -107,6 +107,4 @@ si_conc_mod2 <- RRPP::lm.rrpp(percent_change ~ LTER +
 write.csv(x = si_conc_aov2, row.names = F, na = '',
           file = file.path("stats_results", "annual_DSi_conc_percchange.csv"))
 
-
-
 # End ----
