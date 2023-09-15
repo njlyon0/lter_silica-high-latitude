@@ -87,8 +87,25 @@ si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
 
 # Export locally
 write.csv(x = si_conc_aov1, row.names = F, na = '',
-          file = file.path("stats_results", "annual_DSi_conc.csv"))
+          file = file.path("stats_results", "annual_DSi_conc_slope.csv"))
 
+# Do the same model for percent change
+si_conc_mod2 <- RRPP::lm.rrpp(percent_change ~ LTER +
+                                ## Dynamic drivers
+                                slope_temp_degC + slope_precip_mm.per.day +
+                                slope_npp_kg.C.m2.year + slope_evapotrans_kg.m2 +
+                                slope_snow_max.prop.area + slope_snow_num.days +
+                                ## Static drivers
+                                Latitude + elevation_mean_m + land_total_forest +
+                                land_barren_or_sparsely_vegetated,
+                              data = si_conc, iter = 999)
+
+# Summarize that output (and check it out)
+( si_conc_aov2 <- aov_process(si_conc_mod2) )
+
+# Export locally
+write.csv(x = si_conc_aov2, row.names = F, na = '',
+          file = file.path("stats_results", "annual_DSi_conc_percchange.csv"))
 
 
 
