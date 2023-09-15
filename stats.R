@@ -54,10 +54,22 @@ aov_process <- function(fit){
           # Silica Concentration ----
 ## ----------------------------------------- ##
 # Read in ready data for this response variable
-si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv"))
+si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv")) %>%
+  # Drop annual information
+  dplyr::select(-Year:-Conc_uM, -temp_degC, -precip_mm.per.day, -npp_kg.C.m2.year, 
+                -evapotrans_kg.m2, -snow_max.prop.area, -snow_num.days) %>%
+  # Drop non-unique rows
+  unique()
 
 # Check structure
 dplyr::glimpse(si_conc)
+
+# See how many line chunks (i.e., SiZer groups) per Stream_Name
+si_conc %>%
+  dplyr::group_by(Stream_Name) %>%
+  dplyr::summarize(response_ct = length(unique(sizer_groups))) %>%
+  dplyr::pull(response_ct) %>%
+  unique()
 
 # Fit a model of interest
 si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
