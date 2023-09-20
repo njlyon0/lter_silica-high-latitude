@@ -30,13 +30,10 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Neat little tool to summarize key bits of aov table
-aov_process <- function(fit){
-  
-  # Do ANOVA table
-  mod_aov <- anova(fit)
+aov_process <- function(aov){
   
   # Get the summary table
-  mod_table <- as.data.frame(mod_aov$table)
+  mod_table <- as.data.frame(aov$table)
   
   # Get the terms out as a real column (default is as rownames)
   mod_out <- mod_table %>%
@@ -82,11 +79,14 @@ si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
                                 land_barren_or_sparsely_vegetated,
                               data = si_conc, iter = 999)
 
+# Get ANOVA table for that model
+si_conc_aov1 <- anova(si_conc_mod1, effect.type = "F")
+
 # Summarize that output (and check it out)
-( si_conc_aov1 <- aov_process(si_conc_mod1) )
+( si_conc_table1 <- aov_process(si_conc_aov1) )
 
 # Export locally
-write.csv(x = si_conc_aov1, row.names = F, na = '',
+write.csv(x = si_conc_table1, row.names = F, na = '',
           file = file.path("stats_results", "annual_DSi_conc_slope.csv"))
 
 # Do the same model for percent change
