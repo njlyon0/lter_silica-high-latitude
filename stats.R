@@ -75,7 +75,7 @@ si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
                                 slope_npp_kg.C.m2.year + slope_evapotrans_kg.m2 +
                                 slope_snow_max.prop.area + slope_snow_num.days +
                                 ## Static drivers
-                                Latitude + elevation_mean_m + land_total_forest +
+                                abs(Latitude) + elevation_mean_m + land_total_forest +
                                 land_barren_or_sparsely_vegetated,
                               data = si_conc, iter = 999)
 
@@ -103,6 +103,13 @@ si_conc_aov1 <- anova(si_conc_mod1, effect.type = "F",
 # Export locally
 write.csv(x = si_conc_table1, row.names = F, na = '',
           file = file.path("stats_results", "annual_DSi_conc_slope.csv"))
+
+# Exploratory graph
+ggplot(si_conc, aes(x = abs(Latitude), y = slope_estimate)) +
+  geom_point(pch = 21, size = 3, fill = "blue") +
+  geom_smooth(method = "lm", se = F, formula = "y ~ x", color = "black") +
+  labs(x = "Latitude", y = "Slope of Si Conc. (uM) / Years") +
+  supportR::theme_lyon()
 
 # Do the same model for percent change
 si_conc_mod2 <- RRPP::lm.rrpp(percent_change ~ LTER +
