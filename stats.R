@@ -80,7 +80,22 @@ si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
                               data = si_conc, iter = 999)
 
 # Get ANOVA table for that model
-si_conc_aov1 <- anova(si_conc_mod1, effect.type = "F")
+si_conc_aov1 <- anova(si_conc_mod1, effect.type = "F",
+                      error = c(
+                        "land_total_forest", # 'random' effect for LTER
+                        "LTER", # random effect for 'slope_temp_degC'
+                        "LTER", # random effect for 'slope_precip_mm.per.day'
+                        "LTER", # random effect for 'slope_npp_kg.C.m2.year'
+                        "LTER", # random effect for 'slope_evapotrans_kg.m2'
+                        "LTER", # random effect for 'slope_snow_max.prop.area'
+                        "LTER", # random effect for 'slope_snow_num.days'
+                        "LTER", # random effect for 'Latitude'
+                        "LTER", # random effect for 'elevation_mean_m'
+                        "LTER", # random effect for 'land_total_forest'
+                        "LTER")) # random effect for 'land_barren_or_sparsely_vegetated'
+
+# Specifying "Residuals" in error argument means NO random effect is used
+# Specifying any other fixed effect name means that is used as a random effect *for that term*
 
 # Summarize that output (and check it out)
 ( si_conc_table1 <- aov_process(si_conc_aov1) )
@@ -100,11 +115,14 @@ si_conc_mod2 <- RRPP::lm.rrpp(percent_change ~ LTER +
                                 land_barren_or_sparsely_vegetated,
                               data = si_conc, iter = 999)
 
+# Get ANOVA table for that model
+si_conc_aov2 <- anova(si_conc_mod2, effect.type = "F")
+
 # Summarize that output (and check it out)
-( si_conc_aov2 <- aov_process(si_conc_mod2) )
+( si_conc_table2 <- aov_process(si_conc_aov2) )
 
 # Export locally
-write.csv(x = si_conc_aov2, row.names = F, na = '',
+write.csv(x = si_conc_table2, row.names = F, na = '',
           file = file.path("stats_results", "annual_DSi_conc_percchange.csv"))
 
 # End ----
