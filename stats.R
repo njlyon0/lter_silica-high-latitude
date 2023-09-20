@@ -56,7 +56,9 @@ si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DS
   dplyr::select(-Year:-Conc_uM, -temp_degC, -precip_mm.per.day, -npp_kg.C.m2.year, 
                 -evapotrans_kg.m2, -snow_max.prop.area, -snow_num.days) %>%
   # Drop non-unique rows
-  unique()
+  unique() %>%
+  # Drop McMurdo
+  dplyr::filter(LTER != "MCM")
 
 # Check structure
 dplyr::glimpse(si_conc)
