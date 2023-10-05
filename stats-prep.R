@@ -45,18 +45,24 @@ rm(list = ls())
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
+# sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
 # sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
+sizer_filename <- "monthly_Conc_uM_DSi_bw5.csv"
 
 # Read in SiZer output data
 sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
 
-# If this is annual data, add a "season" column so the code can do either
+# If the data doesn't have a "season" column, add one
 if(!"season" %in% names(sizer_v1)){
   sizer_v1 %<>%
     dplyr::mutate(season = "X", .before = chemical) }
 # Note: `%<>%` is a "hinge assignment pipe"
 ## Equivalent to `df <- df %>% ...`
+
+# If the data doesn't have a "Month" column, add that too
+if(!"Month" %in% names(sizer_v1)){
+  sizer_v1 %<>%
+    dplyr::mutate(Month = "X", .before = chemical) }
 
 # Check structure
 dplyr::glimpse(sizer_v1)
@@ -227,7 +233,8 @@ sizer_v5 <- sizer_v4 %>%
   # Drop ARC streams
   dplyr::filter(LTER != "ARC") %>%
   # Combine section with stream
-  dplyr::mutate(sizer_groups = paste0(stream, "_", section), .before = dplyr::everything()) %>%
+  dplyr::mutate(sizer_groups = paste0(stream, "_", section), 
+                .before = dplyr::everything()) %>%
   # Categorize P values
   dplyr::mutate(significance = dplyr::case_when(
     is.na(test_p_value) ~ "NA",
@@ -268,7 +275,7 @@ dplyr::glimpse(sizer_v5)
 # Wrangle seasonal data
 sizer_v6 <- sizer_v5 %>%
   # Group by sizer groups 
-  dplyr::group_by(sizer_groups, season) %>%
+  dplyr::group_by(sizer_groups, season, Month) %>%
   # Do some calculations
   ## Get a 'relative Year' for each sizer group so all time series start at 1
   dplyr::mutate(relative_Year = 1:length(unique(Year)) , .after = Year) %>%
@@ -313,52 +320,70 @@ for(chunk in unique(sizer_v6$sizer_groups)){
     # Subset data again
     sizer_sub2 <- dplyr::filter(sizer_sub, season == seas)
     
-    # If there is more than one row in that subset
-    if(nrow(sizer_sub2) > 1 & unique(sizer_sub2$LTER) != "MCM"){
-      # Get slope of each dynamic driver within that sizer group
-      ## ET
-      et_slope <- as.data.frame(summary(lm(evapotrans_kg.m2 ~ relative_Year, 
-                                           data = sizer_sub2))$coefficients)$Estimate[2]
-      ## NPP
-      npp_slope <- as.data.frame(summary(lm(npp_kg.C.m2.year ~ relative_Year, 
-                                            data = sizer_sub2))$coefficients)$Estimate[2]
-      ## Precipitation
-      ppt_slope <- as.data.frame(summary(lm(precip_mm.per.day ~ relative_Year, 
-                                            data = sizer_sub2))$coefficients)$Estimate[2]
-      ## Temperature
-      temp_slope <- as.data.frame(summary(lm(temp_degC ~ relative_Year, 
-                                             data = sizer_sub2))$coefficients)$Estimate[2]
-      ## Snow Area
-      snow1_slope <- as.data.frame(summary(lm(snow_max.prop.area ~ relative_Year, 
-                                              data = sizer_sub2))$coefficients)$Estimate[2]
-      ## Snow Days
-      snow2_slope <- as.data.frame(summary(lm(snow_num.days ~ relative_Year, 
-                                              data = sizer_sub2))$coefficients)$Estimate[2]
+    # Loop across month within that season
+    for(mos in unique(sizer_sub2$Month)){
       
-      # Make name for list element
-      list_name <- paste0(chunk, "_", seas)
+      # Subset once more
+      sizer_sub3 <- dplyr::filter(sizer_sub, Month == mos)
       
-      # Assemble a dataframe of this and add to the list
-      dynamic_list[[list_name]] <- data.frame("sizer_groups" = chunk,
-                                              "season" = seas,
-                                              "slope_evapotrans_kg.m2" = et_slope,
-                                              "slope_npp_kg.C.m2.year" = npp_slope,
-                                              "slope_precip_mm.per.day" = ppt_slope,
-                                              "slope_temp_degC" = temp_slope,
-                                              "slope_snow_max.prop.area" = snow1_slope,
-                                              "slope_snow_num.days" = snow2_slope)
-    } } }
+      # If there is more than one row in that subset
+      if(nrow(sizer_sub3) > 1 & unique(sizer_sub3$LTER) != "MCM"){
+        # Get slope of each dynamic driver within that sizer group
+        ## ET
+        if(!all(is.na(sizer_sub3$evapotrans_kg.m2))){
+          et_slope <- as.data.frame(summary(lm(evapotrans_kg.m2 ~ relative_Year, 
+                                               data = sizer_sub3))$coefficients)$Estimate[2] 
+        } else { et_slope <- NA }
+        ## NPP
+        if(!all(is.na(sizer_sub3$npp_kg.C.m2.year))){
+          npp_slope <- as.data.frame(summary(lm(npp_kg.C.m2.year ~ relative_Year, 
+                                                data = sizer_sub3))$coefficients)$Estimate[2]
+        } else { npp_slope <- NA }
+        ## Precipitation
+        if(!all(is.na(sizer_sub3$precip_mm.per.day))){
+          ppt_slope <- as.data.frame(summary(lm(precip_mm.per.day ~ relative_Year, 
+                                                data = sizer_sub3))$coefficients)$Estimate[2]
+        } else { ppt_slope <- NA }
+        ## Temperature
+        if(!all(is.na(sizer_sub3$temp_degC))){
+          temp_slope <- as.data.frame(summary(lm(temp_degC ~ relative_Year, 
+                                                 data = sizer_sub3))$coefficients)$Estimate[2]
+        } else { temp_slope <- NA }
+        ## Snow Area
+        if(!all(is.na(sizer_sub3$snow_max.prop.area))){
+          snow1_slope <- as.data.frame(summary(lm(snow_max.prop.area ~ relative_Year, 
+                                                  data = sizer_sub3))$coefficients)$Estimate[2]
+        } else { snow1_slope <- NA }
+        ## Snow Days
+        if(!all(is.na(sizer_sub3$snow_num.days))){
+          snow2_slope <- as.data.frame(summary(lm(snow_num.days ~ relative_Year, 
+                                                  data = sizer_sub3))$coefficients)$Estimate[2]
+        } else { snow2_slope <- NA }
+        
+        # Make name for list element
+        list_name <- paste0(chunk, "_", seas, "_", mos)
+        
+        # Assemble a dataframe of this and add to the list
+        dynamic_list[[list_name]] <- data.frame("sizer_groups" = chunk,
+                                                "season" = seas,
+                                                "Month" = mos,
+                                                "slope_evapotrans_kg.m2" = et_slope,
+                                                "slope_npp_kg.C.m2.year" = npp_slope,
+                                                "slope_precip_mm.per.day" = ppt_slope,
+                                                "slope_temp_degC" = temp_slope,
+                                                "slope_snow_max.prop.area" = snow1_slope,
+                                                "slope_snow_num.days" = snow2_slope)
+      } } } }
 
 # Unlist that
-dynamic_slopes <- dynamic_list %>%
-  purrr::list_rbind(x = .)
-
+dynamic_slopes <- purrr::list_rbind(x = dynamic_list)
+  
 # Check structure
 dplyr::glimpse(dynamic_slopes)
 
 # Attach to data
 sizer_v7 <- sizer_v6 %>%
-  dplyr::left_join(y = dynamic_slopes, by = c("sizer_groups", "season")) %>%
+  dplyr::left_join(y = dynamic_slopes, by = c("sizer_groups", "season", "Month")) %>%
   # Group dynamic drivers together
   dplyr::relocate(dplyr::contains("snow_num.days"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("snow_max.prop.area"), .after = major_soil) %>%
