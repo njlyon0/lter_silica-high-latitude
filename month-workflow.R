@@ -176,13 +176,13 @@ for(place in unique(data_short$stream)) {
     dplyr::filter(stream == place) %>%
     as.data.frame()
   
-  # Loop across seasons
+  # Loop across months
   for(focal_month in unique(data_sub$Month)){
     
     # Processing message
     message("Working on month: ", focal_month)
     
-    # Filter the data to just that season
+    # Filter the data to just that month
     data_sub2 <- data_sub %>%
       dplyr::filter(Month == focal_month) %>%
       as.data.frame()
@@ -269,7 +269,8 @@ for(place in unique(data_short$stream)) {
     
     # Export whichever graph got made
     ggplot2::ggsave(plot = demo_plot, height = 8, width = 8, units = "in",
-                    filename = file.path(export_folder, paste0(place_short, "_", focal_month, "_ggplot.png")))
+                    filename = file.path(export_folder, paste0(place_short, "_month-",
+                                                               focal_month, "_ggplot.png")))
     
     # Loop - Wrangle SiZer Data ----
     message("Wrangling SiZer data...")
@@ -279,7 +280,7 @@ for(place in unique(data_short$stream)) {
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
       dplyr::mutate(bandwidth_h = bandwidth,
                     Stream_Name = place, 
-                    season = focal_month,
+                    Month = focal_month,
                     .before = dplyr::everything()) %>%
       as.data.frame()
     
@@ -300,21 +301,21 @@ for(place in unique(data_short$stream)) {
     stat_df <- lm_obj[[1]] %>%
       # Make all columns characters
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      # Add a site/season column
+      # Add a site/month column
       dplyr::mutate(Stream_Name = place,
-                    season = focal_month,
+                    Month = focal_month,
                     .before = dplyr::everything())
     
     # Final dataframe processing for *estimates*
     est_df <- lm_obj[[2]] %>%
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(Stream_Name = place, season = focal_month, .before = dplyr::everything())
+      dplyr::mutate(Stream_Name = place, Month = focal_month, .before = dplyr::everything())
     
     # Add this information to their respective lists
     giant_list[[paste0("stats_", focal_month, "_", j)]] <- stat_df
     giant_list[[paste0("estimates_", focal_month, "_", j)]] <- est_df
     
-  } # Close season loop
+  } # Close month loop
   
   # Increase the counter by 1 (for the next iteration of the loop)
   j <- j + 1
@@ -418,7 +419,7 @@ combo_v1 <- years_v2 %>%
   # Attach statistical information to response data
   dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, Stream_Name, section, season)) %>%
   # Attach estimate information to response data
-  dplyr::left_join(est_v2, by = join_by(bandwidth_h, Stream_Name, section, season))
+  dplyr::left_join(est_v2, by = join_by(bandwidth_h, Stream_Name, section, Month))
 
 # Check structure
 dplyr::glimpse(combo_v1)
@@ -427,7 +428,7 @@ dplyr::glimpse(combo_v1)
 # Let's process this to be a little friendlier for later use
 combo_v2 <- combo_v1 %>%
   # Reorder 'site information' (i.e., grouping columns) columns to the left
-  dplyr::relocate(bandwidth_h, LTER, Stream_Name, drainSqKm, season, chemical, 
+  dplyr::relocate(bandwidth_h, LTER, Stream_Name, drainSqKm, Month, chemical, 
                   Year, dplyr::contains(response_var),
                   section, start, end, duration, .before = dplyr::everything()) %>%
   # Rename columns as needed
@@ -470,7 +471,7 @@ combo_v3 <- combo_v2 %>%
   dplyr::select(-dplyr::ends_with("_abbrev"), -site_simp) %>%
   # Calculate relative response so sites with very different absolute totals can be directly compared
   ## Calculate average 'response' per SiZer section
-  dplyr::group_by(sizer_bandwidth, stream, season, chemical, section) %>%
+  dplyr::group_by(sizer_bandwidth, stream, Month, chemical, section) %>%
   dplyr::mutate(mean_response = mean(.data[[response_var]], na.rm = T),
                 sd_response = sd(.data[[response_var]], na.rm = T),
                 .before = section) %>%
