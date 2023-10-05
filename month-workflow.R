@@ -8,7 +8,7 @@
 ## WRTDS = Weighted Regressions on Time, Discharge, and Season
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Need to force an install of HERON to get an updated version?
@@ -83,14 +83,14 @@ data_simp <- data_v0 %>%
     chemical == "Si:DIN" ~ "Si_DIN",
     chemical == "Si:P" ~ "Si_P",
     TRUE ~ chemical)) %>%
-  # Remove all instances where season info is missing
-  dplyr::filter(!is.na(season)) %>%
+  # Remove all instances where month info is missing
+  dplyr::filter(!is.na(Month)) %>%
   # Flip to long format to get all response variables into a single column
   tidyr::pivot_longer(cols = Discharge_cms:FNYield_kmol_yr_km2,
                       names_to = "var",
                       values_to = "value") %>%
-  # Group by everything *except month* and average response values
-  dplyr::group_by(LTER, stream, drainSqKm, season, Year, chemical, var) %>%
+  # Group by everything and average response values
+  dplyr::group_by(LTER, stream, drainSqKm, Month, Year, chemical, var) %>%
   dplyr::summarize(value = mean(value, na.rm = T)) %>%
   dplyr::ungroup() %>%
   # Flip back to wide format
@@ -103,13 +103,13 @@ dplyr::glimpse(data_simp)
 data_simp %>%
   dplyr::group_by(LTER) %>%
   dplyr::summarize(stream_ct = length(unique(stream)),
-                   season_ct = length(unique(season)))
+                   month_ct = length(unique(Month)))
 
 # Check lost/gained columns
 supportR::diff_check(old = names(data_v0), new = names(data_simp))
 
 ## ----------------------------------------- ##
-# Pre-Loop Preparation ----
+          # Pre-Loop Preparation ----
 ## ----------------------------------------- ##
 
 # Identify response (Y) and explanatory (X) variables
