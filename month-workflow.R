@@ -152,7 +152,7 @@ if(all(is.na(data_short[[response_var]])) == T){
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("seasonal_", response_var, "_", element, "_bw", bandwidth))
+(export_folder <- paste0("monthly_", response_var, "_", element, "_bw", bandwidth))
 dir.create(path = export_folder, showWarnings = FALSE)
 
 # Make an empty list to store all of our extracted information
@@ -162,7 +162,7 @@ giant_list <- list()
 j <- 1
 
 ## ----------------------------------------- ##
-# Extract SiZer Data ----
+          # Extract SiZer Data ----
 ## ----------------------------------------- ##
 
 # Loop through sites and extract information
