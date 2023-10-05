@@ -199,12 +199,6 @@ for(place in unique(data_short$stream)) {
     # Make a shorter place name
     place_short <- stringr::str_sub(string = place, start = 1, end = 8)
     
-    # Plot (and export) the SiZer object with horizontal lines of interest
-    png(filename = file.path(export_folder, paste0(place_short, "_", focal_month, "_SiZer-plot.png")),
-        width = 5, height = 5, res = 720, units = 'in')
-    HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(bandwidth))
-    dev.off()
-    
     # Identify inflection points/slope changes
     sizer_info <- HERON::sizer_slice(sizer_object = e, bandwidth = bandwidth)
     
