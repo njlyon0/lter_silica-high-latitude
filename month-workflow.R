@@ -177,14 +177,14 @@ for(place in unique(data_short$stream)) {
     as.data.frame()
   
   # Loop across seasons
-  for(focal_season in unique(data_sub$season)){
+  for(focal_month in unique(data_sub$Month)){
     
     # Processing message
-    message("Working on season: ", focal_season)
+    message("Working on month: ", focal_month)
     
     # Filter the data to just that season
     data_sub2 <- data_sub %>%
-      dplyr::filter(season == focal_season) %>%
+      dplyr::filter(Month == focal_month) %>%
       as.data.frame()
     
     # Loop - Get SiZer Object ----
@@ -200,7 +200,7 @@ for(place in unique(data_short$stream)) {
     place_short <- stringr::str_sub(string = place, start = 1, end = 8)
     
     # Plot (and export) the SiZer object with horizontal lines of interest
-    png(filename = file.path(export_folder, paste0(place_short, "_", focal_season, "_SiZer-plot.png")),
+    png(filename = file.path(export_folder, paste0(place_short, "_", focal_month, "_SiZer-plot.png")),
         width = 5, height = 5, res = 720, units = 'in')
     HERON::sizer_plot(sizer_object = e, bandwidth_vec = c(bandwidth))
     dev.off()
@@ -275,7 +275,7 @@ for(place in unique(data_short$stream)) {
     
     # Export whichever graph got made
     ggplot2::ggsave(plot = demo_plot, height = 8, width = 8, units = "in",
-                    filename = file.path(export_folder, paste0(place_short, "_", focal_season, "_ggplot.png")))
+                    filename = file.path(export_folder, paste0(place_short, "_", focal_month, "_ggplot.png")))
     
     # Loop - Wrangle SiZer Data ----
     message("Wrangling SiZer data...")
@@ -285,12 +285,12 @@ for(place in unique(data_short$stream)) {
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
       dplyr::mutate(bandwidth_h = bandwidth,
                     Stream_Name = place, 
-                    season = focal_season,
+                    season = focal_month,
                     .before = dplyr::everything()) %>%
       as.data.frame()
     
     # Add this tidied dataframe to our export list
-    giant_list[[paste0("data_", focal_season, "_", j)]] <- sizer_export
+    giant_list[[paste0("data_", focal_month, "_", j)]] <- sizer_export
     
     # Loop - Fit Linear Models ----
     message("Fit regressions...")
@@ -308,17 +308,17 @@ for(place in unique(data_short$stream)) {
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
       # Add a site/season column
       dplyr::mutate(Stream_Name = place,
-                    season = focal_season,
+                    season = focal_month,
                     .before = dplyr::everything())
     
     # Final dataframe processing for *estimates*
     est_df <- lm_obj[[2]] %>%
       dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-      dplyr::mutate(Stream_Name = place, season = focal_season, .before = dplyr::everything())
+      dplyr::mutate(Stream_Name = place, season = focal_month, .before = dplyr::everything())
     
     # Add this information to their respective lists
-    giant_list[[paste0("stats_", focal_season, "_", j)]] <- stat_df
-    giant_list[[paste0("estimates_", focal_season, "_", j)]] <- est_df
+    giant_list[[paste0("stats_", focal_month, "_", j)]] <- stat_df
+    giant_list[[paste0("estimates_", focal_month, "_", j)]] <- est_df
     
   } # Close season loop
   
