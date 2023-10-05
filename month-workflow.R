@@ -326,7 +326,7 @@ for(place in unique(data_short$stream)) {
 } # Close stream loop
 
 ## ----------------------------------------- ##
-# Process Loop Outputs ----
+        # Process Loop Outputs ----
 ## ----------------------------------------- ##
 
 # Check out what is in our huge list
@@ -417,7 +417,7 @@ dplyr::glimpse(years_v2)
 # Combine these data files
 combo_v1 <- years_v2 %>%
   # Attach statistical information to response data
-  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, Stream_Name, section, season)) %>%
+  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, Stream_Name, section, Month)) %>%
   # Attach estimate information to response data
   dplyr::left_join(est_v2, by = join_by(bandwidth_h, Stream_Name, section, Month))
 
@@ -489,7 +489,7 @@ dplyr::glimpse(combo_v3)
 ## view(combo_v3)
 
 ## ----------------------------------------- ##
-# Export ----
+                # Export ----
 ## ----------------------------------------- ##
 
 # Create folder to export this type of output too
