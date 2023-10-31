@@ -1,14 +1,14 @@
 ## ------------------------------------------------------- ##
-# Seasonal Data - Exploratory Graphing
+          # Monthly Data - Exploratory Graphing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
 # PURPOSE:
-## Make exploratory data visualizations for *seasonal* data
+## Make exploratory data visualizations for *monthly* data
 ## "Exploratory" in that they may not be publication quality but are still useful tools
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
@@ -22,12 +22,25 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# Data Prep ----
+              # Data Prep ----
 ## ----------------------------------------- ##
 
+# Identify the filename
+file_name <- "stats-ready_monthly_Conc_uM_DSi_bw5.csv"
+
 # Grab the desired data file
-full_df <- read.csv(file = file.path("tidy_data", 
-                                     "stats-ready_seasonal_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
+full_v0 <- read.csv(file = file.path("tidy_data", file_name))
+
+# Glimpse it
+dplyr::glimpse(full_v0)
+
+
+
+
+
+
+# Do some processing
+full_df <- full_v0 %>% 
   # Factor season to get the order how we want it
   dplyr::mutate(season = factor(season, 
                                 levels = c("winter", "snowmelt", "growing season", "fall"))) %>%
