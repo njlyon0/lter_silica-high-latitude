@@ -34,22 +34,14 @@ full_v0 <- read.csv(file = file.path("tidy_data", file_name))
 # Glimpse it
 dplyr::glimpse(full_v0)
 
-
-
-
-
-
 # Do some processing
 full_df <- full_v0 %>% 
-  # Factor season to get the order how we want it
-  dplyr::mutate(season = factor(season, 
-                                levels = c("winter", "snowmelt", "growing season", "fall"))) %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
   dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
                                                      "neg-marg", "neg-sig", "NA", "NS")),
                 dir_fit = factor(dir_fit, 
                                  levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
-                                            "neg-bad", "neg-fine", "neg-good", "neg-great", 
+                                            "neg-bad", "neg-fine", "neg-good", "neg-great",
                                             "NA", "NS")))
 
 # Check its structure
@@ -58,16 +50,21 @@ dplyr::glimpse(full_df)
 # Make a data object with only the columns that we'll want
 core_df <- full_df %>%
   # Arrange by LTER, site, and season
-  dplyr::arrange(LTER, Stream_Name, season) %>%
+  dplyr::arrange(LTER, Stream_Name, Month) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, stream, season, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error,
+  dplyr::select(sizer_groups, LTER, Stream_Name, stream, Month, 
+                chemical:section_duration, 
+                F_statistic:line_fit, 
+                slope_estimate:slope_std_error,
                 dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(core_df)
+
+# What do we drop with that operation?
+supportR::diff_check(old = names(full_df), new = names(core_df))
 
 # Filter the simplified data object to only significant rivers with a good fit
 sig_only <- core_df %>%
