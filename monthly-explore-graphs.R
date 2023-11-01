@@ -49,7 +49,7 @@ dplyr::glimpse(full_df)
 
 # Make a data object with only the columns that we'll want
 core_df <- full_df %>%
-  # Arrange by LTER, site, and season
+  # Arrange by LTER, site, and month
   dplyr::arrange(LTER, Stream_Name, Month) %>%
   # Pare down to only needed columns
   dplyr::select(sizer_groups, LTER, Stream_Name, stream, Month, 
@@ -81,7 +81,7 @@ sig_only <- core_df %>%
 dplyr::glimpse(sig_only)
 
 ## ----------------------------------------- ##
-# Plotting Prep ----
+              # Plotting Prep ----
 ## ----------------------------------------- ##
 
 # Grab useful information for informative file names for these graphs
@@ -111,7 +111,7 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 ## ----------------------------------------- ##
-# 'Bookmark Graphs' - Full Data ----
+     # 'Bookmark Graphs' - Full Data ----
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
@@ -125,8 +125,8 @@ core_hlines <- core_df %>%
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
-  # Facet by season
-  facet_grid(. ~ season) +
+  # Facet by month
+  facet_grid(. ~ Month) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
@@ -138,12 +138,12 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("seasonal_full", file_prefix, "sig-bookmark.png")),
-       height = 8, width = 15, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_full", file_prefix, "sig-bookmark.png")),
+       height = 8, width = 20, units = "in")
 
 # Make the same graph for r2 + slope direction
 ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
-  facet_grid(. ~ season) +
+  facet_grid(. ~ Month) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
   geom_hline(yintercept = (core_hlines$stream_cumulative + 0.5)) +
@@ -152,11 +152,11 @@ ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("seasonal_full", file_prefix, "fit-bookmark.png")),
-       height = 8, width = 15, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_full", file_prefix, "fit-bookmark.png")),
+       height = 8, width = 20, units = "in")
 
 ## ----------------------------------------- ##
-# 'Bookmark Graphs' - Sig. Only ----
+    # 'Bookmark Graphs' - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
@@ -170,7 +170,7 @@ sig_hlines <- sig_only %>%
 
 # Make a graph showing the slope direction and significance for all streams
 ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
-  facet_grid(. ~ season) +
+  facet_grid(. ~ Month) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
@@ -181,12 +181,12 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
   theme(legend.title = element_blank())
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "sig-bookmark.png")),
-       height = 5, width = 12, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "sig-bookmark.png")),
+       height = 6, width = 20, units = "in")
 
 # Make the same graph for r2 + slope direction
 ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
-  facet_grid(. ~ season) +
+  facet_grid(. ~ Month) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_fit_palt) +
   geom_hline(yintercept = (sig_hlines$stream_cumulative + 0.5)) +
@@ -195,21 +195,21 @@ ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
   theme(legend.title = element_blank())
 
 # Export this graph too
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "fit-bookmark.png")),
-       height = 5, width = 12, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "fit-bookmark.png")),
+       height = 6, width = 20, units = "in")
 
 ## ----------------------------------------- ##
-# Slope + Duration - Sig. Only ----
+      # Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, season, section_duration, slope_estimate, slope_std_error) %>%
+  dplyr::select(stream, Month, section_duration, slope_estimate, slope_std_error) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration for only significant line chunks
 ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
-  facet_grid(. ~ season) +
+  facet_grid(. ~ Month) +
   geom_col() +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
                     xmin = slope_estimate - slope_std_error),
@@ -220,21 +220,21 @@ ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "slope-duration-barplot.png")),
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "slope-duration-barplot.png")),
        height = 8, width = 12, units = "in")
 
 ## ----------------------------------------- ##
-# Perc. Change + Duration - Sig. Only ----
+  # Perc. Change + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, season, section_duration, percent_change) %>%
+  dplyr::select(stream, Month, section_duration, percent_change) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration for only significant line chunks
 ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
-  facet_grid(. ~ season) +
+  facet_grid(. ~ Month) +
   geom_col() +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(title = paste("Significant changes in", chem, resp),
@@ -242,61 +242,61 @@ ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
   theme_bw()
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "perc-change-duration-barplot.png")),
-       height = 8, width = 12, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "perc-change-duration-barplot.png")),
+       height = 8, width = 20, units = "in")
 
 ## ----------------------------------------- ##
-# Slope Boxplots ----
+            # Slope Boxplots ----
 ## ----------------------------------------- ##
 
 # Pare down the data to only needed information
 sig_simp <- sig_only %>%
-  dplyr::select(LTER, stream, season, slope_estimate) %>%
+  dplyr::select(LTER, stream, Month, slope_estimate) %>%
   dplyr::distinct()
 
 # Make graph
-ggplot(sig_simp, aes(x = season, y = slope_estimate, fill = LTER)) +
+ggplot(sig_simp, aes(x = as.factor(Month), y = slope_estimate, fill = LTER)) +
   geom_boxplot() +
   geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
   geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   # Facet by LTER
   facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
   # Custom theming / labels
-  labs(x = "Season", y = "Slope",
-       title = paste("Significant seasonal changes in", chem, resp)) +
+  labs(x = "Month", y = "Slope",
+       title = paste("Significant monthly changes in", chem, resp)) +
   theme_classic()+
   theme(legend.position = "none",
         strip.background = element_blank())
 
 # Export it
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "slope-boxplot.png")),
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "slope-boxplot.png")),
        height = 8, width = 12, units = "in")
 
 ## ----------------------------------------- ##
-# Percent Change Boxplots ----
+        # Percent Change Boxplots ----
 ## ----------------------------------------- ##
 
 # Pare down the data to only needed information
 sig_simp <- sig_only %>%
-  dplyr::select(LTER, stream, season, percent_change) %>%
+  dplyr::select(LTER, stream, Month, percent_change) %>%
   dplyr::distinct()
 
 # Make graph
-ggplot(sig_simp, aes(x = season, y = percent_change, fill = LTER)) +
+ggplot(sig_simp, aes(x = as.factor(Month), y = percent_change, fill = LTER)) +
   geom_boxplot() +
   geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
   geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   # Facet by LTER
   facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
   # Custom theming / labels
-  labs(x = "Season", y = "Percent Change (%)",
-       title = paste("Significant seasonal changes in", chem, resp)) +
+  labs(x = "Month", y = "Percent Change (%)",
+       title = paste("Significant monthly changes in", chem, resp)) +
   theme_classic()+
   theme(legend.position = "none",
         strip.background = element_blank())
 
 # Export it
-ggsave(filename = file.path("graphs", paste0("seasonal_sig-only", file_prefix, "perc-change-boxplot.png")),
-       height = 8, width = 12, units = "in")
+ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "perc-change-boxplot.png")),
+       height = 8, width = 20, units = "in")
 
 # End ----
