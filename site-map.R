@@ -128,30 +128,28 @@ lims <- list( "high" = list("lat" = c(55, 75), "lon" = c(-152, 165)),
 # Site Map Creation ----
 ## ------------------------------------------ ##
 
-# Make map figure!
-fig1c <- combo %>% 
+map_high <- borders %>% 
   ggplot() +
   geom_sf(fill = "gray95") +
   # Set map extent
-  coord_sf(xlim = lon_lims, ylim = lat_lims, expand = F) +
-  # Add forest cover information
-  geom_tile(data = lc_v3, aes(x = x, y = y), col = "darkolivegreen4", alpha = 0.5) +
-  # Add points for LTERs (and customize their aesthetics)
-  geom_point(data = lter_coords, aes(x = lon, y = lat, 
-                                     fill = LTER, shape = LTER), size = 4) +
-  scale_fill_manual(values = site_palette) +
-  scale_shape_manual(values = shp_palette) + # different shapes for each LTER
-  # Add labels for LTERs
-  geom_label(data = lter_coords, aes(x = lon, y = lat),
-             label = lter_coords$LTER, nudge_y = 3, size = 3, fontface = "bold", 
-             label.padding = unit(x = 0.15, units = "lines")) +
+  coord_sf(xlim = lims[["high"]][["lon"]], ylim = lims[["high"]][["lat"]], expand = F) +
+  # Add land cover of choice here
+  # geom_tile(data = ..., aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = hi_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
   # Tweak theme / formatting
   labs(x = "Longitude", y = "Latitude") +
-  scale_x_continuous(limits = lon_lims, breaks = seq(from = -150, to = -75, by = 25)) + 
-  scale_y_continuous(limits = lat_lims, breaks = seq(from = 20, to = 70, by = 15)) +
+  scale_x_continuous(limits = lims[["high"]][["lon"]], 
+                     breaks = seq(from = lims[["high"]][["lon"]][1], 
+                                  to = lims[["high"]][["lon"]][2], 
+                                  by = 25)) + 
+  scale_y_continuous(limits = lims[["high"]][["lat"]], 
+                     breaks = seq(from = lims[["high"]][["lat"]][1], 
+                                  to = lims[["high"]][["lat"]][2], 
+                                  by = 15)) +
   supportR::theme_lyon() +
   theme(legend.position = "none",
-        axis.text.y = element_text(angle = 90, vjust = 1, hjust = 0.5)); fig1c
+        axis.text.y = element_text(angle = 90, vjust = 1, hjust = 0.5)); map_high
 
 # Add label on the map
 cowplot::plot_grid(fig1c, labels = c("C"), nrow = 1)
