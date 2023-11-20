@@ -217,11 +217,6 @@ ggsave(filename = file.path("map_images", "northwest_map.png"),
 ggsave(filename = file.path("map_images", "south_map.png"),
        plot = map_lo, width = 6, height = 6, units = "in", dpi = 560)
 
-# Upload to Google Drive
-# googledrive::drive_upload(media = file.path("synchrony_figure_files", map_name),
-#                           path = googledrive::as_id(""),
-#                           overwrite = T)
-
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls())
 gc()
