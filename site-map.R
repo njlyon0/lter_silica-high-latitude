@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-        # Synchrony Figure Preparation
+          # High Latitude Site Map
 ## ------------------------------------------ ##
 # Written by: Nick J Lyon
 
@@ -11,7 +11,7 @@
 ## ------------------------------------------ ##
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, tidyverse, sf, maps, terra, njlyon0/supportR, cowplot)
+librarian::shelf(googledrive, tidyverse, readxl, sf, maps, terra, supportR, cowplot)
 
 # Clear environment
 rm(list = ls())
@@ -22,39 +22,55 @@ gc()
 # Create a folder to store necessary files (if it doesn't already exist)
 dir.create(path = file.path("map_data"), showWarnings = F)
 
-# Identify names of files this script requires
-coord_file <- "lter_site_coordinates.csv"
-landcover_file <- "gblulcgeo20.tif"
+# Identify needed files
+(wanted_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA")) %>% 
+    dplyr::bind_rows(googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk"))) %>% 
+    # Filter to only desired files
+    dplyr::filter(name %in% c("Site_Reference_Table")))
 
-# Check whether we already have the files
-(ready_files <- dir(path = file.path("map_data")))
+# Download those files
+purrr::walk2(.x = wanted_files$id, .y = wanted_files$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("map_data", .y)))
 
-# Identify the files in our desired Drive folder
-(map_files <- googledrive::drive_ls(googledrive::as_id("https://drive.google.com/drive/u/0/folders/1wo2xocmHx0isWwp3siX85rTFB9TvfnNx")) %>%
-  # Filter to only desired files
-  dplyr::filter(name %in% c(coord_file, landcover_file)) %>%
-  # And further remove any files we already have downloaded locally
-    ## Really want to avoid re-downloading the .tif if at all possible
-  dplyr::filter(!name %in% ready_files))
+# Read in those files
+ref_v0 <- readxl::read_excel(path = file.path("map_data", "Site_Reference_Table.xlsx"))
 
-# Download files we don't already have into the folder we have for them
-purrr::walk2(.x = map_files$id, 
-             .y = map_files$name,
-             .f = ~ googledrive::drive_download(file = googledrive::as_id(.x), 
-                                                path = file.path("map_data", .y),
-                                                overwrite = T))
+# Read in one of the SiZer outputs
+## Note this assumes that one of the `...-workflow.R` scripts has been run
+sizer_outs <- read.csv(file = file.path("sizer_outs", "annual_Conc_uM_DSi_bw5.csv"))
 
-# Gather up some needed plotting aesthetics
-# Site palette
-site_palette <- c("CWT" = "#bd0026", "LUQ" = "orange", "HBR" = "gold", 
-                  "AND" = "limegreen", "CDR" = "lightblue", "BNZ" = "#f1b6da", 
-                  "SEV" = "#9d4edd")
-# Define shape palette
-shp_palette <- c("AND" = 22, "BNZ" = 21, "CDR" = 24, "CWT" = 23, 
-                 "HBR" = 22, "LUQ" = 21, "SEV" = 24)
+# Wrangle the reference table to only the bits that we need
+ref_v1 <- ref_v0 %>% 
+  # Keep only a few columns
+  dplyr::select(LTER, Stream_Name, Latitude, Longitude) %>% 
+  # Pare down to only unique rows
+  dplyr::distinct() %>% 
+  # Generate a 'LTER + stream' column
+  dplyr::mutate(stream = paste0(LTER, "_", Stream_Name, .after = Stream_Name)) %>% 
+  # Rename some of those
+  dplyr::rename(lat = Latitude, lon = Longitude) %>% 
+  # Filter to only streams in the SiZer outputs
+  dplyr::filter(stream %in% unique(sizer_outs$stream))
+
+# Check for mismatch between the two
+supportR::diff_check(old = unique(sizer_outs$stream), new = unique(ref_v1$stream))
+
+# Final pre-map creation steps
+site_df <- sizer_outs %>% 
+  # Combine the sizer outputs with the reference table
+  dplyr::left_join(y = ref_v1, by = c("LTER", "Stream_Name", "stream")) %>% 
+  # Group by key columns and calculate average silica concentration
+  dplyr::group_by(LTER, Stream_Name, stream, drainSqKm, lat, lon) %>% 
+  dplyr::summarize(mean_si = mean(Conc_uM, na.rm = T),
+                   mean_abs_change = mean(abs(percent_change), na.rm = T)) %>% 
+  dplyr::ungroup()
+
+# Check structure
+dplyr::glimpse(site_df)
 
 # Clean up environment
-rm(list = setdiff(ls(), c("site_palette", "shp_palette")))
+rm(list = setdiff(x = ls(), y = c("site_df")))
 
 ## ------------------------------------------ ##
               # Site Map Prep ----

@@ -41,8 +41,9 @@ vignettes/*.pdf
 # R project
 *.Rproj
 
-# Ignore all CSVs
+# Ignore all data files
 *.csv
+*.xlsx
 
 # Ignore all graphs
 *.png
