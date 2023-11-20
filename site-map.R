@@ -73,25 +73,8 @@ dplyr::glimpse(site_df)
 rm(list = setdiff(x = ls(), y = c("site_df")))
 
 ## ------------------------------------------ ##
-              # Site Map Prep ----
+# Land Cover Prep ----
 ## ------------------------------------------ ##
-
-# Get country & US state borders
-borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
-  dplyr::bind_rows(sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)))
-
-# Split our site information into high vs. low latitudes
-hi_lats <- dplyr::filter(site_df, lat > 0)
-lo_lats <- dplyr::filter(site_df, lat < 0)
-
-# Check range of lat/long for both
-range(hi_lats$lat); range(hi_lats$lon)
-range(lo_lats$lat); range(lo_lats$lon)
-
-# Define borders of map so that the site points will be nicely inside the borders
-lims <- list( "high" = list("lat" = c(55, 75), "lon" = c(-152, 165)),
-              "low" = list("lat" = c(-70, -80), "lon" = c(155, 165)) )
-
 
 # Read in land cover raster
 # lulc <- terra::rast(x = file.path("map_data", "gblulcgeo20.tif"))
@@ -125,49 +108,119 @@ lims <- list( "high" = list("lat" = c(55, 75), "lon" = c(-152, 165)),
 # dplyr::glimpse(lc_v3)
 
 ## ------------------------------------------ ##
-# Site Map Creation ----
+              # Site Map Prep ----
 ## ------------------------------------------ ##
 
-map_high <- borders %>% 
+# Get country & US state borders
+borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
+  dplyr::bind_rows(sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)))
+
+# Split our site information into low latitudes vs E & W high latitudes
+e_lats <- dplyr::filter(site_df, lat > 0 & lon > 0)
+w_lats <- dplyr::filter(site_df, lat > 0 & lon < 0)
+lo_lats <- dplyr::filter(site_df, lat < 0)
+
+# Check range of lat/long for all limits
+range(e_lats$lat); range(e_lats$lon)
+range(w_lats$lat); range(w_lats$lon)
+range(lo_lats$lat); range(lo_lats$lon)
+
+# Define borders of maps so that the site points will be nicely inside the borders
+e_lims <- list("lat" = c(55, 75), "lon" = c(0, 170))
+w_lims <- list("lat" = c(55, 75), "lon" = c(-170, -135))
+lo_lims <- list("lat" = c(-80, -60), "lon" = c(135, 180)) 
+
+## ------------------------------------------ ##
+            # Site Map Creation ----
+## ------------------------------------------ ##
+
+# Define the bits of the map that all sub-maps will want to re-use
+core_map <-  borders %>% 
   ggplot() +
   geom_sf(fill = "gray95") +
-  # Set map extent
-  coord_sf(xlim = lims[["high"]][["lon"]], ylim = lims[["high"]][["lat"]], expand = F) +
-  # Add land cover of choice here
+  # Add land cover to this section
   # geom_tile(data = ..., aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = hi_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
-  # Tweak theme / formatting
+  # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
-  scale_x_continuous(limits = lims[["high"]][["lon"]], 
-                     breaks = seq(from = lims[["high"]][["lon"]][1], 
-                                  to = lims[["high"]][["lon"]][2], 
+  supportR::theme_lyon()
+
+# Make the high latitude Eastern map
+map_e <- core_map +
+  # Set map extent
+  coord_sf(xlim = e_lims[["lon"]], ylim = e_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = e_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Make axis tick marks nice and neat
+  scale_x_continuous(limits = e_lims[["lon"]], 
+                     breaks = seq(from = min(e_lims[["lon"]]), 
+                                  to = max(e_lims[["lon"]]), 
                                   by = 25)) + 
-  scale_y_continuous(limits = lims[["high"]][["lat"]], 
-                     breaks = seq(from = lims[["high"]][["lat"]][1], 
-                                  to = lims[["high"]][["lat"]][2], 
-                                  by = 15)) +
-  supportR::theme_lyon() +
-  theme(legend.position = "none",
-        axis.text.y = element_text(angle = 90, vjust = 1, hjust = 0.5)); map_high
+  scale_y_continuous(limits = e_lims[["lat"]], 
+                     breaks = seq(from = min(e_lims[["lat"]]), 
+                                  to = max(e_lims[["lat"]]), 
+                                  by = 15)) + 
+  # Remove legend (for now)
+  theme(legend.position = "none"); map_e
 
-# Add label on the map
-cowplot::plot_grid(fig1c, labels = c("C"), nrow = 1)
+# Make the high latitude Western map
+map_w <- core_map +
+  # Set map extent
+  coord_sf(xlim = w_lims[["lon"]], ylim = w_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = w_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Make axis tick marks nice and neat
+  scale_x_continuous(limits = w_lims[["lon"]], 
+                     breaks = seq(from = min(w_lims[["lon"]]), 
+                                  to = max(w_lims[["lon"]]), 
+                                  by = 25)) + 
+  scale_y_continuous(limits = w_lims[["lat"]], 
+                     breaks = seq(from = min(w_lims[["lat"]]), 
+                                  to = max(w_lims[["lat"]]), 
+                                  by = 15)) + 
+  # Remove legend (for now)
+  theme(legend.position = "none"); map_w
 
-# Make sure that the figure folder exists
-dir.create(path = file.path("synchrony_figure_files"), showWarnings = F)
+# Make the low latitude map
+map_lo <- core_map +
+  # Set map extent
+  coord_sf(xlim = lo_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = lo_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Make axis tick marks nice and neat
+  scale_x_continuous(limits = lo_lims[["lon"]], 
+                     breaks = seq(from = min(lo_lims[["lon"]]), 
+                                  to = max(lo_lims[["lon"]]), 
+                                  by = 25)) + 
+  scale_y_continuous(limits = lo_lims[["lat"]], 
+                     breaks = seq(from = min(lo_lims[["lat"]]), 
+                                  to = max(lo_lims[["lat"]]), 
+                                  by = 15)) + 
+  # Remove legend (for now)
+  theme(legend.position = "none"); map_lo
 
-# Name the map file
-map_name <- "sync_fig1C_map.png"
+# Combine these map panels in an intuitive way
+## Need to experiment more with this...
+cowplot::plot_grid(cowplot::plot_grid(map_w, map_e, labels = c("A", "B", nrow = 1)),
+                   map_lo, labels = c("", "C"), ncol = 1)
 
-# Save locally
-ggsave(filename = file.path("synchrony_figure_files", map_name),
-       plot = last_plot(), width = 6, height = 6, units = "in", dpi = 420)
+# Make a folder for these
+dir.create(path = file.path("map_images"), showWarnings = F)
+
+# Save each panel locally
+## East
+ggsave(filename = file.path("map_images", "northeast_map.png"),
+       plot = map_e, width = 8, height = 6, units = "in", dpi = 560)
+## West
+ggsave(filename = file.path("map_images", "northwest_map.png"),
+       plot = map_w, width = 6, height = 6, units = "in", dpi = 560)
+## South
+ggsave(filename = file.path("map_images", "south_map.png"),
+       plot = map_lo, width = 6, height = 6, units = "in", dpi = 560)
 
 # Upload to Google Drive
-googledrive::drive_upload(media = file.path("synchrony_figure_files", map_name),
-                          path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1wZqCP-axj9KUfAaiPJsTamc03zsgngCY"),
-                          overwrite = T)
+# googledrive::drive_upload(media = file.path("synchrony_figure_files", map_name),
+#                           path = googledrive::as_id(""),
+#                           overwrite = T)
 
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls())
