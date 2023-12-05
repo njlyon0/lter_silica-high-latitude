@@ -57,7 +57,7 @@ ref_v1 <- ref_v0 %>%
                                      no = site_simp),
                 stream = paste0(LTER_abbrev, "_", site_abbrev), .after = Stream_Name) %>% 
   # Drop intermediary columns
-  dplyr::select(-dplyr::ends_with("_abbrev")) %>% 
+  dplyr::select(-dplyr::ends_with("_abbrev"), -site_simp) %>% 
   # Rename some of those
   dplyr::rename(lat = Latitude, lon = Longitude) %>% 
   # Filter to only streams in the SiZer outputs
