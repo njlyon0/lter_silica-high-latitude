@@ -46,9 +46,18 @@ ref_v1 <- ref_v0 %>%
   dplyr::select(LTER, Stream_Name, Latitude, Longitude) %>% 
   # Pare down to only unique rows
   dplyr::distinct() %>% 
-  # Generate a 'LTER + stream' column
-  dplyr::mutate(stream = paste0(stringr::str_sub(LTER, start = 1, end = 4),
-                                "_", Stream_Name), .after = Stream_Name) %>% 
+  # Simplify river names slightly
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>%
+  # Create a column that combines LTER and stream names
+  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
+                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
+                                     no = LTER),
+                site_abbrev = ifelse(nchar(site_simp) > 14,
+                                     yes = stringr::str_sub(string = site_simp, start = 1, end = 14),
+                                     no = site_simp),
+                stream = paste0(LTER_abbrev, "_", site_abbrev), .after = Stream_Name) %>% 
+  # Drop intermediary columns
+  dplyr::select(-dplyr::ends_with("_abbrev")) %>% 
   # Rename some of those
   dplyr::rename(lat = Latitude, lon = Longitude) %>% 
   # Filter to only streams in the SiZer outputs
