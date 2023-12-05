@@ -47,7 +47,7 @@ ref_v1 <- ref_v0 %>%
   # Pare down to only unique rows
   dplyr::distinct() %>% 
   # Generate a 'LTER + stream' column
-  dplyr::mutate(stream = paste0(LTER, "_", Stream_Name, .after = Stream_Name)) %>% 
+  dplyr::mutate(stream = paste0(LTER, "_", Stream_Name), .after = Stream_Name) %>% 
   # Rename some of those
   dplyr::rename(lat = Latitude, lon = Longitude) %>% 
   # Filter to only streams in the SiZer outputs
