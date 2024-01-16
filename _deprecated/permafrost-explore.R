@@ -29,8 +29,9 @@ pf <- sf::st_read(dsn = file.path("permafrost_test", "permaice.shp"))
 sf::st_crs(x = pf)
 
 # Exploratory plot
-## NOTE: takes a few minutes to load
-plot(pf)
+## NOTE: waited 10 minutes and it doesn't work (plus crashed local RStudio)
+## Need to explore alternate options for visualization
+# plot(pf)
 
 
 
