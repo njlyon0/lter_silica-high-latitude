@@ -89,37 +89,40 @@ rm(list = setdiff(x = ls(), y = c("site_df")))
 ## https://apgc.awi.de/dataset/pex
 ## Note that I re-projected into WGS84 to match CRS of rivers
 
-# Read in permafrost data
-pf <- terra::rast(x = file.path("map_data", "permafrost-probability.tif"))
+# Need to process permafrost raster if it's not already present
+if("permafrost-simple.tif" %in% dir(path = file.path("map_data")) != T){
+  
+  # Read in permafrost data
+  pf <- terra::rast(x = file.path("map_data", "permafrost-probability.tif"))
+  
+  # Exploratory plot to make sure it looks OK
+  plot(pf, axes = T, main = "Permafrost probability")
+  
+  # Identify permafrost probability threshold we want to use as a cutoff
+  pf_thresh <- 0.6
+  
+  # Subset to only permafrost probabilities above a certain threshold
+  pf_v2 <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
+  
+  # Do another plot to see that worked
+  plot(pf_v2, axes = T, 
+       main = paste0("Permafrost probability ≥", (pf_thresh * 100), "%"))
+  
+  # And coerce all values above the threshold to a single value
+  pf_v3 <- terra::clamp(x = pf_v2, lower = 1, upper = 1, values = T)
+  
+  # One more demo plot
+  plot(pf_v3, axes = T, 
+       main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
+  
+  # Export our modified raster
+  terra::writeRaster(x = pf_v3, overwrite = T,
+                     filename = file.path("map_data", "permafrost-simple.tif"))
+  
+  # Clean up environment & collect garbage
+  rm(list = setdiff(x = ls(), y = c("site_df"))); gc() }
 
-# Exploratory plot to make sure it looks OK
-plot(pf, axes = T, main = "Permafrost probability")
-
-# Identify permafrost probability threshold we want to use as a cutoff
-pf_thresh <- 0.6
-
-# Subset to only permafrost probabilities above a certain threshold
-pf_v2 <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
-
-# Do another plot to see that worked
-plot(pf_v2, axes = T, 
-     main = paste0("Permafrost probability ≥", (pf_thresh * 100), "%"))
-
-# And coerce all values above the threshold to a single value
-pf_v3 <- terra::clamp(x = pf_v2, lower = 1, upper = 1, values = T)
-
-# One more demo plot
-plot(pf_v3, axes = T, 
-     main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
-
-# Export our modified raster
-terra::writeRaster(x = pf_v3, overwrite = T,
-                   filename = file.path("map_data", "permafrost-simple.tif"))
-
-# Clean up environment & collect garbage
-rm(list = setdiff(x = ls(), y = c("site_df"))); gc()
-
-# Read it back in as a stars object
+# Read permafrost tif back in as a stars object
 pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
 
 # One final demo plot
