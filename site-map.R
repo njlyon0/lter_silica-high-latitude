@@ -129,16 +129,20 @@ borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
 e_lats <- dplyr::filter(site_df, lat > 0 & lon > 0)
 w_lats <- dplyr::filter(site_df, lat > 0 & lon < 0)
 lo_lats <- dplyr::filter(site_df, lat < 0)
+high_lats <- dplyr::filter(site_df, lat > 0)
 
 # Check range of lat/long for all limits
 range(e_lats$lat); range(e_lats$lon)
 range(w_lats$lat); range(w_lats$lon)
 range(lo_lats$lat); range(lo_lats$lon)
+range(high_lats$lat); range(high_lats$lon)
 
 # Define borders of maps so that the site points will be nicely inside the borders
 e_lims <- list("lat" = c(55, 75), "lon" = c(0, 170))
 w_lims <- list("lat" = c(55, 75), "lon" = c(-170, -135))
-lo_lims <- list("lat" = c(-80, -60), "lon" = c(135, 180)) 
+low_lims <- list("lat" = c(-80, -60), "lon" = c(-180, 180)) #zoomed out
+lo_lims <- list("lat" = c(-80, -70), "lon" = c(150, 180)) #zoomed in
+high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170)) 
 
 ## ------------------------------------------ ##
             # Site Map Creation ----
@@ -190,7 +194,25 @@ map_w <- core_map +
   # Remove legend (for now)
   theme(legend.position = "none"); map_w
 
-# Make the low latitude map
+# Make the low latitude map - zoomed out
+map_low <- core_map +
+  # Set map extent
+  coord_sf(xlim = low_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = lo_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Make axis tick marks nice and neat
+  scale_x_continuous(limits = low_lims[["lon"]], 
+                     breaks = seq(from = min(low_lims[["lon"]]), 
+                                  to = max(low_lims[["lon"]]), 
+                                  by = 50)) + 
+  scale_y_continuous(limits = low_lims[["lat"]], 
+                     breaks = seq(from = min(low_lims[["lat"]]), 
+                                  to = max(low_lims[["lat"]]), 
+                                  by = 15)) + 
+  # Remove legend (for now)
+  theme(legend.position = "below"); map_low
+
+# Make the low latitude map - zoomed in
 map_lo <- core_map +
   # Set map extent
   coord_sf(xlim = lo_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
@@ -200,18 +222,36 @@ map_lo <- core_map +
   scale_x_continuous(limits = lo_lims[["lon"]], 
                      breaks = seq(from = min(lo_lims[["lon"]]), 
                                   to = max(lo_lims[["lon"]]), 
-                                  by = 25)) + 
+                                  by = 10)) + 
   scale_y_continuous(limits = lo_lims[["lat"]], 
                      breaks = seq(from = min(lo_lims[["lat"]]), 
                                   to = max(lo_lims[["lat"]]), 
+                                  by = 10)) + 
+  # Remove legend (for now)
+  theme(legend.position = "below"); map_lo
+
+# Make the high latitude all long map
+map_high <- core_map +
+  # Set map extent
+  coord_sf(xlim = high_lims[["lon"]], ylim = high_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aethetics
+  geom_point(data = high_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Make axis tick marks nice and neat
+  scale_x_continuous(limits = high_lims[["lon"]], 
+                     breaks = seq(from = min(high_lims[["lon"]]), 
+                                  to = max(high_lims[["lon"]]), 
+                                  by = 50)) + 
+  scale_y_continuous(limits = high_lims[["lat"]], 
+                     breaks = seq(from = min(high_lims[["lat"]]), 
+                                  to = max(high_lims[["lat"]]), 
                                   by = 15)) + 
   # Remove legend (for now)
-  theme(legend.position = "none"); map_lo
+  theme(legend.position = "bottom"); map_high
 
 # Combine these map panels in an intuitive way
 ## Need to experiment more with this...
-cowplot::plot_grid(cowplot::plot_grid(map_w, map_e, labels = c("A", "B", nrow = 1)),
-                   map_lo, labels = c("", "C"), ncol = 1)
+cowplot::plot_grid(cowplot::plot_grid(map_high, labels = c("A", nrow = 1)),
+                   map_low, labels = c("", "B"), ncol = 1)
 
 # Make a folder for these
 dir.create(path = file.path("map_images"), showWarnings = F)
