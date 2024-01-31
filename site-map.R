@@ -116,7 +116,7 @@ plot(pf_v4, axes = T,
      main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
 
 # Export our modified raster
-terra::writeRaster(x = pf_v4, overwrite = T, 
+terra::writeRaster(x = pf_v4, overwrite = T,
                    filename = file.path("map_data", "permafrost-simple.tif"))
 
 # Clean up environment & collect garbage
@@ -125,9 +125,11 @@ rm(list = setdiff(x = ls(), y = c("site_df"))); gc()
 # Read it back in as a stars object
 pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
 
-# Demo plot
-ggplot() +
-  geom_stars(data = pf_stars, downsample = 10)
+# One final demo plot
+ggplot() + 
+  geom_stars(data = pf_stars, downsample = 10) +
+  scale_fill_continuous(na.value = "transparent") +
+  theme(legend.position = "none")
 
 ## ------------------------------------------ ##
               # Site Map Prep ----
@@ -158,10 +160,12 @@ core_map <-  borders %>%
   ggplot() +
   geom_sf(fill = "gray95") +
   # Add permafrost to this section
-  # geom_tile(data = pf_list[[1]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_stars(data = pf_stars, downsample = 10) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
-  supportR::theme_lyon()
+  scale_fill_continuous(na.value = "transparent") +
+  supportR::theme_lyon() +
+  theme(legend.position = "none"); core_map
 
 # Make the low latitude map - zoomed out
 map_low <- core_map +
