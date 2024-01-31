@@ -122,53 +122,12 @@ terra::writeRaster(x = pf_v4, overwrite = T,
 # Clean up environment & collect garbage
 rm(list = setdiff(x = ls(), y = c("site_df"))); gc()
 
-## ------------------------------------------ ##
-            # Permafrost Prep ----
-## ------------------------------------------ ##
-
 # Read it back in as a stars object
 pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
 
-# Coerce to a simple features object
-pf_sf <- sf::st_as_sf(x = pf_stars)
-
-
+# Demo plot
 ggplot() +
   geom_stars(data = pf_stars, downsample = 10)
-
-# Make an empty list
-pf_list <- list()
-
-# Loop across some longitude ranges
-for(rng in c((60 * 0:2))){
-  
-  # Identify full range
-  span <- sort(c(rng, rng + 60))
-  
-  # Identify the negative span too
-  neg_span <- sort(span * -1)
-  
-  # Crop the raster to its positive and negative spans
-  pf_crop_pos <- terra::crop(x = pf_v4, y = terra::ext(x = c(span, 15, 90)))
-  pf_crop_neg <- terra::crop(x = pf_v4, y = terra::ext(x = c(neg_span, 15, 90)))
-  
-  # Coerce both to dataframes
-  pf_pos_df <- as.data.frame(pf_crop_pos, xy = T)
-  pf_neg_df <- as.data.frame(pf_crop_neg, xy = T)
-  
-  # Add each to the list
-  pf_list[[as.character(rng)]] <- pf_pos_df
-  pf_list[[paste0(as.character(rng), " negative")]] <- pf_neg_df
-  
-  # End with a processing message
-  message("Processing complete for '", paste0(span, collapse = " to "), 
-          "' and '", paste0(neg_span, collapse = " to "), "'") }
-
-# Check structure
-dplyr::glimpse(pf_list)
-
-# Clean up environment & collect garbage
-rm(list = setdiff(x = ls(), y = c("site_df", "pf_list"))); gc()
 
 ## ------------------------------------------ ##
               # Site Map Prep ----
