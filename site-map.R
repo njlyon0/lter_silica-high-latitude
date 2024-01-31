@@ -11,7 +11,7 @@
 ## ------------------------------------------ ##
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, tidyverse, purrr, readxl, sf, maps, terra, stars, supportR, cowplot)
+librarian::shelf(googledrive, tidyverse, readxl, sf, maps, terra, stars, supportR, cowplot)
 
 # Clear environment
 rm(list = ls())
@@ -162,15 +162,15 @@ core_map <-  borders %>%
   labs(x = "Longitude", y = "Latitude") +
   # scale_fill_continuous(na.value = "transparent") +
   supportR::theme_lyon() +
-  theme(legend.position = "none"); core_map
+  theme(legend.position = "none")
 
 # Make the low latitude map - zoomed out
 map_low <- core_map +
   # Set map extent
   coord_sf(xlim = low_lims[["lon"]], ylim = low_lims[["lat"]], expand = F) +
   # Add points for sites and customize point aesthetics
-  geom_point(data = low_lats, aes(x = lon, y = lat, 
-                                  color = mean_si, size = drainSqKm), shape = 19) +
+  geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si, 
+                                 size = drainSqKm), shape = 19, alpha = 0.75) +
   # Make axis tick marks nice and neat
   scale_x_continuous(limits = low_lims[["lon"]], 
                      breaks = seq(from = min(low_lims[["lon"]]), 
@@ -181,17 +181,19 @@ map_low <- core_map +
                                   to = max(low_lims[["lat"]]), 
                                   by = 15)) + 
   # Customize fill & color
-  scale_fill_gradient(low = "#48cae4", high = "#03045e", na.value = "transparent") +
+  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
   scale_color_gradient(low = "#780116", high = "#f7b538") +
+  # Customize point size bins
+  scale_size_binned(breaks = c(10^3, 10^6)) +
   # Put legend above map
-  theme(legend.position = "top") +
+  theme(legend.position = "top", legend.text = element_text(size = 6)) +
   guides(fill = "none"); map_low
 
 # Make the same graph for high latitude sites
 map_high <- core_map +
   coord_sf(xlim = high_lims[["lon"]], ylim = high_lims[["lat"]], expand = F) +
-  geom_point(data = high_lats, aes(x = lon, y = lat, color = mean_si, 
-                                   size = drainSqKm), shape = 19) +
+  geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si,
+                                 size = drainSqKm), shape = 19, alpha = 0.75) +
   scale_x_continuous(limits = high_lims[["lon"]], 
                      breaks = seq(from = min(high_lims[["lon"]]), 
                                   to = max(high_lims[["lon"]]), 
@@ -200,8 +202,9 @@ map_high <- core_map +
                      breaks = seq(from = min(high_lims[["lat"]]), 
                                   to = max(high_lims[["lat"]]), 
                                   by = 15)) + 
-  scale_fill_gradient(low = "#48cae4", high = "#03045e", na.value = "transparent") +
+  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
   scale_color_gradient(low = "#780116", high = "#f7b538") +
+  scale_size_binned(breaks = c(10^3, 10^6)) +
   theme(legend.position = "none") +
   guides(fill = "none"); map_high
 
