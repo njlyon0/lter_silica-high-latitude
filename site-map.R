@@ -108,15 +108,12 @@ plot(pf_v2, axes = T,
 # And coerce all values above the threshold to a single value
 pf_v3 <- terra::clamp(x = pf_v2, lower = 1, upper = 1, values = T)
 
-# Crop off the unneeded latitudes
-pf_v4 <- terra::crop(x = pf_v3, y = c(-180, 180, 15, 90))
-
 # One more demo plot
-plot(pf_v4, axes = T, 
+plot(pf_v3, axes = T, 
      main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
 
 # Export our modified raster
-terra::writeRaster(x = pf_v4, overwrite = T,
+terra::writeRaster(x = pf_v3, overwrite = T,
                    filename = file.path("map_data", "permafrost-simple.tif"))
 
 # Clean up environment & collect garbage
