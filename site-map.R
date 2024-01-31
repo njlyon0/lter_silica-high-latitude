@@ -11,7 +11,7 @@
 ## ------------------------------------------ ##
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, tidyverse, readxl, sf, maps, terra, supportR, cowplot)
+librarian::shelf(googledrive, tidyverse, purrr, readxl, sf, maps, terra, supportR, cowplot)
 
 # Clear environment
 rm(list = ls())
@@ -93,17 +93,66 @@ rm(list = setdiff(x = ls(), y = c("site_df")))
 pf <- terra::rast(x = file.path("map_data", "permafrost-probability.tif"))
 
 # Exploratory plot to make sure it looks OK
-plot(pf, axes = T)
+plot(pf, axes = T, main = "Permafrost probability")
 
 # Identify permafrost probability threshold we want to use as a cutoff
 pf_thresh <- 0.6
 
 # Subset to only permafrost probabilities above a certain threshold
-pf_sub <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
+pf_v2 <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
 
 # Do another plot to see that worked
-plot(pf_sub, axes = T, 
+plot(pf_v2, axes = T, 
      main = paste0("Permafrost probability ≥", (pf_thresh * 100), "%"))
+
+# And coerce all values above the threshold to a single value
+pf_v3 <- terra::clamp(x = pf_v2, lower = 1, upper = 1, values = T)
+
+# Crop off the unneeded latitudes
+pf_v4 <- terra::crop(x = pf_v3, y = c(-180, 180, 15, 90))
+
+# One more demo plot
+plot(pf_v4, axes = T, 
+     main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
+
+# Make an empty list
+pf_list <- list()
+
+# Loop across some longitude ranges
+for(rng in c((60 * 0:2))){
+  
+  # Identify full range
+  span <- sort(c(rng, rng + 60))
+  
+  # Identify the negative span too
+  neg_span <- sort(span * -1)
+  
+  # Crop the raster to its positive and negative spans
+  pf_crop_pos <- terra::crop(x = pf_v4, y = terra::ext(x = c(span, 15, 90)))
+  pf_crop_neg <- terra::crop(x = pf_v4, y = terra::ext(x = c(neg_span, 15, 90)))
+  
+  # Coerce both to dataframes
+  pf_pos_df <- as.data.frame(pf_crop_pos, xy = T)
+  pf_neg_df <- as.data.frame(pf_crop_neg, xy = T)
+  
+  # Bind them together
+  span_df <- dplyr::bind_rows(pf_pos_df, pf_neg_df)
+  
+  # Add to the list
+  pf_list[[as.character(rng)]] <- span_df
+  
+  # End with a processing message
+  message("Processing complete for '", paste0(span, collapse = " to "), 
+          "' and '", paste0(neg_span, collapse = " to "), "'") }
+
+# Unlist to a dataframe
+pf_df <- purrr::list_rbind(x = pf_list)
+
+# Check structure
+dplyr::glimpse(pf_df)
+
+# Clean up environment & collect garbage
+rm(list = setdiff(x = ls(), y = c("site_df", "pf_df"))); gc()
 
 ## ------------------------------------------ ##
               # Site Map Prep ----
@@ -140,8 +189,8 @@ high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170))
 core_map <-  borders %>% 
   ggplot() +
   geom_sf(fill = "gray95") +
-  # Add land cover to this section
-  geom_tile(data = pf_sub, col = "purple", alpha = 0.5) +
+  # Add permafrost to this section
+  geom_tile(data = pf_df, aes(x = x, y = y), col = "purple", alpha = 0.5) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
   supportR::theme_lyon()
