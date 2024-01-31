@@ -152,6 +152,9 @@ high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170))
             # Site Map Creation ----
 ## ------------------------------------------ ##
 
+# Get around weird issue with scientific notation
+options(scipen = 10000)
+
 # Define the bits of the map that all sub-maps will want to re-use
 core_map <-  borders %>% 
   ggplot() +
@@ -205,7 +208,8 @@ map_low <- core_map +
   scale_color_gradient(low = "#780116", high = "#f7b538") +
   scale_size_binned(breaks = c(10^3, 10^6)) +
   # Put legend above map
-  theme(legend.position = "top", legend.text = element_text(size = 6)) +
+  theme(legend.position = "right", 
+        legend.text = element_text(angle = 25)) +
   guides(fill = "none"); map_low
 
 # Combine these map panels in an intuitive way
@@ -215,7 +219,7 @@ cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
 dir.create(path = file.path("map_images"), showWarnings = F)
 
 # Save map
-ggsave(filename = file.path("map_images", "high-latitude_map.png"),
+ggsave(filename = file.path("map_images", "high-latitude_map.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
