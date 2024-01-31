@@ -164,36 +164,14 @@ core_map <-  borders %>%
   supportR::theme_lyon() +
   theme(legend.position = "none")
 
-# Make the low latitude map - zoomed out
-map_low <- core_map +
-  # Set map extent
-  coord_sf(xlim = low_lims[["lon"]], ylim = low_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aesthetics
-  geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si, 
-                                 size = drainSqKm), shape = 19, alpha = 0.75) +
-  # Make axis tick marks nice and neat
-  scale_x_continuous(limits = low_lims[["lon"]], 
-                     breaks = seq(from = min(low_lims[["lon"]]), 
-                                  to = max(low_lims[["lon"]]), 
-                                  by = 50)) + 
-  scale_y_continuous(limits = low_lims[["lat"]], 
-                     breaks = seq(from = min(low_lims[["lat"]]), 
-                                  to = max(low_lims[["lat"]]), 
-                                  by = 15)) + 
-  # Customize fill & color
-  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
-  scale_color_gradient(low = "#780116", high = "#f7b538") +
-  # Customize point size bins
-  scale_size_binned(breaks = c(10^3, 10^6)) +
-  # Put legend above map
-  theme(legend.position = "top", legend.text = element_text(size = 6)) +
-  guides(fill = "none"); map_low
-
 # Make the same graph for high latitude sites
 map_high <- core_map +
+  # Set map extent
   coord_sf(xlim = high_lims[["lon"]], ylim = high_lims[["lat"]], expand = F) +
+  # Add points for sites and customize point aesthetics
   geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si,
                                  size = drainSqKm), shape = 19, alpha = 0.75) +
+  # Make axis tick marks nice and neat
   scale_x_continuous(limits = high_lims[["lon"]], 
                      breaks = seq(from = min(high_lims[["lon"]]), 
                                   to = max(high_lims[["lon"]]), 
@@ -202,11 +180,33 @@ map_high <- core_map +
                      breaks = seq(from = min(high_lims[["lat"]]), 
                                   to = max(high_lims[["lat"]]), 
                                   by = 15)) + 
+  # Customize fill & color
   scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
   scale_color_gradient(low = "#780116", high = "#f7b538") +
+  # Customize point size bins
   scale_size_binned(breaks = c(10^3, 10^6)) +
   theme(legend.position = "none") +
   guides(fill = "none"); map_high
+
+# Make the low latitude map
+map_low <- core_map +
+  coord_sf(xlim = low_lims[["lon"]], ylim = low_lims[["lat"]], expand = F) +
+  geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si, 
+                                 size = drainSqKm), shape = 19, alpha = 0.75) +
+  scale_x_continuous(limits = low_lims[["lon"]], 
+                     breaks = seq(from = min(low_lims[["lon"]]), 
+                                  to = max(low_lims[["lon"]]), 
+                                  by = 50)) + 
+  scale_y_continuous(limits = low_lims[["lat"]], 
+                     breaks = seq(from = min(low_lims[["lat"]]), 
+                                  to = max(low_lims[["lat"]]), 
+                                  by = 15)) + 
+  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
+  scale_color_gradient(low = "#780116", high = "#f7b538") +
+  scale_size_binned(breaks = c(10^3, 10^6)) +
+  # Put legend above map
+  theme(legend.position = "top", legend.text = element_text(size = 6)) +
+  guides(fill = "none"); map_low
 
 # Combine these map panels in an intuitive way
 cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
