@@ -100,49 +100,10 @@ pf_thresh <- 0.6
 
 # Subset to only permafrost probabilities above a certain threshold
 pf_sub <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
-# pf_sub <- (pf > pf_thresh)
 
 # Do another plot to see that worked
 plot(pf_sub, axes = T, 
      main = paste0("Permafrost probability ≥", (pf_thresh * 100), "%"))
-
-# Coerce the raster into a dataframe with one row per XY coordinate
-# pf_df <- as.data.frame(pf_sub, xy = T)
-#   # Drop NA pixels
-#   
-# 
-# # Check structure of this
-# dplyr::glimpse(pf_df)
-
-
-
-# Crop to only North America
-# lulc_crop <- terra::crop(x = lulc, y = terra::ext(c(lon_lims, lat_lims)))
-
-# Demo plot to be sure that worked
-# plot(lulc_crop, axes = T)
-
-# Keep only tree categories
-# lc_v2 <- (lulc_crop %in% c(11:15)) # True forest only
-# lc_v2B <- (lulc_crop %in% c(6, 11:15, 18, 21)) # Forest + wooded areas
-# plot(lc_v2, axes = T)
-# plot(lc_v2B, axes = T)
-## 6: cropland/woodland mosaic
-## 11: deciduous broadleaf forest
-## 12: deciduous needleleaf forest
-## 13: evergreen broadleaf forest
-## 14: evergreen needleleaf forest
-## 15: mixed forest
-## 18: wooded wetland
-## 21: wooded tundra
-
-# Coerce the raster into a dataframe with one row per XY coordinate
-# lc_v3 <- as.data.frame(lc_v2, xy = T) %>%
-#   # Retain only true content pixels
-#   dplyr::filter(gblulcgeo20 != 0)
-# 
-# # Check that out
-# dplyr::glimpse(lc_v3)
 
 ## ------------------------------------------ ##
               # Site Map Prep ----
