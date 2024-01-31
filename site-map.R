@@ -137,23 +137,16 @@ ggplot() +
 borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
   dplyr::bind_rows(sf::st_as_sf(maps::map(database = "state", plot = F, fill = T)))
 
-# Split our site information into low latitudes vs E & W high latitudes
-e_lats <- dplyr::filter(site_df, lat > 0 & lon > 0)
-w_lats <- dplyr::filter(site_df, lat > 0 & lon < 0)
-lo_lats <- dplyr::filter(site_df, lat < 0)
+# Split our site information into polar regions
+low_lats <- dplyr::filter(site_df, lat < 0)
 high_lats <- dplyr::filter(site_df, lat > 0)
 
 # Check range of lat/long for all limits
-range(e_lats$lat); range(e_lats$lon)
-range(w_lats$lat); range(w_lats$lon)
-range(lo_lats$lat); range(lo_lats$lon)
+range(low_lats$lat); range(low_lats$lon)
 range(high_lats$lat); range(high_lats$lon)
 
 # Define borders of maps so that the site points will be nicely inside the borders
-e_lims <- list("lat" = c(55, 75), "lon" = c(0, 170))
-w_lims <- list("lat" = c(55, 75), "lon" = c(-170, -135))
-low_lims <- list("lat" = c(-80, -60), "lon" = c(-180, 180)) #zoomed out
-lo_lims <- list("lat" = c(-80, -70), "lon" = c(150, 180)) #zoomed in
+low_lims <- list("lat" = c(-80, -60), "lon" = c(-180, 180))
 high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170)) 
 
 ## ------------------------------------------ ##
@@ -165,58 +158,17 @@ core_map <-  borders %>%
   ggplot() +
   geom_sf(fill = "gray95") +
   # Add permafrost to this section
-  geom_tile(data = pf_list[[1]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  geom_tile(data = pf_list[[2]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  geom_tile(data = pf_list[[3]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  geom_tile(data = pf_list[[4]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  geom_tile(data = pf_list[[5]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
-  geom_tile(data = pf_list[[6]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  # geom_tile(data = pf_list[[1]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
   supportR::theme_lyon()
 
-# Make the high latitude Eastern map
-map_e <- core_map +
-  # Set map extent
-  coord_sf(xlim = e_lims[["lon"]], ylim = e_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = e_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
-  # Make axis tick marks nice and neat
-  scale_x_continuous(limits = e_lims[["lon"]], 
-                     breaks = seq(from = min(e_lims[["lon"]]), 
-                                  to = max(e_lims[["lon"]]), 
-                                  by = 25)) + 
-  scale_y_continuous(limits = e_lims[["lat"]], 
-                     breaks = seq(from = min(e_lims[["lat"]]), 
-                                  to = max(e_lims[["lat"]]), 
-                                  by = 15)) + 
-  # Remove legend (for now)
-  theme(legend.position = "none"); map_e
-
-# Make the high latitude Western map
-map_w <- core_map +
-  # Set map extent
-  coord_sf(xlim = w_lims[["lon"]], ylim = w_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = w_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
-  # Make axis tick marks nice and neat
-  scale_x_continuous(limits = w_lims[["lon"]], 
-                     breaks = seq(from = min(w_lims[["lon"]]), 
-                                  to = max(w_lims[["lon"]]), 
-                                  by = 25)) + 
-  scale_y_continuous(limits = w_lims[["lat"]], 
-                     breaks = seq(from = min(w_lims[["lat"]]), 
-                                  to = max(w_lims[["lat"]]), 
-                                  by = 15)) + 
-  # Remove legend (for now)
-  theme(legend.position = "none"); map_w
-
 # Make the low latitude map - zoomed out
 map_low <- core_map +
   # Set map extent
-  coord_sf(xlim = low_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
+  coord_sf(xlim = low_lims[["lon"]], ylim = low_lims[["lat"]], expand = F) +
   # Add points for sites and customize point aethetics
-  geom_point(data = lo_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  geom_point(data = low_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
   # Make axis tick marks nice and neat
   scale_x_continuous(limits = low_lims[["lon"]], 
                      breaks = seq(from = min(low_lims[["lon"]]), 
@@ -228,24 +180,6 @@ map_low <- core_map +
                                   by = 15)) + 
   # Remove legend (for now)
   theme(legend.position = "below"); map_low
-
-# Make the low latitude map - zoomed in
-map_lo <- core_map +
-  # Set map extent
-  coord_sf(xlim = lo_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = lo_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
-  # Make axis tick marks nice and neat
-  scale_x_continuous(limits = lo_lims[["lon"]], 
-                     breaks = seq(from = min(lo_lims[["lon"]]), 
-                                  to = max(lo_lims[["lon"]]), 
-                                  by = 10)) + 
-  scale_y_continuous(limits = lo_lims[["lat"]], 
-                     breaks = seq(from = min(lo_lims[["lat"]]), 
-                                  to = max(lo_lims[["lat"]]), 
-                                  by = 10)) + 
-  # Remove legend (for now)
-  theme(legend.position = "below"); map_lo
 
 # Make the high latitude all long map
 map_high <- core_map +
@@ -266,26 +200,16 @@ map_high <- core_map +
   theme(legend.position = "bottom"); map_high
 
 # Combine these map panels in an intuitive way
-## Need to experiment more with this...
-cowplot::plot_grid(cowplot::plot_grid(map_high, labels = c("A", nrow = 1)),
-                   map_low, labels = c("", "B"), ncol = 1)
+cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
 
 # Make a folder for these
 dir.create(path = file.path("map_images"), showWarnings = F)
 
-# Save each panel locally
-## East
-ggsave(filename = file.path("map_images", "northeast_map.png"),
-       plot = map_e, width = 8, height = 6, units = "in", dpi = 560)
-## West
-ggsave(filename = file.path("map_images", "northwest_map.png"),
-       plot = map_w, width = 6, height = 6, units = "in", dpi = 560)
-## South
-ggsave(filename = file.path("map_images", "south_map.png"),
-       plot = map_lo, width = 6, height = 6, units = "in", dpi = 560)
+# Save map
+ggsave(filename = file.path("map_images", "high-latitude_map.png"),
+       plot = last_plot(), width = 8, height = 12, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
-rm(list = ls())
-gc()
+rm(list = ls()); gc()
 
 # End ----
