@@ -83,11 +83,38 @@ dplyr::glimpse(site_df)
 rm(list = setdiff(x = ls(), y = c("site_df")))
 
 ## ------------------------------------------ ##
-# Land Cover Prep ----
+              # Permafrost Prep ----
 ## ------------------------------------------ ##
+# For more information on permafrost data see:
+## https://apgc.awi.de/dataset/pex
+## Note that I re-projected into WGS84 to match CRS of rivers
 
-# Read in land cover raster
-# lulc <- terra::rast(x = file.path("map_data", "gblulcgeo20.tif"))
+# Read in permafrost data
+pf <- terra::rast(x = file.path("map_data", "permafrost-probability.tif"))
+
+# Exploratory plot to make sure it looks OK
+plot(pf, axes = T)
+
+# Identify permafrost probability threshold we want to use as a cutoff
+pf_thresh <- 0.6
+
+# Subset to only permafrost probabilities above a certain threshold
+pf_sub <- terra::clamp(x = pf, lower = pf_thresh, upper = 1, values = F)
+# pf_sub <- (pf > pf_thresh)
+
+# Do another plot to see that worked
+plot(pf_sub, axes = T, 
+     main = paste0("Permafrost probability ≥", (pf_thresh * 100), "%"))
+
+# Coerce the raster into a dataframe with one row per XY coordinate
+# pf_df <- as.data.frame(pf_sub, xy = T)
+#   # Drop NA pixels
+#   
+# 
+# # Check structure of this
+# dplyr::glimpse(pf_df)
+
+
 
 # Crop to only North America
 # lulc_crop <- terra::crop(x = lulc, y = terra::ext(c(lon_lims, lat_lims)))
@@ -153,7 +180,7 @@ core_map <-  borders %>%
   ggplot() +
   geom_sf(fill = "gray95") +
   # Add land cover to this section
-  # geom_tile(data = ..., aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_sub, col = "purple", alpha = 0.5) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
   supportR::theme_lyon()
