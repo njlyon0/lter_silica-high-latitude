@@ -163,7 +163,7 @@ core_map <-  borders %>%
   geom_stars(data = pf_stars, downsample = 10) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
-  scale_fill_continuous(na.value = "transparent") +
+  # scale_fill_continuous(na.value = "transparent") +
   supportR::theme_lyon() +
   theme(legend.position = "none"); core_map
 
@@ -171,8 +171,9 @@ core_map <-  borders %>%
 map_low <- core_map +
   # Set map extent
   coord_sf(xlim = low_lims[["lon"]], ylim = low_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = low_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
+  # Add points for sites and customize point aesthetics
+  geom_point(data = low_lats, aes(x = lon, y = lat, 
+                                  color = mean_si, size = drainSqKm), shape = 19) +
   # Make axis tick marks nice and neat
   scale_x_continuous(limits = low_lims[["lon"]], 
                      breaks = seq(from = min(low_lims[["lon"]]), 
@@ -182,16 +183,18 @@ map_low <- core_map +
                      breaks = seq(from = min(low_lims[["lat"]]), 
                                   to = max(low_lims[["lat"]]), 
                                   by = 15)) + 
-  # Remove legend (for now)
-  theme(legend.position = "below"); map_low
+  # Customize fill & color
+  scale_fill_gradient(low = "#48cae4", high = "#03045e", na.value = "transparent") +
+  scale_color_gradient(low = "#780116", high = "#f7b538") +
+  # Put legend above map
+  theme(legend.position = "top") +
+  guides(fill = "none"); map_low
 
-# Make the high latitude all long map
+# Make the same graph for high latitude sites
 map_high <- core_map +
-  # Set map extent
   coord_sf(xlim = high_lims[["lon"]], ylim = high_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aethetics
-  geom_point(data = high_lats, aes(x = lon, y = lat, fill = mean_si, size = drainSqKm), shape = 21) +
-  # Make axis tick marks nice and neat
+  geom_point(data = high_lats, aes(x = lon, y = lat, color = mean_si, 
+                                   size = drainSqKm), shape = 19) +
   scale_x_continuous(limits = high_lims[["lon"]], 
                      breaks = seq(from = min(high_lims[["lon"]]), 
                                   to = max(high_lims[["lon"]]), 
@@ -200,8 +203,10 @@ map_high <- core_map +
                      breaks = seq(from = min(high_lims[["lat"]]), 
                                   to = max(high_lims[["lat"]]), 
                                   by = 15)) + 
-  # Remove legend (for now)
-  theme(legend.position = "bottom"); map_high
+  scale_fill_gradient(low = "#48cae4", high = "#03045e", na.value = "transparent") +
+  scale_color_gradient(low = "#780116", high = "#f7b538") +
+  theme(legend.position = "none") +
+  guides(fill = "none"); map_high
 
 # Combine these map panels in an intuitive way
 cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
@@ -211,7 +216,7 @@ dir.create(path = file.path("map_images"), showWarnings = F)
 
 # Save map
 ggsave(filename = file.path("map_images", "high-latitude_map.png"),
-       plot = last_plot(), width = 8, height = 12, units = "in", dpi = 560)
+       plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls()); gc()
