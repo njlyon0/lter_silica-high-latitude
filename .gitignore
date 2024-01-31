@@ -47,6 +47,7 @@ permafrost_test/
 # Ignore all data files
 *.csv
 *.xlsx
+*.tif
 
 # Ignore all graphs
 *.png
