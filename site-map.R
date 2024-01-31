@@ -11,7 +11,7 @@
 ## ------------------------------------------ ##
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, tidyverse, purrr, readxl, sf, maps, terra, supportR, cowplot)
+librarian::shelf(googledrive, tidyverse, purrr, readxl, sf, maps, terra, stars, supportR, cowplot)
 
 # Clear environment
 rm(list = ls())
@@ -83,7 +83,7 @@ dplyr::glimpse(site_df)
 rm(list = setdiff(x = ls(), y = c("site_df")))
 
 ## ------------------------------------------ ##
-              # Permafrost Prep ----
+          # Permafrost Wrangling ----
 ## ------------------------------------------ ##
 # For more information on permafrost data see:
 ## https://apgc.awi.de/dataset/pex
@@ -115,6 +115,27 @@ pf_v4 <- terra::crop(x = pf_v3, y = c(-180, 180, 15, 90))
 plot(pf_v4, axes = T, 
      main = paste0("Permafrost probability ≥", (pf_thresh * 100), "% (set to 1)"))
 
+# Export our modified raster
+terra::writeRaster(x = pf_v4, overwrite = T, 
+                   filename = file.path("map_data", "permafrost-simple.tif"))
+
+# Clean up environment & collect garbage
+rm(list = setdiff(x = ls(), y = c("site_df"))); gc()
+
+## ------------------------------------------ ##
+            # Permafrost Prep ----
+## ------------------------------------------ ##
+
+# Read it back in as a stars object
+pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
+
+# Coerce to a simple features object
+pf_sf <- sf::st_as_sf(x = pf_stars)
+
+
+ggplot() +
+  geom_stars(data = pf_stars, downsample = 10)
+
 # Make an empty list
 pf_list <- list()
 
@@ -135,24 +156,19 @@ for(rng in c((60 * 0:2))){
   pf_pos_df <- as.data.frame(pf_crop_pos, xy = T)
   pf_neg_df <- as.data.frame(pf_crop_neg, xy = T)
   
-  # Bind them together
-  span_df <- dplyr::bind_rows(pf_pos_df, pf_neg_df)
-  
-  # Add to the list
-  pf_list[[as.character(rng)]] <- span_df
+  # Add each to the list
+  pf_list[[as.character(rng)]] <- pf_pos_df
+  pf_list[[paste0(as.character(rng), " negative")]] <- pf_neg_df
   
   # End with a processing message
   message("Processing complete for '", paste0(span, collapse = " to "), 
           "' and '", paste0(neg_span, collapse = " to "), "'") }
 
-# Unlist to a dataframe
-pf_df <- purrr::list_rbind(x = pf_list)
-
 # Check structure
-dplyr::glimpse(pf_df)
+dplyr::glimpse(pf_list)
 
 # Clean up environment & collect garbage
-rm(list = setdiff(x = ls(), y = c("site_df", "pf_df"))); gc()
+rm(list = setdiff(x = ls(), y = c("site_df", "pf_list"))); gc()
 
 ## ------------------------------------------ ##
               # Site Map Prep ----
@@ -190,7 +206,12 @@ core_map <-  borders %>%
   ggplot() +
   geom_sf(fill = "gray95") +
   # Add permafrost to this section
-  geom_tile(data = pf_df, aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[1]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[2]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[3]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[4]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[5]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
+  geom_tile(data = pf_list[[6]], aes(x = x, y = y), col = "purple", alpha = 0.5) +
   # Customize some global (ha ha) theme/formatting bits
   labs(x = "Longitude", y = "Latitude") +
   supportR::theme_lyon()
