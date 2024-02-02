@@ -44,7 +44,7 @@ data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_WRTDS_annual.c
 # Now subset to sites of interest
 data_simp <- data_v0 %>%
   # Keep only cryosphere LTERs
-  dplyr::filter(LTER %in% c("MCM", "ARC", "GRO", "NIVA", "Krycklan",
+  dplyr::filter(LTER %in% c("MCM", "Canada", "GRO", "NIVA", "Krycklan",
                             "Finnish Environmental Institute")) %>%
   # But drop problem sites that are otherwise retained
   dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001",
