@@ -134,4 +134,22 @@ si_conc_aov2 <- anova(si_conc_mod2, effect.type = "F")
 write.csv(x = si_conc_table2, row.names = F, na = '',
           file = file.path("stats_results", "annual_DSi_conc_percchange.csv"))
 
+## ----------------------------------------- ##
+# Within-LTER Tests ----
+## ----------------------------------------- ##
+
+# Subset to a particular LTER
+one_lter <- dplyr::filter(si_conc, LTER == "NIVA")
+
+# Fit model
+test_mod <- RRPP::lm.rrpp(percent_change ~ Stream_Name,
+                          data = one_lter, iter = 999)
+
+# Assess model
+summary(test_mod, formula = F)
+
+# Get pairwise comparisons
+test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$Stream_Name)
+summary(test_pw)
+
 # End ----
