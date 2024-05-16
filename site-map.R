@@ -165,9 +165,10 @@ core_map <-  borders %>%
   # Add permafrost to this section
   geom_stars(data = pf_stars, downsample = 10) +
   # Customize some global (ha ha) theme/formatting bits
-  labs(x = "Longitude", y = "Latitude") +
+  # labs(x = "Longitude", y = "Latitude") +
+  labs(x = "", y = "") +
   # scale_fill_continuous(na.value = "transparent") +
-  supportR::theme_lyon() +
+  supportR::theme_lyon(text_size = 13) +
   theme(legend.position = "none")
 
 # Make the same graph for high latitude sites
@@ -183,7 +184,7 @@ map_high <- core_map +
                                   to = max(high_lims[["lon"]]), 
                                   by = 50)) + 
   scale_y_continuous(limits = high_lims[["lat"]], 
-                     breaks = seq(from = min(high_lims[["lat"]]), 
+                     breaks = seq(from = min(high_lims[["lat"]]) + 5, 
                                   to = max(high_lims[["lat"]]), 
                                   by = 15)) + 
   # Customize fill & color
@@ -224,6 +225,38 @@ dir.create(path = file.path("map_images"), showWarnings = F)
 # Save map
 ggsave(filename = file.path("map_images", "high-latitude_map.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
+
+
+##==========================================
+# Make a zoomed in low latitude map
+
+#set new coordinates
+lo_lats <- dplyr::filter(site_df, lat < 0)
+lo_lims <- list("lat" = c(-79, -77), "lon" = c(155, 173))
+
+
+map_lo <- core_map +
+  coord_sf(xlim = lo_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
+  geom_point(data = lo_lats, aes(x = lon, y = lat, color = mean_si, 
+                                 size = drainSqKm), shape = 19, alpha = 0.75) +
+  scale_x_continuous(limits = lo_lims[["lon"]], 
+                     breaks = seq(from = min(lo_lims[["lon"]]), 
+                                  to = max(lo_lims[["lon"]]), 
+                                  by = 10)) + 
+  scale_y_continuous(limits = low_lims[["lat"]], 
+                     breaks = seq(from = min(lo_lims[["lat"]]+1), 
+                                  to = max(lo_lims[["lat"]]), 
+                                  by = 2)) + 
+  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
+  scale_color_gradient(low = "#780116", high = "#f7b538") +
+  scale_size_binned(breaks = c(10^3, 10^6)) +
+  # Put legend above map
+  theme(legend.position = "below"); map_lo
+
+# Save map - why isn't this saving correctly - dots are enormous
+ggsave(filename = file.path("map_images", "mcm_map.jpg"),
+       plot = last_plot(), width = 10, height = 2, units = "in", dpi = 560)
+
 
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls()); gc()
