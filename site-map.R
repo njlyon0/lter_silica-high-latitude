@@ -255,7 +255,7 @@ map_lo <- core_map +
 
 # Save map - why isn't this saving correctly - dots are enormous
 ggsave(filename = file.path("map_images", "mcm_map.jpg"),
-       plot = last_plot(), width = 10, height = 2, units = "in", dpi = 560)
+       plot = last_plot(), width = 2, height = 2, units = "in", dpi = 560)
 
 
 # Clean up environment and collect garbage to speed R up going forward
