@@ -1,7 +1,7 @@
 ## ------------------------------------------ ##
           # High Latitude Site Map
 ## ------------------------------------------ ##
-# Written by: Nick J Lyon
+# Written by: Nick J Lyon, Joanna Carey
 
 # PURPOSE
 ## Create publication-quality site map figure
@@ -127,7 +127,7 @@ pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"
 
 # One final demo plot
 ggplot() + 
-  geom_stars(data = pf_stars, downsample = 10) +
+  stars::geom_stars(data = pf_stars, downsample = 10) +
   scale_fill_continuous(na.value = "transparent") +
   theme(legend.position = "none")
 
@@ -163,7 +163,7 @@ core_map <-  borders %>%
   ggplot() +
   geom_sf(fill = "gray95") +
   # Add permafrost to this section
-  geom_stars(data = pf_stars, downsample = 10) +
+  stars::geom_stars(data = pf_stars, downsample = 10) +
   # Customize some global (ha ha) theme/formatting bits
   # labs(x = "Longitude", y = "Latitude") +
   labs(x = "", y = "") +
@@ -226,15 +226,16 @@ dir.create(path = file.path("map_images"), showWarnings = F)
 ggsave(filename = file.path("map_images", "high-latitude_map.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
-
-##==========================================
+## ------------------------------------------ ##
+        # Site Map Creation (V2) ----
+## ------------------------------------------ ##
 # Make a zoomed in low latitude map
 
 #set new coordinates
 lo_lats <- dplyr::filter(site_df, lat < 0)
 lo_lims <- list("lat" = c(-79, -77), "lon" = c(155, 173))
 
-
+# Create low latitude map
 map_lo <- core_map +
   coord_sf(xlim = lo_lims[["lon"]], ylim = lo_lims[["lat"]], expand = F) +
   geom_point(data = lo_lats, aes(x = lon, y = lat, color = mean_si, 
@@ -255,8 +256,7 @@ map_lo <- core_map +
 
 # Save map - why isn't this saving correctly - dots are enormous
 ggsave(filename = file.path("map_images", "mcm_map.jpg"),
-       plot = last_plot(), width = 10, height = 2, units = "in", dpi = 560)
-
+       plot = last_plot(), width = 6, height = 5, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls()); gc()
