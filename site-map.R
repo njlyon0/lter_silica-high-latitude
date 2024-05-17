@@ -168,8 +168,7 @@ core_map <-  borders %>%
   # labs(x = "Longitude", y = "Latitude") +
   labs(x = "", y = "") +
   # scale_fill_continuous(na.value = "transparent") +
-  supportR::theme_lyon(text_size = 13) +
-  theme(legend.position = "none")
+  supportR::theme_lyon(text_size = 13)
 
 # Make the same graph for high latitude sites
 map_high <- core_map +
