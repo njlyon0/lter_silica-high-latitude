@@ -26,7 +26,6 @@ dir.create(path = file.path("tidy_data"), showWarnings = F)
 # Clear environment
 rm(list = ls())
 
-setwd("~/LNO_Si_Synthesis/CryoAnalysis_2023")
 
 ## ----------------------------------------- ##
           # SiZer Output Selection ----
@@ -35,9 +34,9 @@ setwd("~/LNO_Si_Synthesis/CryoAnalysis_2023")
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-#sizer_filename <- "annual_Yield_DSi_bw5.csv"
+sizer_filename <- "annual_Conc_uM_Si_P_bw5.csv"
 #sizer_filename <- "seasonal_Conc_uM_DSi_bw5.csv"
-sizer_filename <- "monthly_Conc_uM_DIN_bw5.csv"
+#sizer_filename <- "monthly_Discharge_cms_DSi_bw5.csv"
 
 # Read in SiZer output data
 sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
@@ -63,7 +62,7 @@ dplyr::glimpse(sizer_v1)
 ## ----------------------------------------- ##
 
 # Read in the site reference table
-site_info_v1 <- readr::read_csv('Site_Reference_Table_11.15.23.csv') %>%
+site_info_v1 <- readr::read_csv('Site_Reference_Table.csv') %>%
   # And subset to only LTERs in the SiZer data
   dplyr::filter(LTER %in% sizer_v1$LTER)
 
@@ -164,3 +163,26 @@ write.csv(x = stats_ready, na = "", row.names = F,
           file = file.path("tidy_data", ready_filename_nodrivers))
 
 # End ----
+
+
+## ----------------------------------------- ##
+# Exploratory plots of Changing values vs Latitude ----
+## ----------------------------------------- ##
+
+names(stats_ready)
+
+# Make graph
+ggplot(stats_ready, aes(x = Latitude, y = percent_change)) + geom_point() +
+  # Facet by LTER
+  facet_wrap( ~ LTER, scales = "free_x") +
+  geom_smooth(method="lm") +
+  # Custom theming / labels
+  labs(x = "Latitude", y = "Average Percent Change",
+       title = paste("Percent change as function of latitude Si_P conc")) +
+  theme_classic()+
+  theme(legend.position = "none",
+        strip.background = element_blank())
+
+# Export it
+ggsave(filename = file.path("graphs", paste0("Si_P_Conc_vs_Lat", "slope-scatter.png")),
+       height = 8, width = 12, units = "in")
