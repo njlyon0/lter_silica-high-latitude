@@ -31,7 +31,7 @@ length(unique(annual$Stream_Name))
 length(unique(annual$LTER))
 
 #filter to only high latitude sites
-high_lat_lter <- c("Canada","Finnish Environmental Institute","GRO","Krycklan","MCM","NIVA","Swedish Government")
+high_lat_lter <- c("Canada","Finnish Environmental Institute","GRO","Krycklan","MCM","NIVA","Swedish Goverment")
 high_lat_annual <- annual %>% filter(LTER %in% high_lat_lter)
 unique(high_lat_annual$LTER) #where is Swedish Government data?
 unique(high_lat_annual$chemical)
@@ -57,6 +57,18 @@ high_lat_annual_colors <- high_lat_annual %>%
   select(plot_site_name,LTER_fill) %>%
   distinct()
 
+#create blank Canada data to align patchwork plots
+glimpse(high_lat_annual)
+canada_blank_DIN <- high_lat_annual %>%
+  filter(LTER=="Canada") %>% select(LTER,Stream_Name,plot_site_name) %>% distinct() %>% #get only canada sites
+  mutate(chemical="DIN",
+         Conc_uM=-1)
+canada_blank_DIP <- high_lat_annual %>%
+  filter(LTER=="Canada") %>% select(LTER,Stream_Name,plot_site_name) %>% distinct() %>% #get only canada sites
+  mutate(chemical="P",
+         Conc_uM=0.001)
+canada_blank = rbind(canada_blank_DIN,canada_blank_DIP)
+
 ## ---------------------------------------- ##
 ## Boxplots!
 ## ---------------------------------------- ##
@@ -67,42 +79,44 @@ high_lat_annual %>% filter(chemical=="DSi") %>%
   scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
   scale_y_continuous(limits=c(0,300),name="DSi concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free")+ #switch="x"; will move facet labels under x-axis
-  theme_classic(base_size=14)+
-  theme(axis.text.x=element_text(angle=45,hjust=1,size=10),
+  theme_classic(base_size=12)+
+  theme(axis.text.x=element_blank(),
         legend.position="none",
         axis.title.x=element_blank(),
         strip.placement="outside",
         strip.background=element_blank())
 
 din <- 
-  high_lat_annual %>% filter(chemical=="DIN") %>%
+  high_lat_annual %>% 
   #add placeholder data for missing Canada sites?
+  full_join(canada_blank) %>% #Kootenay is here - maybe will go away with updated WRTDS results?
+  filter(chemical=="DIN") %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),width=1)+
   scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
   scale_y_continuous(limits=c(0,250),name="DIN concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free")+
-  theme_classic(base_size=14)+
-  theme(axis.text.x=element_text(angle=45,hjust=1,size=10),
+  theme_classic(base_size=12)+
+  theme(axis.text.x=element_blank(),
         legend.position="none",
         axis.title.x=element_blank(),
-        strip.placement="outside",
-        strip.background=element_blank())
+        strip.text=element_blank())
 
 dip <- 
-  high_lat_annual %>% filter(chemical=="P") %>%
+  high_lat_annual %>% 
   #add placeholder data for missing Canada sites?
+  full_join(canada_blank) %>%
+  filter(chemical=="P") %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),width=1)+
   scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
-  scale_y_continuous(limits=c(0,2.5),name="DIP concentration (uM)")+
+  scale_y_continuous(limits=c(0.001,2.5),name="DIP concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free")+
-  theme_classic(base_size=14)+
+  theme_classic(base_size=12)+
   theme(axis.text.x=element_text(angle=45,hjust=1,size=10),
         legend.position="none",
         axis.title.x=element_blank(),
-        strip.placement="outside",
-        strip.background=element_blank())
+        strip.text=element_blank())
 
 #patchwork together
 dsi/din/dip
