@@ -42,8 +42,9 @@ high_lat_annual <- annual %>% filter(LTER %in% high_lat_lter) %>%
                                     "Viskan Asbro", "Gota Alv Trollhattan"))
 unique(high_lat_annual$LTER)
 unique(high_lat_annual$chemical)
-#fix spelling of "Swedish Goverment"
+#fix spelling of "Swedish Goverment"; shorten Canada for plotting
 high_lat_annual <- high_lat_annual %>% mutate(LTER = case_when(LTER=="Swedish Goverment"~"Swedish Government",
+                                                               LTER=="Canada"~"CAN",
                                                                T~LTER))
 
 #clean site names
@@ -68,23 +69,17 @@ high_lat_annual_colors <- high_lat_annual %>%
   select(plot_site_name,LTER_fill) %>%
   distinct()
 
-#create blank Canada data to align patchwork plots
-glimpse(high_lat_annual)
-canada_blank_DIN <- high_lat_annual %>%
-  filter(LTER=="Canada") %>% select(LTER,Stream_Name,plot_site_name) %>% distinct() %>% #get only canada sites
-  mutate(chemical="DIN",
-         Conc_uM=0)
-canada_blank_DIP <- high_lat_annual %>%
-  filter(LTER=="Canada") %>% select(LTER,Stream_Name,plot_site_name) %>% distinct() %>% #get only canada sites
-  mutate(chemical="P",
-         Conc_uM=0)
-canada_blank = rbind(canada_blank_DIN,canada_blank_DIP)
-
+#create blank data to align patchwork plots
+#get list of all sites
+site_list <- high_lat_annual %>% distinct(LTER,Stream_Name,plot_site_name)
 ## ---------------------------------------- ##
 ## Boxplots!
 ## ---------------------------------------- ##
 dsi <- 
 high_lat_annual %>% filter(chemical=="DSi") %>%
+  full_join(site_list) %>%
+  mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
+                             T~Conc_uM)) %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
   scale_fill_manual(values=c("#006999","#586db4","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
@@ -98,10 +93,10 @@ high_lat_annual %>% filter(chemical=="DSi") %>%
         strip.background=element_blank()) #panel.border=element_rect(fill=NA); if we want to box in each LTER
 
 din <- 
-  high_lat_annual %>% 
-  #add placeholder data for missing Canada sites?
-  full_join(canada_blank) %>% #Kootenay is here - maybe will go away with updated WRTDS results?
-  filter(chemical=="DIN") %>%
+  high_lat_annual %>% filter(chemical=="DIN") %>%
+  full_join(site_list) %>% 
+  mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
+                             T~Conc_uM)) %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
   scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
@@ -114,15 +109,16 @@ din <-
         strip.text=element_blank())
 
 dip <- 
-  high_lat_annual %>% 
-  #add placeholder data for missing Canada sites?
-  full_join(canada_blank) %>%
-  filter(chemical=="P") %>%
+  high_lat_annual %>% filter(chemical=="P") %>%
+  full_join(site_list) %>%
+   mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
+                              T~Conc_uM)) %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
   scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
+  scale_x_discrete(drop=F)+
   scale_y_continuous(limits=c(0,2.5),name="DIP concentration (uM)")+
-  facet_grid(~LTER,scales="free_x",space="free")+
+  facet_grid(~LTER,scales="free_x",space="free",drop=F)+
   theme_classic(base_size=12)+
   theme(axis.text.x=element_text(angle=45,hjust=1,size=5),
         legend.position="none",
@@ -130,4 +126,14 @@ dip <-
         strip.text=element_blank())
 
 #cowplot together
-cowplot::plot_grid(dsi,din,dip, nrow=3, align="hv")
+cowplot::plot_grid(dsi,din,dip, nrow=3, rel_heights=c(1,1,1.2))
+
+#which sites are missing for each variable?
+dsi_sites <- high_lat_annual %>% filter(chemical=="DSi") %>% distinct(LTER,Stream_Name)
+din_sites <- high_lat_annual %>% filter(chemical=="DIN") %>% distinct(LTER,Stream_Name)
+dip_sites <- high_lat_annual %>% filter(chemical=="P") %>% distinct(LTER,Stream_Name)
+
+supportR::diff_check(old=high_lat_annual$Stream_Name,
+                     new=dip_sites$Stream_Name)
+
+high_lat_annual %>% filter(!Stream_Name %in% din_sites$Stream_Name) %>% distinct(LTER,plot_site_name)
