@@ -81,8 +81,8 @@ high_lat_annual %>% filter(chemical=="DSi") %>%
   mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
                              T~Conc_uM)) %>%
   ggplot()+
-  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
-  scale_fill_manual(values=c("#006999","#586db4","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
+  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),linewidth=0.05,outlier.size=0.3)+
+  scale_fill_manual(values=c("#0099e0","#7c92ef","#c883e4","#ff72c1","#ff6e8d","#ff8452","#ffa600"))+
   scale_y_continuous(limits=c(0,300),name="DSi concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free")+ #switch="x"; will move facet labels under x-axis
   theme_classic(base_size=12)+
@@ -98,8 +98,8 @@ din <-
   mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
                              T~Conc_uM)) %>%
   ggplot()+
-  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
-  scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
+  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),linewidth=0.05,outlier.size=0.3)+
+  scale_fill_manual(values=c("#0099e0","#7c92ef","#c883e4","#ff72c1","#ff6e8d","#ff8452","#ffa600"))+
   scale_y_continuous(limits=c(0,250),name="DIN concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free")+
   theme_classic(base_size=12)+
@@ -114,8 +114,8 @@ dip <-
    mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
                               T~Conc_uM)) %>%
   ggplot()+
-  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER))+
-  scale_fill_manual(values=c("#003f5c","#374c80","#7a5195","#bc5090","#ef5675","#ff764a","#ffa600"))+
+  geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),linewidth=0.05,outlier.size=0.3)+
+  scale_fill_manual(values=c("#0099e0","#7c92ef","#c883e4","#ff72c1","#ff6e8d","#ff8452","#ffa600"))+
   scale_x_discrete(drop=F)+
   scale_y_continuous(limits=c(0,2.5),name="DIP concentration (uM)")+
   facet_grid(~LTER,scales="free_x",space="free",drop=F)+
