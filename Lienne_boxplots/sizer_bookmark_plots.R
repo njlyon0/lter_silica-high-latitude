@@ -24,7 +24,7 @@ librarian::shelf(readxl,tidyverse,janitor)
 
 #load data
 listcsv <- dir(pattern = "*.csv",recursive = F)
-#view sites
+#view files
 listcsv
 #find and read site data
 df_outs <- list()
@@ -54,9 +54,9 @@ core_df <- all_sizer_outs %>%
   # Arrange by LTER and site
   dplyr::arrange(LTER, Stream_Name) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, stream, chemical:section_duration, 
+  dplyr::select(sizer_groups, LTER, Stream_Name, plot_site_name, chemical:section_duration, 
                 F_statistic:line_fit, slope_estimate:slope_std_error,
-                dplyr::starts_with("dir_"), plot_site_name) %>%
+                dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -92,6 +92,29 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
+#organize stream names by LTER
+stream_order <- core_df %>% select(LTER,plot_site_name) %>% distinct() %>% arrange()
+core_df <- core_df %>% mutate(plot_site_name = factor(plot_site_name,levels=stream_order$plot_site_name))
+glimpse(core_df)
+
+## ----------------------------------------- ##
+# 'Bookmark Graphs' - Full Data ----
+## ----------------------------------------- ##
+
+# Make a graph showing the slope direction and significance for all streams
+ggplot(core_df, aes(x = Year, y = plot_site_name, color = dir_sig)) +
+  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
+  scale_color_manual(values = dir_p_palt) +
+  scale_y_discrete(limits=rev)+
+  # Customize theme / formatting elements
+  facet_grid(~chemical,scales="free",space="free")+
+  theme_classic() +
+  theme(legend.title=element_blank(),
+        axis.text=element_text(size=8),
+        axis.title=element_blank(),
+        strip.background=element_blank(),
+        panel.spacing=unit(0.5,"cm"))
+
 ## ----------------------------------------- ##
 # 'Bookmark Graphs' - Sig. Only ----
 ## ----------------------------------------- ##
@@ -107,7 +130,6 @@ ggplot(aes(x = Year, y = plot_site_name, color = dir_sig)) +
   # Customize theme / formatting elements
   labs(x = "Year", y = "Stream") +
   theme_bw() +
-  facet_grid(~chemical,scales="free_y",space="free")+
   theme(legend.title = element_blank(),
         panel.spacing=unit(0.5,"cm"),
         axis.text=element_text(size=8))
