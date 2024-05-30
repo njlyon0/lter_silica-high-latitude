@@ -39,8 +39,10 @@ high_lat_annual <- annual %>% filter(LTER %in% high_lat_lter) %>%
                                     "SKEENA RIVER AT USK","KOOTENAY RIVER ABOVE HIGHWAY 93 IN KOOTENAY NATIONAL PARK",
                                     "Helgean Hammarsjon", "Ronnean Klippan", "Morrumsan Morrum", "Lyckebyan Lyckeby",
                                     "Lagan Laholm", "Nissan Halmstad", "Atran Falkenberg", "Alsteran Getebro", "Eman Emsfors",
-                                    "Viskan Asbro", "Gota Alv Trollhattan"))
+                                    "Viskan Asbro", "Gota Alv Trollhattan")
+                & !Stream_Name %in% NIVA_sites$Stream_Name)
 unique(high_lat_annual$LTER)
+length(unique(high_lat_annual$Stream_Name))
 unique(high_lat_annual$chemical)
 #fix spelling of "Swedish Goverment"; shorten Canada for plotting
 high_lat_annual <- high_lat_annual %>% mutate(LTER = case_when(LTER=="Swedish Goverment"~"Swedish Government",
@@ -55,6 +57,16 @@ high_lat_annual <- high_lat_annual %>%
   mutate(plot_site_name = gsub("(stream|river|creek).*","",plot_site_name)) %>%
   #change to sentence case
   mutate(plot_site_name = str_to_title(plot_site_name))
+glimpse(high_lat_annual)
+unique(high_lat_annual$chemical)
+length(unique(high_lat_annual$plot_site_name))
+
+#deal with extra NIVA sites
+NIVA_sites <- 
+high_lat_annual %>% filter(LTER=="NIVA") %>% distinct(Stream_Name) %>%
+  filter(!Stream_Name %in% c("BUSEDRA", "FINEALT", "NOREVEF", "ROGEORR", "STREORK",
+                             "TELESKI", "VAGEOTR", "VESENUM"))
+#add this to site filter above
 
 #create df of fills for consistency between plots
 #we really don't end up using this...
@@ -70,46 +82,49 @@ high_lat_annual_colors <- high_lat_annual %>%
   distinct()
 
 #create blank data to align patchwork plots
-#get list of all sites
-site_list <- high_lat_annual %>% distinct(LTER,Stream_Name,plot_site_name)
+#get list of all sites with DSi data
+site_list <- high_lat_annual %>% filter(chemical=="DSi") %>% 
+  filter(!is.na(Conc_uM)) %>%
+  distinct(LTER,Stream_Name,plot_site_name)
 ## ---------------------------------------- ##
 ## Boxplots!
 ## ---------------------------------------- ##
 dsi <- 
-high_lat_annual %>% filter(chemical=="DSi") %>%
-  full_join(site_list) %>%
-  mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
-                             T~Conc_uM)) %>%
+# high_lat_annual %>% filter(chemical=="DSi") %>%
+#   full_join(site_list) %>%
+#   mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
+#                              T~Conc_uM)) %>%
+high_lat_annual %>% filter(chemical=="DSi" & plot_site_name %in% site_list$plot_site_name) %>% #|chemical=="DIN"|chemical=="P") %>%
+  #mutate(chemical = factor(chemical,levels=c("DSi","DIN","P"))) %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),linewidth=0.05,outlier.size=0.3)+
   scale_fill_manual(values=c("#0099e0","#7c92ef","#c883e4","#ff72c1","#ff6e8d","#ff8452","#ffa600"))+
   scale_y_continuous(limits=c(0,300),name="DSi concentration (uM)")+
-  facet_grid(~LTER,scales="free_x",space="free")+ #switch="x"; will move facet labels under x-axis
+  facet_grid(~LTER,scales="free",space="free")+ #switch="x"; will move facet labels under x-axis
   theme_classic(base_size=12)+
-  theme(axis.text.x=element_blank(),
+  theme(axis.text.x=element_blank(),#element_text(angle=45,hjust=1,size=5),
         legend.position="none",
         axis.title.x=element_blank(),
         strip.placement="outside",
         strip.background=element_blank()) #panel.border=element_rect(fill=NA); if we want to box in each LTER
 
 din <- 
-  high_lat_annual %>% filter(chemical=="DIN") %>%
+  high_lat_annual %>% filter(chemical=="DIN"& plot_site_name %in% site_list$plot_site_name) %>%
   full_join(site_list) %>% 
-  mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
-                             T~Conc_uM)) %>%
+   mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
+                              T~Conc_uM)) %>%
   ggplot()+
   geom_boxplot(aes(x=plot_site_name,y=Conc_uM,fill=LTER),linewidth=0.05,outlier.size=0.3)+
   scale_fill_manual(values=c("#0099e0","#7c92ef","#c883e4","#ff72c1","#ff6e8d","#ff8452","#ffa600"))+
   scale_y_continuous(limits=c(0,250),name="DIN concentration (uM)")+
-  facet_grid(~LTER,scales="free_x",space="free")+
+  facet_grid(~LTER,scales="free",space="free")+
   theme_classic(base_size=12)+
   theme(axis.text.x=element_blank(),
         legend.position="none",
         axis.title.x=element_blank(),
         strip.text=element_blank())
-
 dip <- 
-  high_lat_annual %>% filter(chemical=="P") %>%
+  high_lat_annual %>% filter(chemical=="P"& plot_site_name %in% site_list$plot_site_name) %>%
   full_join(site_list) %>%
    mutate(Conc_uM = case_when(is.na(chemical)~0, #concentration needs to be 0 to plot with facet_grid... we'll need to remove these with illustrator
                               T~Conc_uM)) %>%
