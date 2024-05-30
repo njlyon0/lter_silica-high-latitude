@@ -12,7 +12,7 @@
 
 #set working directory
 getwd()
-setwd("C:/Users/lsethna_smm/Documents/GitHub/lter_silica-high-latitude/Lienne_boxplots/bookmark plot stat outs")
+setwd("C:/Users/lsethna_smm/Documents/GitHub/lter_silica-high-latitude/Lienne_boxplots/bookmark plot stat outs v2")
 #clear environment
 rm(list=ls())
 #load packages
@@ -32,6 +32,17 @@ df_outs <- list()
 for (i in 1:length(listcsv)) {
   sizer_out = read.csv(listcsv[i])
   
+  # Make a data object with only the columns that we'll want
+  sizer_out <- sizer_out %>%
+    # Arrange by LTER and site
+    dplyr::arrange(LTER, Stream_Name) %>%
+    # Pare down to only needed columns
+    dplyr::select(sizer_groups, LTER, Stream_Name, chemical:section_duration, 
+                  F_statistic:line_fit, slope_estimate:slope_std_error,
+                  dplyr::starts_with("dir_")) %>%
+    # Drop non-unique rows
+    dplyr::distinct()
+  
   df_outs[[i]]=sizer_out
 }
 
@@ -48,17 +59,6 @@ all_sizer_outs <- all_sizer_outs %>%
   mutate(plot_site_name = gsub("(stream|river|creek).*","",plot_site_name)) %>%
   #change to sentence case
   mutate(plot_site_name = str_to_title(plot_site_name))
-
-# Make a data object with only the columns that we'll want
-core_df <- all_sizer_outs %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, Stream_Name) %>%
-  # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, plot_site_name, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error,
-                dplyr::starts_with("dir_")) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
 
 # Filter the simplified data object to only significant rivers with a good fit
 sig_only <- core_df %>%
@@ -93,25 +93,47 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 #organize stream names by LTER
-stream_order <- core_df %>% select(LTER,plot_site_name) %>% distinct() %>% arrange()
-core_df <- core_df %>% mutate(plot_site_name = factor(plot_site_name,levels=stream_order$plot_site_name))
-glimpse(core_df)
+stream_order <- all_sizer_outs %>% select(LTER,plot_site_name) %>% distinct() %>% arrange(LTER, plot_site_name)
+all_sizer_outs <- all_sizer_outs %>% mutate(plot_site_name = factor(plot_site_name,levels=stream_order$plot_site_name))
+glimpse(all_sizer_outs)
+
+# Count numbers of streams at each LTER
+core_hlines <- all_sizer_outs %>%
+  dplyr::select(LTER, plot_site_name) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(LTER) %>%
+  dplyr::summarize(stream_ct = dplyr::n()) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
+glimpse(core_hlines)
+
+#how many years in each site
+core_years <- all_sizer_outs %>% group_by(LTER,plot_site_name,chemical) %>%
+  summarize(year_ct=dplyr::n()) %>% filter(year_ct <= 5)
 
 ## ----------------------------------------- ##
 # 'Bookmark Graphs' - Full Data ----
 ## ----------------------------------------- ##
-
+unique(all_sizer_outs$chemical)
 # Make a graph showing the slope direction and significance for all streams
-ggplot(core_df, aes(x = Year, y = plot_site_name, color = dir_sig)) +
+all_sizer_outs %>% filter(chemical=="DSi-Q") %>%
+  full_join(stream_order) %>%
+ggplot(aes(x = Year, y = plot_site_name, color = dir_sig)) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
+  # Put in horizontal lines between LTERs
+  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
+  geom_hline(yintercept = 78.5-c(2,24,30,40,51,59)) +
   scale_y_discrete(limits=rev)+
+  scale_x_continuous(limits=c(1995,2025),breaks=seq(1995,2025,5))+
+  ggtitle("Significant changes in [DSi]-Q slope")+
   # Customize theme / formatting elements
-  facet_grid(~chemical,scales="free",space="free")+
+  #facet_grid(~chemical)+
   theme_classic() +
   theme(legend.title=element_blank(),
         axis.text=element_text(size=8),
         axis.title=element_blank(),
+        strip.text=element_blank(),
         strip.background=element_blank(),
         panel.spacing=unit(0.5,"cm"))
 
