@@ -44,6 +44,12 @@ dplyr::glimpse(combo_full)
 
 # Do some processing
 full_df <- combo_full %>% 
+  #remove Canada b/c no ratios
+  dplyr::filter(!LTER %in% c("Canada")) %>%
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Swedish Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
@@ -99,16 +105,16 @@ dplyr::glimpse(sig_only)
 ## ----------------------------------------- ##
 
 # Grab useful information for informative file names for these graphs
-chem <- "All"
 resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
              replacement = "", x = names(full_df)[11])
 ## Note response identification is dependent upon column order!
 names(full_df)
 
 # Assemble this into a file prefix
-(file_prefix <- paste0("_", chem, "_", resp, "_"))
+(file_prefix <- paste0("_", resp, "_"))
 
-chem_palt <- c("DSi" = "#d62828", "DIN" = "blue", "DIP" = "yellow", "Si:DIN" = "purple", "Si:DIP" = "green")
+chem_palt <- c("DSi" = "#d62828", "DIN" = "blue", "DIP" = "#fee440", "Si:DIN" = "#7209b7", "Si:DIP" = "#008000")
+chem_palt2 <- c("DSi" = "#ef233c", "DIN" = "#ffffff", "DIP" = "blue", "Si:DIN" = "#fb6f92", "Si:DIP" = "#7209b7")
 #https://coolors.co/palettes/trending
 
 ## ----------------------------------------- ##
@@ -121,49 +127,70 @@ ggplot(sig_only, aes(x = chemical, y = percent_change, fill = chemical)) +
   geom_boxplot(outlier.shape = 21) +
   #geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
   geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
-  scale_fill_manual(values = chem_palt) +
+  scale_fill_manual(values = chem_palt2) +
   # Facet by LTER
   facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
   # Custom theming / labels
-  #labs(x = "", y = "Percent Change (%)",
-       #title = paste("Significant changes in", chem, resp)) +
+  labs(x = "", y = "Percent Change",
+       title = paste("Significant changes in", resp)) +
   theme_classic()+
-  theme(legend.position = "none",
+  theme(panel.spacing = unit(2, "lines"), legend.position = "none",
         strip.background = element_blank())
 
-
 # Export it
-ggsave(filename = file.path("graphs", paste0("sig-only", file_prefix, "perc-change-boxplot_allelements.png")),
-       height = 7, width = 11, units = "in")
+ggsave(filename = file.path("graphs", paste0(file_prefix, "perc-change-boxplot_allelements.png")),
+       height = 6, width = 8, units = "in")
 
 
 
 ## ----------------------------------------- ##
-# Slope Boxplots - haven't changed this yet to reflect what i want to do ---
+# Slope Boxplots - these don't plot well because ratio values so different
 ## ----------------------------------------- ##
-
-# Pare down the data to only needed information
-sig_simp <- sig_only %>%
-  dplyr::select(LTER, stream, Month, slope_estimate) %>%
-  dplyr::distinct()
+names(sig_only)
 
 # Make graph
-ggplot(sig_simp, aes(x = as.factor(Month), y = slope_estimate, fill = LTER)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
+ggplot(sig_only, aes(x = chemical, y = slope_estimate, fill = chemical)) +
+  #geom_violin() +
+  geom_boxplot(outlier.shape = 21) +
+  #geom_jitter(width = 0.2, alpha = 0.5, pch = 21) +
   geom_hline(yintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
+  scale_fill_manual(values = chem_palt2) +
   # Facet by LTER
   facet_wrap( ~ LTER, scales = "free_y", nrow = 5, strip.position = "right") +
   # Custom theming / labels
-  labs(x = "Month", y = "Slope",
-       title = paste("Significant monthly changes in", chem, resp)) +
+  labs(x = "", y = "Rate of Change (uM yr-1)",
+       title = paste("Significant changes in", resp)) +
   theme_classic()+
-  theme(legend.position = "none",
+  theme(panel.spacing = unit(2, "lines"), legend.position = "none",
         strip.background = element_blank())
 
 # Export it
-ggsave(filename = file.path("graphs", paste0("monthly_sig-only", file_prefix, "slope-boxplot.png")),
-       height = 8, width = 12, units = "in")
+#ggsave(filename = file.path("graphs", paste0(file_prefix, "perc-change-boxplot_allelements.png")),
+       height = 6, width = 8, units = "in")
+
+
+              
+###============================
+#summary stats on SiZer Ouputs
+###============================
+              
+sig_only %>%
+  dplyr::group_by(chemical, LTER, dir_sig) %>% #add in stream if want to do it by stream
+  dplyr::summarize(ct=n(), 
+                   avg_perChange = mean(percent_change),
+                   sd_perChange = sd(percent_change)) #not working b/c this column are factors?
+
+sig_only %>%
+  dplyr::group_by(dir_sig) %>%
+  dplyr::summarize(ct=n()) #n results in same thing as length. #be careful if number rows proxy looking for
+#can do length(Year) to double check. n function wants nothing in the parenthese
+
+#group by lter, chemical and stream and count number of unique sizer groups
+sig_only %>%
+  dplyr::group_by(chemical, LTER) %>%
+  summarize(sizer_ct = length(unique(sizer_groups))) #this will help identify breakpoints and inflection points
+
+
 
 # End ----
 
