@@ -59,7 +59,8 @@ PolarSites <- Data %>%
     TRUE ~ chemical))
 
 names(PolarSites)
-unique(PolarSites$stream)
+Niva<-subset(PolarSites, PolarSites$LTER=="NIVA")
+unique(Niva$stream)
 
 ####=================================================
 #this new column allows one to have boxplots sorted by lter, then stream
