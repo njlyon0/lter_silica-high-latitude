@@ -360,7 +360,7 @@ names(sig_simp)
 giant_list <- list()
 #Z score is effect size (check function help file for units - maybe unitless)
 #by having the interaction in here, we're able to see if streams within an LTER are different
-#
+
 #use code below on annual data to see generally if there are differences within a single LTER
 for(ltername in unique(sig_simp$LTER)){
   message("processing LTER:", ltername)
