@@ -45,9 +45,9 @@ rm(list = ls())
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-# sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
+sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
 # sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
-sizer_filename <- "monthly_Conc_uM_DSi_bw5.csv"
+#sizer_filename <- "monthly_Conc_uM_DSi_bw5.csv"
 
 # Read in SiZer output data
 sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
@@ -72,7 +72,7 @@ dplyr::glimpse(sizer_v1)
 ## ----------------------------------------- ##
 
 # Read in the driver data as it is
-drivers_v1 <- read.csv(file = file.path("drivers", "all-data_si-extract.csv"))
+drivers_v1 <- read.csv(file = file.path("drivers", "all-data_si-extract_2_20240623.csv"))
 
 # Check structure
 dplyr::glimpse(drivers_v1)
@@ -278,7 +278,7 @@ sizer_v6 <- sizer_v5 %>%
   dplyr::group_by(sizer_groups, season, Month) %>%
   # Do some calculations
   ## Get a 'relative Year' for each sizer group so all time series start at 1
-  dplyr::mutate(relative_Year = 1:length(unique(Year)) , .after = Year) %>%
+  dplyr::mutate(relative_Year = row_number() , .after = Year) %>%
   ## Calculate average (and SD) dynamic drivers within sizer groups
   dplyr::mutate(mean_evapotrans_kg.m2 = mean(evapotrans_kg.m2, na.rm = T),
                 sd_evapotrans_kg.m2 = sd(evapotrans_kg.m2, na.rm = T),
@@ -427,9 +427,9 @@ dplyr::glimpse(sizer_v8)
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v8 %>%
+stats_ready <- sizer_v8 
   # And choose a minimum chunk duration for inclusion
-  dplyr::filter(section_duration >= 5)
+  #dplyr::filter(section_duration >= 5)
 
 # Make a file name for this file
 (ready_filename <- paste0("stats-ready_", sizer_filename))
