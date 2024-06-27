@@ -34,7 +34,7 @@ rm(list = ls())
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-sizer_filename <- "annual_Conc_uM_Si_P_bw5.csv"
+sizer_filename <- "annual_Discharge_cms_DSi_bw5.csv"
 #sizer_filename <- "seasonal_Conc_uM_DSi_bw5.csv"
 #sizer_filename <- "monthly_Discharge_cms_DSi_bw5.csv"
 
@@ -99,7 +99,6 @@ sizer_v2 <- sizer_v1 %>%
 # Re-check structure
 dplyr::glimpse(sizer_v2)
 
-
 ## ----------------------------------------- ##
           # Quality of Life Tweaks ----
 ## ----------------------------------------- ##
@@ -151,15 +150,15 @@ dplyr::glimpse(sizer_v3)
 ## ----------------------------------------- ##
 
 # Re-name this object
-stats_ready <- sizer_v3 %>%
+stats_ready2 <- sizer_v3 #%>%
   # And choose a minimum chunk duration for inclusion
-  dplyr::filter(section_duration >= 5)
+  #dplyr::filter(section_duration >= 0)
 
 # Make a file name for this file
 (ready_filename_nodrivers <- paste0("stats-ready_nodrivers", sizer_filename))
 
 # Save it locally
-write.csv(x = stats_ready, na = "", row.names = F,
+write.csv(x = stats_ready2, na = "", row.names = F,
           file = file.path("tidy_data", ready_filename_nodrivers))
 
 # End ----
