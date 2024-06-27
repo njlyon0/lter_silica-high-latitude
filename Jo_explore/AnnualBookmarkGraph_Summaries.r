@@ -98,8 +98,10 @@ sig_only %>%
   dplyr::summarize(ct=n()) #n results in same thing as length. #be careful if number rows proxy looking for
 #can do length(Year) to double check. n function wants nothing in the parenthese
 
-
-
+#group by lter, chemical and stream and count number of unique sizer groups
+sig_only %>%
+  dplyr::group_by(LTER) %>%
+  summarize(sizer_ct = length(unique(sizer_groups))) #this will help identify breakpoints and inflection points
  
 
 
