@@ -173,15 +173,15 @@ ggplot(sig_only, aes(x = chemical, y = slope_estimate, fill = chemical)) +
 ###============================
 #summary stats on SiZer Ouputs
 ###============================
-              
+names(sig_only)              
 sig_only %>%
   dplyr::group_by(chemical, LTER, dir_sig) %>% #add in stream if want to do it by stream
   dplyr::summarize(ct=n(), 
                    avg_perChange = mean(percent_change),
                    sd_perChange = sd(percent_change)) #not working b/c this column are factors?
 
-sig_only %>%
-  dplyr::group_by(dir_sig) %>%
+core_df %>%
+  dplyr::group_by(chemical, dir_sig) %>%
   dplyr::summarize(ct=n()) #n results in same thing as length. #be careful if number rows proxy looking for
 #can do length(Year) to double check. n function wants nothing in the parenthese
 
