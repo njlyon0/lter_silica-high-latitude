@@ -48,10 +48,10 @@ aov_process <- function(aov){
           # Silica Concentration ----
 ## ----------------------------------------- ##
 # Read in ready data for this response variable
-#si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_Conc_uM_DSi_bw5.csv"))
+si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_Conc_uM_DSi_bw5.csv"))
 
-si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversmonthly_Conc_uM_DSi_bw5.csv")) 
-
+#si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversmonthly_Conc_uM_DSi_bw5.csv")) 
+names(si_conc)
 
 a<-aov(percent_change ~Stream_Name, data=Niva)
 summary(a)
@@ -109,12 +109,13 @@ si_conc <- si_conc %>%
 #having plus sign with LTER is same thing as (actually better) as subsetting by LTER
 
 
-#are there differences in responses among streams of a single LTER
+#are there differences in responses among streams of a single LTER?
 #make for loop to one LTER
 
 # Make an empty list to store all of our extracted information
 giant_list <- list()
 
+#use code below on annual data to see generally if there are differences within a single LTER
 for(ltername in unique(si_conc$LTER)){
   message("processing LTER:", ltername)
   one_lter<- si_conc %>%
@@ -132,7 +133,10 @@ giant_df<- giant_list %>%
   purrr::list_rbind(x=.)
 
 
-#try again w/ annual
+
+
+
+
 
 #old code looking at differences across LTERs by stream and month
 #si_conc_mod1 <- RRPP::lm.rrpp(percent_change ~ Stream_Name:Month + LTER,
