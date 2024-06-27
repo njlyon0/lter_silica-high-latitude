@@ -31,7 +31,7 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Grab the desired data file
-full_df <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_Conc_uM_DSi_bw5.csv")) 
+full_df <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_Conc_uM_DIN_bw5.csv")) 
 
 full_df<-full_df %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
@@ -59,6 +59,7 @@ core_df <- full_df %>%
                 dplyr::starts_with("dir_"), streamshort) %>%
   # Drop non-unique rows
   dplyr::distinct()
+
 
 # Check structure
 dplyr::glimpse(core_df)
@@ -108,6 +109,7 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
+
 ## ----------------------------------------- ##
      # 'Bookmark Graphs' - Full Data ----
 ## ----------------------------------------- ##
@@ -121,9 +123,8 @@ core_hlines <- core_df %>%
   dplyr::ungroup() %>%
   dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
 
-
 # Make a graph showing the slope direction and significance for all streams
-ggplot(core_df, aes(x = Year, y = stats::reorder(Stream_Name, LTER), color = dir_sig)) +
+ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
   geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
   scale_color_manual(values = dir_p_palt) +
   # Put in horizontal lines between LTERs
@@ -141,6 +142,7 @@ ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "sig-bo
 
 
 #### summarizing output ####
+#================================================
 #across all years all rivers, how many yrs of inc? dec? 
 #for each network, how many yrs of increasing and decreasing?
 ## Count numbers of rivers increasing and decreasing at each LTER
@@ -149,7 +151,7 @@ names(core_df)
 #### ask nick
 #what is it doing to percent change here - averaging it? I didn't ask for that but I'd like it.
 core_df %>%
-  dplyr::group_by(LTER, dir_sig, percent_change) %>% #add in stream if want to do it by stream
+  dplyr::group_by(LTER, dir_sig) %>% #add in stream if want to do it by stream
   dplyr::summarize(ct=n()) #not working b/c this column are factors?
   
 core_df %>%
