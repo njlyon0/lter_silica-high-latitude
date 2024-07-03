@@ -86,10 +86,35 @@ Driver_numeric <- Driver1 %>%
 names(Driver_numeric)
 
 #remove response variables and unique identifyer and examine coorelation among predictors
-#this works but still too many predictors to see relationships
-Driver_numeric <- Driver_numeric %>%
+
+#elevation highly correlated with tundra and forest so just have forest here
+#removed wetland, developed, cropland b/c many outliers
+Driver_numeric_land <- Driver_numeric %>%
   select(-sizer_groups, -percent_change, -slope_estimate) %>%
+  #pull out just the land and lat to see if related
+  select(Latitude, contains("land_")) %>%
+  select(-land_barren_or_sparsely_vegetated, -land_cropland, -land_urban_and_built_up_land, 
+         -land_tundra, -land_wetland) %>%
   pairs ()
+#keeping just Latitude, total forest, shrub-grassland
+
+Driver_numeric_meterol <- Driver_numeric %>%
+  select(-sizer_groups, -percent_change, -slope_estimate) %>%
+  #pull out lat and elevation
+  select(-mean_response, -elevation_mean_m) %>%
+  #pull out just the land and lat to see if related
+  select(contains("mean_")) %>%
+  #temp correlated with basically everything! just keep temp
+  select(-mean_precip_mm.per.day, -mean_npp_kg.C.m2.year, -mean_snow_num.days) %>%
+  pairs ()
+
+Driver_numeric_meterol2 <- Driver_numeric %>%
+  select(-sizer_groups, -percent_change, -slope_estimate) %>%
+  #pull out just the land and lat to see if related
+  select(contains("slope_")) %>%
+  pairs ()
+
+#so left with 10 predictors
 
 #scaling data - removing first column which doesn't need to be scaled
 Driver_Scaled <- as.data.frame(scale(x = Driver_numeric[-1], center = T, scale = T)) 
