@@ -97,6 +97,7 @@ Driver_numeric_land <- Driver_numeric %>%
          -land_tundra, -land_wetland) %>%
   pairs ()
 #keeping just Latitude, total forest, shrub-grassland
+#except below we have to remove Lat and total forest b/c correlated with mean temp
 
 Driver_numeric_meterol <- Driver_numeric %>%
   select(-sizer_groups, -percent_change, -slope_estimate) %>%
@@ -112,10 +113,23 @@ Driver_numeric_meterol2 <- Driver_numeric %>%
   select(-sizer_groups, -percent_change, -slope_estimate) %>%
   #pull out just the land and lat to see if related
   select(contains("slope_")) %>%
+  #remove slope of num snow days b/c correlated with slope of snow max prop area
+  select(-slope_snow_num.days) %>%
   pairs ()
 
-#so left with 10 predictors
+#so left with 8 predictors
+names(Driver_numeric)
 
+#need to add drainage area back in here but need to transform it I think first
+Driver_num_final <- Driver_numeric %>%
+  select(mean_temp_degC, land_shrubland_grassland, contains("slope_")) %>%
+  #remove slope of num snow days b/c correlated with slope of snow max prop area
+  select(-slope_snow_num.days) %>%
+  pairs ()
+
+
+#=======================================================
+#below is old code - haven't tried this yet b/c still dealing with getting data ready...
 #scaling data - removing first column which doesn't need to be scaled
 Driver_Scaled <- as.data.frame(scale(x = Driver_numeric[-1], center = T, scale = T)) 
 
