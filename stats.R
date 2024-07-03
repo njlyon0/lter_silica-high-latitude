@@ -51,25 +51,63 @@ aov_process <- function(aov){
           # Silica Concentration ----
 ## ----------------------------------------- ##
 # Read in ready data for this response variable
-si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv")) %>%
-  # Drop annual information
-  dplyr::select(-Year:-Conc_uM, -temp_degC, -precip_mm.per.day, -npp_kg.C.m2.year, 
-                -evapotrans_kg.m2, -snow_max.prop.area, -snow_num.days) %>%
+si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv")) 
+names(si_conc)
+
+Driver1 <- si_conc %>%
+  # Drop information not useful for regression model
+  # When doing non-conc data need to change "conc_uM" to appropriate term
+  dplyr::select(-relative_Year, -Conc_uM, -season:-Year, -temp_degC, -section:-section_end, -F_statistic:-slope_direction,
+                -term_statistic:-term_p_value, -temp_degC, -sd_temp_degC, -precip_mm.per.day, -sd_precip_mm.per.day,
+                -npp_kg.C.m2.year, -sd_npp_kg.C.m2.year, -evapotrans_kg.m2,
+                -sd_evapotrans_kg.m2, -snow_max.prop.area, sd_snow_max.prop.area, -snow_num.days, -sd_snow_num.days) %>%
+  #drop even more columns
+  dplyr::select(-sizer_bandwidth, -sd_response, -section_duration, -slope_std_error,
+                -land_evergreen_needleleaf_forest, -land_evergreen_broadleaf_forest, -land_mixed_forest, 
+                -land_deciduous_broadleaf_forest, -land_deciduous_needleleaf_forest, -sd_snow_max.prop.area) %>%
   # Drop non-unique rows
   unique() %>%
-  # Drop McMurdo
+  # Drop McMurdo b/c don't have driver data for that
   dplyr::filter(LTER != "MCM")
 
 # Check structure
-dplyr::glimpse(si_conc)
+dplyr::glimpse(Driver1)
+names(Driver1)
 
-# See how many line chunks (i.e., SiZer groups) per Stream_Name
-si_conc %>%
-  dplyr::group_by(Stream_Name) %>%
-  dplyr::summarize(response_ct = length(unique(sizer_groups))) %>%
-  dplyr::pull(response_ct) %>%
-  unique()
 
+##========================================
+#first isolate numeric data for scaling and checking for covariation and skew
+##========================================
+
+#isolate numeric data
+Driver_numeric <- Driver1 %>%
+  select(sizer_groups, where(is.numeric)) 
+  
+names(Driver_numeric)
+
+#remove response variables and unique identifyer and examine coorelation among predictors
+#this works but still too many predictors to see relationships
+Driver_numeric <- Driver_numeric %>%
+  select(-sizer_groups, -percent_change, -slope_estimate) %>%
+  pairs ()
+
+#scaling data - removing first column which doesn't need to be scaled
+Driver_Scaled <- as.data.frame(scale(x = Driver_numeric[-1], center = T, scale = T)) 
+
+Driver_Scaled_Renamed <- supportR::safe_rename(data = Driver_Scaled, bad_names = names(Driver_Scaled), 
+                                                  good_names = paste0("scaled_", names(Driver_Scaled))) %>%
+  mutate(sizer_groups = Driver_numeric$sizer_groups)
+
+#now that there is a column to join by, re-join with non-numeric data
+Driver_Scaled2 <- Driver1 %>%
+  left_join(y = Driver_Scaled_Renamed, by = "sizer_groups")
+
+#remove duplicative columns so not scaled and scaled for same data
+#now join with non-numeric data
+
+
+
+#old model below - haven't re-run w/ scaled data
 # Fit a model of interest
 si_conc_mod1 <- RRPP::lm.rrpp(slope_estimate ~ LTER +
                                 ## Dynamic drivers
