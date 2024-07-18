@@ -67,6 +67,20 @@ if(!"Month" %in% names(sizer_v1)){
 # Check structure
 dplyr::glimpse(sizer_v1)
 
+##--------------------------------------------------##
+#WRTDS output selection - grab P data
+##--------------------------------------------------##
+
+data_v0<-readr::read_csv('Full_Results_WRTDS_annual.csv')
+names(data_v0)
+
+#select just P data and stream
+data_v1 <- data_v0 %>%
+  dplyr::select(Stream_Name, Year, chemical, Conc_uM, FNConc_uM, Discharge_cms) %>%
+  dplyr::filter(chemical=="P")
+
+head(data_v1)
+
 ## ----------------------------------------- ##
           # Driver Data Prep ----
 ## ----------------------------------------- ##
@@ -140,6 +154,9 @@ supportR::diff_check(old = unique(dynamic_v2$LTER), new = unique(sizer_v1$LTER))
 static_v2 <- dplyr::filter(static_v1, LTER %in% unique(sizer_v1$LTER))
 dynamic_v3 <- dplyr::filter(dynamic_v2, LTER %in% unique(sizer_v1$LTER))
 
+#Drop any streams from WRTDS data that aren't in SiZer data
+WRTDS_v3 <- dplyr::filter(data_v1, Stream_Name %in% unique(sizer_v1$Stream_Name))
+
 # Check that fixed the coarsest mismatch
 supportR::diff_check(old = unique(static_v2$LTER), new = unique(sizer_v1$LTER))
 supportR::diff_check(old = unique(dynamic_v3$LTER), new = unique(sizer_v1$LTER))
@@ -176,8 +193,14 @@ dplyr::glimpse(sizer_v2)
 sizer_v3 <- sizer_v2 %>%
   dplyr::left_join(y = dynamic_v4, by = c("LTER", "Stream_Name", "Year"))
 
+names(sizer_v3)
+
+# Attach the WRTDS output too - this isnt working b/c already have a chemical column in here
+sizer_v3.5 <-sizer_v3 %>%
+  dplyr::left_join(y = WRTDS_v3, by = c("Stream_Name", "Year"))
+
 # Re-check structure
-dplyr::glimpse(sizer_v3)
+dplyr::glimpse(sizer_v3.5)
 
 ## ----------------------------------------- ##
           # Latitude Integration ----
