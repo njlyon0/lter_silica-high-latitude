@@ -183,8 +183,9 @@ r.squaredGLMM(lmer2)
 summary(lmer2)
 
 
+
 ###==============================
-# Trying RRPP - old ignore
+# Trying RRPP - old IGNORE
 # Fit a model of interest
 si_mod1 <- RRPP::lm.rrpp(percent_change ~ LTER +
                                 ## Dynamic drivers
