@@ -31,7 +31,7 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Grab the desired data file
-full_df <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_Conc_uM_DIN_bw5.csv")) 
+full_df <- read.csv(file = file.path("tidy_data", "stats-ready_nodriversannual_FNConc_uM_DSi_bw5.csv")) 
 
 full_df<-full_df %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
