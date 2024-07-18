@@ -34,7 +34,7 @@ rm(list = ls())
 # This script can handle either annual or seasonal data but you must make that choice here
 
 # Define file name
-sizer_filename <- "annual_Discharge_cms_DSi_bw5.csv"
+sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
 #sizer_filename <- "seasonal_Conc_uM_DSi_bw5.csv"
 #sizer_filename <- "monthly_Discharge_cms_DSi_bw5.csv"
 
