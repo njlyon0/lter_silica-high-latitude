@@ -324,7 +324,7 @@ for(chunk in unique(sizer_v6$sizer_groups)){
     for(mos in unique(sizer_sub2$Month)){
       
       # Subset once more
-      sizer_sub3 <- dplyr::filter(sizer_sub, Month == mos)
+      sizer_sub3 <- dplyr::filter(sizer_sub2, Month == mos)
       
       # If there is more than one row in that subset
       if(nrow(sizer_sub3) > 1 & unique(sizer_sub3$LTER) != "MCM"){
