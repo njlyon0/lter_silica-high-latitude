@@ -187,7 +187,8 @@ for(place in unique(wrtds_focal$stream)){
     
     # Migrate "groups" over 
     place_info <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
-                                          x = explanatory, y = response)
+                                          x = explanatory, y = response,
+                                          group_dig = 5)
     
     # Make plot
     demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
@@ -203,7 +204,8 @@ for(place in unique(wrtds_focal$stream)){
     
     # Migrate groups over
     place_info <- HERON::id_inflections(raw_data = wrtds_place, sizer_data = sizer_info,
-                                        x = explanatory, y = response)
+                                        x = explanatory, y = response,
+                                        group_dig = 5)
     
     # Make plot
     demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
@@ -220,7 +222,8 @@ for(place in unique(wrtds_focal$stream)){
     
     # Strip group assignments
     place_info <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
-                                          x = explanatory, y = response)
+                                          x = explanatory, y = response,
+                                          group_dig = 5)
     
     # Plot 
     demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
