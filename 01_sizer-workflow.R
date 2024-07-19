@@ -14,9 +14,6 @@
 # Need to force an install of HERON to get an updated version?
 # devtools::install_github("lter/HERON", force = T)
 
-# Silence `dplyr::summarize` message
-options(dplyr.summarize.inform = FALSE)
-
 # Load libraries
 # install.packages("librarian")
 librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
@@ -96,7 +93,8 @@ range(wrtds_v3$Yield_kmol_yr_km2, na.rm = T)
 # How many streams / LTER remaining?
 wrtds_v3 %>% 
   dplyr::group_by(LTER) %>%
-  dplyr::summarize(stream_ct = length(unique(stream)))
+  dplyr::summarize(stream_ct = length(unique(stream)),
+                   .groups = "keep")
 
 # Check lost/gained columns
 supportR::diff_check(old = names(wrtds_v1), new = names(wrtds_v3))
@@ -198,7 +196,8 @@ for(place in unique(wrtds_focal$stream)){
                           values_to = "value") %>%
       # Group by everything *except month* and average response values
       dplyr::group_by(LTER, stream, drainSqKm, season, Year, chemical, var) %>%
-      dplyr::summarize(value = mean(value, na.rm = T)) %>%
+      dplyr::summarize(value = mean(value, na.rm = T),
+                       .groups = "keep") %>%
       dplyr::ungroup() %>%
       # Flip back to wide format
       tidyr::pivot_wider(names_from = var, values_from = value)
@@ -235,7 +234,8 @@ for(place in unique(wrtds_focal$stream)){
                           values_to = "value") %>%
       # Group by everything *except season* and average response values
       dplyr::group_by(LTER, stream, drainSqKm, Month, Year, chemical, var) %>%
-      dplyr::summarize(value = mean(value, na.rm = T)) %>%
+      dplyr::summarize(value = mean(value, na.rm = T),
+                       .groups = "keep") %>%
       dplyr::ungroup() %>%
       # Flip back to wide format
       tidyr::pivot_wider(names_from = var, values_from = value)
