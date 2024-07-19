@@ -106,7 +106,7 @@ place_export <- place_info %>%
   dplyr::mutate(sizer_bandwidth = 5,
                 stream = place, 
                 season = focal_season,
-                Month = focal_month,
+                Month = as.character(focal_month),
                 .before = dplyr::everything()) %>% 
   dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character))
 
@@ -130,7 +130,7 @@ stat_df <- lm_obj[[1]] %>%
   # Add a site column
   dplyr::mutate(stream = place, 
                 season = focal_season,
-                Month = focal_month,
+                Month = as.character(focal_month),
                 .before = dplyr::everything())
 
 # Final dataframe processing for *estimates*
@@ -138,7 +138,7 @@ est_df <- lm_obj[[2]] %>%
   dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
   dplyr::mutate(stream = place, 
                 season = focal_season,
-                Month = focal_month,
+                Month = as.character(focal_month),
                 .before = dplyr::everything())
 
 # Add this information to their respective lists
