@@ -232,7 +232,7 @@ for(place in unique(wrtds_focal$stream)){
   
   # Do some final convenience wrangling
   place_export <- place_info %>%
-    dplyr::mutate(bandwidth_h = 5,
+    dplyr::mutate(sizer_bandwidth = 5,
                   stream = place, 
                   .before = dplyr::everything()) %>% 
     dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character))
@@ -247,7 +247,7 @@ for(place in unique(wrtds_focal$stream)){
   lm_obj <- HERON::sizer_lm(data = place_info, x = explanatory,
                             y = response, group_col = "groups") %>%
     # Then add column for bandwidth
-    purrr::map(.f = mutate, bandwidth_h = 5,
+    purrr::map(.f = mutate, sizer_bandwidth = 5,
                .before = dplyr::everything())
   
   # Final dataframe processing for *statistics*
@@ -269,7 +269,7 @@ for(place in unique(wrtds_focal$stream)){
 } # Close loop
 
 ## ----------------------------------------- ##
-# Process Outputs ----
+            # Process Outputs ----
 ## ----------------------------------------- ##
 
 # Process the data first
@@ -279,12 +279,12 @@ data_actual <- purrr::list_rbind(x = data_list) %>%
                                  yes = "No inflection points", no = groups), 
                 .after = LTER) %>%
   # Make end/start actually numbers and calculate duration of group
-  dplyr::mutate(start = as.numeric(start),
-                end = as.numeric(end),
-                duration = end - start,
-                .after = end) %>% 
-  # Remove 'groups' column (redundant with 'section')
-  dplyr::select(-groups) %>% 
+  dplyr::mutate(section_start = as.numeric(start),
+                section_end = as.numeric(end),
+                section_duration = section_end - section_start,
+                .after = section_end) %>% 
+  # Remove redundant columns
+  dplyr::select(-groups, -start, -end) %>% 
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -321,39 +321,36 @@ statistic_actual <- purrr::list_rbind(x = statistic_list) %>%
 # Check structure
 dplyr::glimpse(statistic_actual)
 
+## ----------------------------------------- ##
+# Combine Outputs ----
+## ----------------------------------------- ##
 
-
-# Basement ----
-
-
-# Combine these data files
-combo_v1 <- years_v2 %>%
-  # Attach statistical information to response data
-  dplyr::left_join(y = stats_v2, by = dplyr::join_by(bandwidth_h, Stream_Name, section)) %>%
-  # Attach estimate information to response data
-  dplyr::left_join(est_v2, by = join_by(bandwidth_h, Stream_Name, section))
+# Combine these three types of output
+combo_v1 <- data_actual %>% 
+  # Attach statistical information
+  dplyr::left_join(y = statistic_actual,
+                   by = c("sizer_bandwidth", "stream", "section")) %>% 
+  # Attach estimate information too
+  dplyr::left_join(y = estimate_actual,
+                   by = c("sizer_bandwidth", "stream", "section"))
 
 # Check structure
 dplyr::glimpse(combo_v1)
-## view(combo_v1)
 
-# Let's process this to be a little friendlier for later use
-combo_v2 <- combo_v1 %>%
+# Process this to make navigating it more intuitive/easier
+combo_v2 <- combo_v1 %>% 
   # Reorder 'site information' (i.e., grouping columns) columns to the left
-  dplyr::relocate(bandwidth_h, LTER, Stream_Name, drainSqKm, chemical, 
-                  Year, dplyr::contains(response_var),
-                  section, start, end, duration, .before = dplyr::everything()) %>%
+  dplyr::relocate(sizer_bandwidth, LTER, stream, drainSqKm, chemical, 
+                  Month:Year, dplyr::contains(response),
+                  section, dplyr::starts_with("section_"),
+                  .before = dplyr::everything()) %>% 
   # Rename columns as needed
-  dplyr::rename(sizer_bandwidth = bandwidth_h,
-                section_start = start,
-                section_end = end,
-                section_duration = duration,
-                sizer_slope = slope_type) %>%
+  dplyr::rename(sizer_slope = slope_type) %>% 
   # Fix column class issues
   dplyr::mutate(sizer_bandwidth = as.numeric(sizer_bandwidth),
                 Year = as.numeric(Year)) %>%
   dplyr::mutate(dplyr::across(.cols = r_squared:std_error, .fns = as.numeric)) %>%
-  dplyr::mutate(dplyr::across(.cols = dplyr::contains(response_var), .fns = as.numeric)) %>%
+  dplyr::mutate(dplyr::across(.cols = dplyr::contains(response), .fns = as.numeric)) %>%
   # Reorder statistical columns more informatively
   dplyr::relocate(F_statistic, test_p_value, r_squared, adj_r_squared, sigma, 
                   df, df_residual, nobs, logLik, AIC, BIC, deviance, 
@@ -367,38 +364,39 @@ combo_v2 <- combo_v1 %>%
 # Check structure
 dplyr::glimpse(combo_v2)
 
-# Calculate / create some other desired columns
+# Create some other desired columns
 combo_v3 <- combo_v2 %>%
   # Simplify river names slightly
-  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>%
-  # Create a column that combines LTER and stream names
-  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
-                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
-                                     no = LTER),
-                site_abbrev = ifelse(nchar(site_simp) > 14,
-                                     yes = stringr::str_sub(string = site_simp, start = 1, end = 14),
-                                     no = site_simp),
-                stream = paste0(LTER_abbrev, "_", site_abbrev), .after = Stream_Name) %>%
-  # Drop intermediary columns needed to make that abbreviation simply
-  dplyr::select(-dplyr::ends_with("_abbrev"), -site_simp) %>%
-  # Calculate relative response so sites with very different absolute totals can be directly compared
-  ## Calculate average 'response' per SiZer section
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = stream)) %>% 
+  # Simplify other place information column contents
+  dplyr::mutate(LTER_simp = ifelse(nchar(LTER) <= 4, yes = LTER,
+                                     no = stringr::str_sub(LTER, start = 1, end = 4)),
+                site_simp = ifelse(nchar(site_simp) <= 14, yes = site_simp,
+                                     no = stringr::str_sub(site_simp, start = 1, end = 14)),
+                LTER_stream = paste0(LTER_simp, "_", site_simp), .after = stream) %>% 
+  # Drop intermediary columns
+  dplyr::select(-dplyr::ends_with("_simp")) %>% 
+  # Calculate average 'response' per SiZer section
   dplyr::group_by(sizer_bandwidth, stream, chemical, section) %>%
-  dplyr::mutate(mean_response = mean(.data[[response_var]], na.rm = T),
-                sd_response = sd(.data[[response_var]], na.rm = T),
+  dplyr::mutate(mean_response = mean(.data[[response]], na.rm = T),
+                sd_response = sd(.data[[response]], na.rm = T),
                 .before = section) %>%
-  dplyr::ungroup() %>%
+  dplyr::ungroup() %>% 
   # Express slope as a percent change of average response
   dplyr::mutate(percent_change = (slope_estimate / mean_response) * 100,
                 .after = sd_response)
 
-# Make sure the new 'stream' column is as unique as raw LTER + stream
-length(unique(paste0(combo_v3$LTER, combo_v3$Stream_Name)))
-length(unique(combo_v3$stream))
+# Make sure the new 'LTER_stream' column is as unique as raw LTER + stream
+length(unique(paste0(combo_v3$LTER, combo_v3$stream)))
+length(unique(combo_v3$LTER_stream))
 
-# Check structure yet again
+# Check structure
 dplyr::glimpse(combo_v3)
-## view(combo_v3)
+
+
+# BASEMENT ----
+
+
 
 ## ----------------------------------------- ##
 # Export ----
