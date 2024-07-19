@@ -134,11 +134,10 @@ dir.create(path = file.path(output_dir), showWarnings = F)
           # Core SiZer Workflow ----
 ## ----------------------------------------- ##
 
-# Make an empty list to store all of our extracted information
-giant_list <- list()
-
-# Make a counter and set it to 1 (the loop will add to it)
-j <- 1
+# Make some empty lists to store different bits of information
+data_list <- list()
+statistic_list <- list()
+estimate_list <- list()
 
 # Loop across streams
 for(place in unique(wrtds_focal$stream)){
@@ -231,15 +230,15 @@ for(place in unique(wrtds_focal$stream)){
   # Wrangle SiZer output for export
   message("Wrangling SiZer data...")
   
-  # Modify the columns in the provided sizer dataframes
+  # Do some final convenience wrangling
   place_export <- place_info %>%
-    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
     dplyr::mutate(bandwidth_h = 5,
                   stream = place, 
-                  .before = dplyr::everything())
-  
+                  .before = dplyr::everything()) %>% 
+    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character))
+    
   # Add this tidied dataframe to our export list
-  giant_list[[paste0("data_", j)]] <- place_export
+  data_list[[place]] <- place_export
   
   # Fit linear models
   message("Fit regressions...")
@@ -264,75 +263,38 @@ for(place in unique(wrtds_focal$stream)){
     dplyr::mutate(stream = place, .before = dplyr::everything())
   
   # Add this information to their respective lists
-  giant_list[[paste0("stats_", j)]] <- stat_df
-  giant_list[[paste0("estimates_", j)]] <- est_df
-  
-  # Increase the counter by 1 (for the next iteration of the loop)
-  j <- j + 1
-  
+  statistic_list[[place]] <- stat_df
+  estimate_list[[place]] <- est_df
+ 
 } # Close loop
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-
-
-
-
-
-# Basement ----
-
-
-
-
 ## ----------------------------------------- ##
-# Process Loop Outputs ----
+# Process Outputs ----
 ## ----------------------------------------- ##
 
-# Check out what is in our huge list
-names(giant_list)
+# Process the data first
+data_actual <- purrr::list_rbind(x = data_list) %>% 
+  # Tweak the '-Inf to Inf' entry for consistency with other dataframes and rename column
+  dplyr::mutate(section = ifelse(groups == "(-Inf, Inf]",
+                                 yes = "No inflection points", no = groups), 
+                .after = LTER) %>%
+  # Make end/start actually numbers and calculate duration of group
+  dplyr::mutate(start = as.numeric(start),
+                end = as.numeric(end),
+                duration = end - start,
+                .after = end) %>% 
+  # Remove 'groups' column (redundant with 'section')
+  dplyr::select(-groups) %>% 
+  # Drop non-unique rows
+  dplyr::distinct()
 
-# Make a new list to store simplified outputs in
-result_list <- list()
+# Check structure
+dplyr::glimpse(data_actual)
 
-# Now (ironically) we'll use a loop to unlist what the first loop made
-for(data_type in c("data", "stats", "estimates")){
-  
-  # For each data type...
-  list_sub <- giant_list %>%
-    # Identify all list elements that contain this type of data
-    purrr::keep(.p = stringr::str_detect(string = names(.),
-                                         pattern = data_type)) %>%
-    # Unlist by selecting all columns of each list element
-    purrr::list_rbind()
-  
-  # Add this to the simpler results list
-  result_list[[data_type]] <- list_sub
-  
-  # And print a message
-  message("Dataframe for ", data_type, " extracted") }
-
-# Check out the simplified results list we're left with
-names(result_list)
-dplyr::glimpse(result_list)
-
-# Grab each bit as a dataframe for ease of further modification
-estimates <- result_list[["estimates"]]
-stats <- result_list[["stats"]]
-years <- result_list[["data"]]
-
-# Wrangle estimate part
-est_v2 <- estimates %>%
+# Wrangle the estimate outputs
+estimate_actual <- purrr::list_rbind(x = estimate_list) %>% 
   # Remove intercept information
-  dplyr::filter(term != "(Intercept)") %>%
+  dplyr::filter(term != "(Intercept)") %>% 
   # Drop term column now that it's all "data[[x]]"
   dplyr::select(-term) %>%
   # Rename some columns for clarity
@@ -343,44 +305,26 @@ est_v2 <- estimates %>%
   dplyr::distinct()
 
 # Check structure
-dplyr::glimpse(est_v2)
+dplyr::glimpse(estimate_actual)
 
-# Wrangle statistics part
-stats_v2 <- stats %>%
-  # Rename period columns to use underscores
-  dplyr::rename(p_value = p.value,
-                r_squared = r.squared,
-                adj_r_squared = adj.r.squared,
-                df_residual = df.residual) %>%
+# Wrangle statistics outputs
+statistic_actual <- purrr::list_rbind(x = statistic_list) %>% 
+  # Replace periods with underscores in column names
+  dplyr::rename_with(.fn = ~ gsub(pattern = "\\.", replacement = "_", x = .x),
+                     .cols = dplyr::contains(".")) %>% 
   # Rename ambiguously named columns
   dplyr::rename(F_statistic = statistic,
-                test_p_value = p_value) %>%
+                test_p_value = p_value) %>% 
   # Drop non-unique rows
   dplyr::distinct()
 
 # Check structure
-dplyr::glimpse(stats_v2)
+dplyr::glimpse(statistic_actual)
 
-# Wrangle source data ('years')
-years_v2 <- years %>%
-  # Tweak the '-Inf to Inf' entry for consistency with other dataframes and rename column
-  dplyr::mutate(section = ifelse(groups == "(-Inf, Inf]",
-                                 yes = "No inflection points", no = groups), 
-                .after = LTER) %>%
-  # Make end/start actually numbers and calculate duration of group
-  dplyr::mutate(start = as.numeric(start),
-                end = as.numeric(end),
-                duration = end - start,
-                .after = end) %>%
-  # Make bandwidth a character
-  dplyr::mutate(bandwidth_h = as.character(bandwidth_h)) %>%
-  # Drop 'stream' and 'groups' columns (redundant with 'Stream_Name', and 'section' respectively)
-  dplyr::select(-stream, -groups) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
 
-# Check structure
-dplyr::glimpse(years_v2)
+
+# Basement ----
+
 
 # Combine these data files
 combo_v1 <- years_v2 %>%
