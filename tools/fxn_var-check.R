@@ -45,7 +45,7 @@ var_check <- function(data = NULL, chem = NULL,
   data_sub <- dplyr::filter(.data = data, chemical == chem)
  
   # Error for no data in those variables
-  if(all(is.na(data_short[[resp_var]])) == TRUE){
+  if(all(is.na(data_sub[[resp_var]])) == TRUE){
     stop("No non-NA response values found for this chemical")
   } else { message("Data subset looks good!") }
   
