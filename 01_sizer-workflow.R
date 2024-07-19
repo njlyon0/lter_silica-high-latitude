@@ -141,8 +141,8 @@ giant_list <- list()
 j <- 1
 
 # Loop across streams
-# for(place in unique(wrtds_focal$stream)){
-for(place in "Iijoki Raasakan voimal"){
+for(place in unique(wrtds_focal$stream)){
+# for(place in "Iijoki Raasakan voimal"){
   
   # Starting message
   message("Processing begun for ", element, " ", response, " at ", place)
