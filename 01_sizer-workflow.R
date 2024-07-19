@@ -21,7 +21,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
+librarian::shelf(tidyverse, SiZer, supportR, lter/HERON)
 
 # Clear environment
 rm(list = ls())
