@@ -14,6 +14,9 @@
 # Need to force an install of HERON to get an updated version?
 # devtools::install_github("lter/HERON", force = T)
 
+# Silence `dplyr::summarize` message
+options(dplyr.summarize.inform = FALSE)
+
 # Load libraries
 # install.packages("librarian")
 librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
@@ -118,7 +121,7 @@ dplyr::glimpse(wrtds_v4)
 
 # What is the temporal resolution of the WRTDS output data?
 ## *MUST* be one of "annual", "seasonal", or "monthly"
-temporal_res <- "monthly"
+temporal_res <- "seasonal"
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Conc_uM"
