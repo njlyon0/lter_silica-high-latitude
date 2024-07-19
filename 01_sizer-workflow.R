@@ -180,27 +180,27 @@ for(place in "Iijoki Raasakan voimal"){
     message("No slope changes/inflections found; Proceeding...")
     
     # Migrate "groups" over 
-    sizer_place <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
-                                           x = explanatory, y = response)
+    place_info <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
+                                          x = explanatory, y = response)
     
     # Make plot
-    demo_plot <- HERON::sizer_ggplot(raw_data = wrtds_place, sizer_data = sizer_place,
+    demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
                                      x = explanatory, y = response,
                                      trendline = 'sharp', vline = "none") +
       ggtitle(label = paste0("h = 5 Slope Changes (None)"))
-  
-  ## If inflection points (slope sign changes) are found:
+    
+    ## If inflection points (slope sign changes) are found:
   } else if(length(inflects) > 0){ 
     
     # Message this status
     message("Inflections found; Proceeding...")
     
     # Migrate groups over
-    sizer_place <- HERON::id_inflections(raw_data = wrtds_place, sizer_data = sizer_info,
-                                       x = explanatory, y = response)
+    place_info <- HERON::id_inflections(raw_data = wrtds_place, sizer_data = sizer_info,
+                                        x = explanatory, y = response)
     
     # Make plot
-    demo_plot <- HERON::sizer_ggplot(raw_data = wrtds_place, sizer_data = sizer_place,
+    demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
                                      x = explanatory, y = response,
                                      trendline = 'sharp', vline = "inflections",
                                      sharp_colors = c("#bbbbbb", "green")) +
@@ -213,17 +213,17 @@ for(place in "Iijoki Raasakan voimal"){
     message("Slope changes found but no inflections; Proceeding...")
     
     # Strip group assignments
-    sizer_place <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
-                                         x = explanatory, y = response)
+    place_info <- HERON::id_slope_changes(raw_data = wrtds_place, sizer_data = sizer_info,
+                                          x = explanatory, y = response)
     
     # Plot 
-    demo_plot <- HERON::sizer_ggplot(raw_data = wrtds_place, sizer_data = sizer_place,
+    demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
                                      x = explanatory, y = response,
                                      trendline = 'sharp', vline = "changes",
                                      sharp_colors = c("#bbbbbb", "green")) +
       ggtitle(label = paste0("h = 5 Slope Changes"))
   }
- 
+  
   # Export whichever graph got made
   ggplot2::ggsave(filename = file.path(output_dir, paste0(place_short, "_ggplot.png")),
                   height = 8, width = 8)
