@@ -39,8 +39,66 @@ ref_table <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.x
 ## ----------------------------------------- ##
 
 # Read in the driver data
-drivers_v0 <- read.csv(file = file.path("data", "all-data_si-extract_2.csv"))
+drivers_v1 <- read.csv(file = file.path("data", "all-data_si-extract_2.csv"))
 
+# Split off static drivers
+static_v1 <- drivers_v1 %>%
+  # Pare down to needed columns
+  dplyr::select(LTER, Stream_Name, elevation_mean_m, major_rock, 
+                major_land, major_soil, dplyr::starts_with("land_")) %>% 
+  # Keep only unique rows
+  dplyr::distinct() %>% 
+  # Keep only LTERs in SiZer output
+  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+  # Keep only streams in SiZer output
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream))
+
+# Check structure
+dplyr::glimpse(static_v1)
+
+# Split off the dynamic ones too
+dynamic_v1 <- drivers_v1 %>% 
+  # Only desired columns
+  dplyr::select(LTER, Stream_Name, dplyr::starts_with("temp_"),
+                dplyr::starts_with("snow_"), dplyr::starts_with("evapotrans_"),
+                dplyr::starts_with("npp_"), dplyr::starts_with("precip")) %>%
+  # Drop monthly information of retained dynamic drivers
+  dplyr::select(-dplyr::contains(c("_jan_", "_feb_", "_mar_", "_apr_",
+                                   "_may_", "_jun_", "_jul_", "_aug_",
+                                   "_sep_", "_oct_", "_nov_", "_dec_"))) %>% 
+  # Remove unwanted streams / duplicate rows
+  dplyr::distinct() %>% 
+  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  # Reshape longer
+  tidyr::pivot_longer(cols = -LTER:-Stream_Name) %>% 
+  # Remove NA values
+  dplyr::filter(!is.na(value)) %>% 
+  # Standardize delimited between bits of information
+  dplyr::mutate(
+    name = gsub(pattern = "_num_days", replacement = "_num.days", x = name),
+    name = gsub(pattern = "_max_prop_area", replacement = "_max.prop.area", x = name),
+    name = gsub(pattern = "_kg_m2", replacement = "_kg.m2", x = name),
+    name = gsub(pattern = "_kgC_m2_year", replacement = "_kgC.m2.year", x = name),
+    name = gsub(pattern = "_mm_per_day", replacement = "_mm.per.day", x = name)) %>% 
+  # Split that apart into the three components of each column name
+  tidyr::separate_wider_delim(cols = name, delim = "_", 
+                              names = c("driver", "Year", "units")) %>% 
+  # Recombine the driver and units columns
+  dplyr::mutate(name_actual = paste(driver, units, sep = "_"), .before = driver) %>%
+  dplyr::select(-driver, -units) %>%
+  # Make "Year" numeric
+  dplyr::mutate(Year = as.numeric(Year)) %>%
+  # Average the values within our grouping variables
+  dplyr::group_by(dplyr::across(-c(value))) %>%
+  dplyr::summarize(value = mean(value, na.rm = T),
+                   .groups = "keep") %>%
+  dplyr::ungroup() %>%
+  # Reshape back into wide format with the new name column!
+  tidyr::pivot_wider(names_from = name_actual, values_from = value, values_fill = NA)
+
+# Check structure
+dplyr::glimpse(dynamic_v1)
 
 ## ----------------------------------------- ##
 # WRTDS Output Prep ----
@@ -56,13 +114,26 @@ wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
 # Wrangle these data to just the bits we want to use as covariates with SiZer outputs
 wrtds_v2 <- wrtds_v1 %>% 
   # Pare down to just needed columns
-  dplyr::select(LTER, Stream_Name, drainSqKm, Year, chemical, 
-                Discharge_cms, Conc_uM, FNConc_uM) %>% 
+  dplyr::select(LTER, Stream_Name, drainSqKm, Year, chemical, Conc_uM, FNConc_uM) %>% 
   # Remove the colons from ratio chemicals
-  dplyr::mutate(chemical = gsub(pattern = ":", replacement = "_", x = chemical)) %>% 
+  dplyr::mutate(chemical = gsub(pattern = ":", replacement = ".", x = chemical)) %>% 
   # Remove whichever chemical is the focus of the chosen SiZer outputs
-  dplyr::filter(chemical != unique(sizer_v1$chemical))
-
+  dplyr::filter(chemical != unique(sizer_v1$chemical)) %>%
+  # Reshape longer
+  tidyr::pivot_longer(cols = dplyr::contains("Conc_uM")) %>% 
+  # Reassemble a new column name + drop older bits
+  dplyr::mutate(name_fix = paste0(chemical, "_", name)) %>% 
+  dplyr::select(-chemical, -name) %>% 
+  # Average within existing groups
+  dplyr::group_by(LTER) %>% 
+  dplyr::group_by(dplyr::across(-c(value))) %>%
+  dplyr::summarize(value = mean(value, na.rm = T),
+                   .groups = "keep") %>%
+  dplyr::ungroup() %>%
+  # Remove invalid
+  dplyr::filter(value >= 0 & value <= Inf) %>% 
+  # Reshape wider
+  tidyr::pivot_wider(names_from = name_fix, values_from = value, values_fill = NA)
 
 # Check structure
 dplyr::glimpse(wrtds_v2)
@@ -83,62 +154,6 @@ dplyr::glimpse(wrtds_v2)
           # Driver Data Prep ----
 ## ----------------------------------------- ##
 
-# Read in the driver data as it is
-drivers_v1 <- read.csv(file = file.path("drivers", "all-data_si-extract_2_20240623.csv"))
-
-# Check structure
-dplyr::glimpse(drivers_v1)
-
-# Split off the static driver information
-static_v1 <- drivers_v1 %>%
-  dplyr::select(LTER, Stream_Name, 
-                elevation_mean_m, major_rock, 
-                major_land, dplyr::starts_with("land_"),
-                major_soil)
-
-# Check that out
-dplyr::glimpse(static_v1)
-
-# Now split off the dynamic drivers (they'll require more wrangling
-dynamic_v1 <- drivers_v1 %>%
-  dplyr::select(LTER, Stream_Name, dplyr::starts_with("temp_"),
-                dplyr::starts_with("snow_"), dplyr::starts_with("evapotrans_"),
-                dplyr::starts_with("npp_"), dplyr::starts_with("precip")) %>%
-  # Drop monthly information of retained dynamic drivers
-  dplyr::select(-dplyr::contains("_jan_"), -dplyr::contains("_feb_"), -dplyr::contains("_mar_"),
-                -dplyr::contains("_apr_"), -dplyr::contains("_may_"), -dplyr::contains("_jun_"),
-                -dplyr::contains("_jul_"), -dplyr::contains("_aug_"), -dplyr::contains("_sep_"),
-                -dplyr::contains("_oct_"), -dplyr::contains("_nov_"), -dplyr::contains("_dec_"))
-
-# Check structure
-dplyr::glimpse(dynamic_v1)
-
-# Need to summarize this to join appropriately with the SiZer data
-dynamic_v2 <- dynamic_v1 %>%
-  # Reshape this data into long format for ease of wrangling
-  tidyr::pivot_longer(cols = -LTER:-Stream_Name) %>%
-  # Clean up the units part of the old column names
-  dplyr::mutate(name = gsub(pattern = "_num_days", replacement = "_num.days", x = name)) %>%
-  dplyr::mutate(name = gsub(pattern = "_mm_per_day", replacement = "_mm.per.day", x = name)) %>%
-  dplyr::mutate(name = gsub(pattern = "_kgC_m2_year", replacement = "_kg.C.m2.year", x = name)) %>%
-  dplyr::mutate(name = gsub(pattern = "_kg_m2", replacement = "_kg.m2", x = name)) %>%
-  dplyr::mutate(name = gsub(pattern = "_max_prop_area", replacement = "_max.prop.area", x = name)) %>%
-  # Break the old name column into its component parts
-  tidyr::separate_wider_delim(cols = name, delim = "_", names = c("driver", "Year", "units")) %>%
-  # Recombine the driver and units columns
-  dplyr::mutate(name_actual = paste(driver, units, sep = "_"), .before = driver) %>%
-  dplyr::select(-driver, -units) %>%
-  # Make "Year" numeric
-  dplyr::mutate(Year = as.numeric(Year)) %>%
-  # Average the values within our grouping variables
-  dplyr::group_by(dplyr::across(-c(value))) %>%
-  dplyr::summarize(value = mean(value, na.rm = T)) %>%
-  dplyr::ungroup() %>%
-  # Reshape back into wide format with the new name column!
-  tidyr::pivot_wider(names_from = name_actual, values_from = value, values_fill = NA)
-
-# Re-check structure
-dplyr::glimpse(dynamic_v2)
 
 ## ----------------------------------------- ##
         # Driver Integration Prep ----
