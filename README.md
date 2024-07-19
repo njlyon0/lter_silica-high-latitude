@@ -1,4 +1,4 @@
-# Cryosphere Silica Exports
+# High Latitude Silica Exports
 
 - Primary Investigators: Joanna Carey & Kathi Jo Jankowski
 - [Project Summary](https://lternet.edu/working-groups/river-si-exports/)
@@ -10,9 +10,12 @@ This repository contains the code needed for one sub-project created by the Long
 
 ## Script Explanations
 
-Scripts in this repository are described below:
+The 'core' scripts in this repository are described below. Any script not described below is exploratory and should be treated as such.
 
-- **`...-workflow.R`** - Runs SiZer workflow to identify changers in slope for WRTDS time series. Temporal granularity of source data is specified in file prefix ("seasonal" or "annual"). Note that "seasonal" data are derived by averaging across sub-season temporal columns in the monthly data.
+- `00_data-download.R` - Downloads the various source data from this working group's Shared Google Drive. Note that only those with access to that Drive will be able to run the script.
+
+- `01_sizer-workflow.R` - Runs SiZer workflow to identify changes in slope for WRTDS time series. Works for monthly, seasonal (averaged across sub-season months), and annual input data.
+
 
 - **`stats-prep.R`** - Accepts outputs of _either_ `...-workflow.R` script and (1) attaches basin characteristics / climatic drivers extracted elsewhere and (2) does some summarizing / wrangling needed before stats / visualization.
 
