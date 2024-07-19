@@ -173,115 +173,8 @@ dplyr::glimpse(sizer_v2)
 
 # BASEMENT ----
 
-
-
-
-## ----------------------------------------- ##
-          # Driver Data Prep ----
-## ----------------------------------------- ##
-
-
-## ----------------------------------------- ##
-        # Driver Integration Prep ----
-## ----------------------------------------- ##
-
-# First, check which LTERs are not in the SiZer data but are in the basin data
-supportR::diff_check(old = unique(static_v1$LTER), new = unique(sizer_v1$LTER))
-supportR::diff_check(old = unique(dynamic_v2$LTER), new = unique(sizer_v1$LTER))
-
-# Drop any LTERs from the driver data that aren't in our SiZer data
-static_v2 <- dplyr::filter(static_v1, LTER %in% unique(sizer_v1$LTER))
-dynamic_v3 <- dplyr::filter(dynamic_v2, LTER %in% unique(sizer_v1$LTER))
-
-#Drop any streams from WRTDS data that aren't in SiZer data
-WRTDS_v3 <- dplyr::filter(data_v1, Stream_Name %in% unique(sizer_v1$Stream_Name))
-
-# Check that fixed the coarsest mismatch
-supportR::diff_check(old = unique(static_v2$LTER), new = unique(sizer_v1$LTER))
-supportR::diff_check(old = unique(dynamic_v3$LTER), new = unique(sizer_v1$LTER))
-
-# Next, check for any streams that are in drivers but not SiZer and vice versa
-## Waited 'til we dropped LTER mismatches to make this result easier to quickly scan
-supportR::diff_check(old = unique(static_v2$Stream_Name), new = unique(sizer_v1$Stream_Name))
-supportR::diff_check(old = unique(dynamic_v3$Stream_Name), new = unique(sizer_v1$Stream_Name))
-
-# Drop any mismatched streams from the basin data
-static_v3 <- dplyr::filter(static_v2, Stream_Name %in% sizer_v1$Stream_Name)
-dynamic_v4 <- dplyr::filter(dynamic_v3, Stream_Name %in% sizer_v1$Stream_Name)
-
-# Re-check stream mismatches (should just be McMurdo streams)
-supportR::diff_check(old = unique(static_v3$Stream_Name), new = unique(sizer_v1$Stream_Name))
-supportR::diff_check(old = unique(dynamic_v4$Stream_Name), new = unique(sizer_v1$Stream_Name))
-
-# Note that these steps aren't totally needed because we're going to do a "left" join
-## But still good to be explicit about what streams don't have driver data
-## So we're not caught unawares by some missing data they shouldn't be missing
-
-## ----------------------------------------- ##
-          # Driver Integration ----
-## ----------------------------------------- ##
-
-# Combine the static driver data with the SiZer data!
-sizer_v2 <- sizer_v1 %>%
-  dplyr::left_join(y = static_v3, by = c("LTER", "Stream_Name"))
-
-# Check structure
-dplyr::glimpse(sizer_v2)
-
-# Attach the dynamic drivers too
-sizer_v3 <- sizer_v2 %>%
-  dplyr::left_join(y = dynamic_v4, by = c("LTER", "Stream_Name", "Year"))
-
-names(sizer_v3)
-
-# Attach the WRTDS output too - this isnt working b/c already have a chemical column in here
-sizer_v3.5 <-sizer_v3 %>%
-  dplyr::left_join(y = WRTDS_v3, by = c("Stream_Name", "Year"))
-
-# Re-check structure
-dplyr::glimpse(sizer_v3.5)
-
-## ----------------------------------------- ##
-          # Latitude Integration ----
-## ----------------------------------------- ##
-
-# Read in the site reference table
-site_info_v1 <- read.csv(file = file.path("drivers", "Site_Reference_Table.csv")) %>%
-  # And subset to only LTERs in the SiZer data
-  dplyr::filter(LTER %in% sizer_v3$LTER)
-
-# Check structure
-dplyr::glimpse(site_info_v1)
-
-# Pare down the columns the bare minimum of needed information
-site_info_v2 <- site_info_v1 %>%
-  dplyr::select(LTER, Stream_Name, Latitude) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# Check structure
-dplyr::glimpse(site_info_v2)
-
-# Check mismatch of streams with what is in the SiZer data
-supportR::diff_check(old = unique(site_info_v2$Stream_Name), new = unique(sizer_v3$Stream_Name))
-
-# Drop unwanted streams
-site_info_v3 <- site_info_v2 %>%
-  dplyr::filter(Stream_Name %in% unique(sizer_v3$Stream_Name))
-
-# Any sites missing latitude?
-site_info_v3 %>%
-  dplyr::filter(is.na(Latitude))
-## Any sites appearing here need to be edited **in the GoogleSheet "Site_Reference_Table"**
-## See the Drive folder here: https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA
-
-# Attach this to the SiZer data
-sizer_v4 <- sizer_v3 %>%
-  dplyr::left_join(y = site_info_v3, by = c("LTER", "Stream_Name")) %>%
-  dplyr::relocate(Latitude, .after = term_p_value)
-
-# Re-check structure
-dplyr::glimpse(sizer_v4)
+# Everything below here is not yet revisited and likely will not work as expected
+## USE CAUTION -- or the unedited 'stats-prep.R' script :)
 
 ## ----------------------------------------- ##
           # Quality of Life Tweaks ----
@@ -291,7 +184,7 @@ dplyr::glimpse(sizer_v4)
 ## Mostly to have easy things to map graphing aesthetics to but there are other benefits!
 
 # Do desired wrangling
-sizer_v5 <- sizer_v4 %>%
+sizer_v5 <- sizer_v2 %>%
   # Drop ARC streams
   dplyr::filter(LTER != "ARC") %>%
   # Combine section with stream
