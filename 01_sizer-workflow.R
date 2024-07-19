@@ -119,7 +119,7 @@ dplyr::glimpse(wrtds_v4)
 
 # What is the temporal resolution of the WRTDS output data?
 ## *MUST* be one of "annual", "seasonal", or "monthly"
-temporal_res <- "seasonal"
+temporal_res <- "monthly"
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Conc_uM"
@@ -333,7 +333,7 @@ dplyr::glimpse(combo_v1)
 combo_v2 <- combo_v1 %>% 
   # Reorder 'site information' (i.e., grouping columns) columns to the left
   dplyr::relocate(sizer_bandwidth, LTER, stream, drainSqKm, chemical, 
-                  Month:Year, dplyr::contains(response),
+                  Month, season, Year, dplyr::contains(response),
                   section, dplyr::starts_with("section_"),
                   .before = dplyr::everything()) %>% 
   # Rename columns as needed
@@ -384,6 +384,10 @@ length(unique(combo_v3$LTER_stream))
 
 # Check structure
 dplyr::glimpse(combo_v3)
+
+# Make sure no columns are lost
+supportR::diff_check(old = unique(c(names(data_actual), names(estimate_actual), names(statistic_actual))),
+                     new = names(combo_v3))
 
 ## ----------------------------------------- ##
                 # Export ----
