@@ -1,3 +1,25 @@
+## ------------------------------------------------------- ##
+# Core SiZer Processing Steps
+## ------------------------------------------------------- ##
+# Written by: Nick J Lyon & Joanna Carey
+
+## ----------------------------------------- ##
+# Script Explanation ----
+## ----------------------------------------- ##
+
+# Purpose:
+## The 'actual' SiZer workflow is included below.
+## This script is built to be sourced in the '01_sizer-workflow.R' script after some prep steps have been handled
+
+# Rationale for treatment as separate script:
+## Essentially we want to do this whole workflow for annual, seasonal, and monthly WRTDS outputs
+## No easy way to do that for all three without duplicating this for each context
+## SO, rather than doing that duplication, we can source this script at multiple bits
+## Also makes updating/maintaining in the future easier
+
+## ----------------------------------------- ##
+# Actual Work ----
+## ----------------------------------------- ##
 # Message for starting of SiZer bit
 message("Run SiZer...")
 
@@ -114,3 +136,5 @@ est_df <- lm_obj[[2]] %>%
 # Add this information to their respective lists
 statistic_list[[paste0(place, "_", focal_season, "_", focal_month)]] <- stat_df
 estimate_list[[paste0(place, "_", focal_season, "_", focal_month)]] <- est_df
+
+# End ----
