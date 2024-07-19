@@ -21,12 +21,20 @@ librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
 # Clear environment
 rm(list = ls())
 
-# Read in data & rename a column
-wrtds_v1 <- read.csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
+# Load custom functions
+for(fxn in dir(path = file.path("tools"))){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
 
 ## ----------------------------------------- ##
-# SiZer Prep ----
+# General SiZer Prep ----
 ## ----------------------------------------- ##
+
+# Read in data & rename a column
+wrtds_v1 <- read.csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
 
 # Remove unwanted data / data that don't meet needed criteria
 wrtds_v2 <- wrtds_v1 %>% 
@@ -79,53 +87,33 @@ wrtds_v3 %>%
 # Check lost/gained columns
 supportR::diff_check(old = names(wrtds_v1), new = names(wrtds_v3))
 
+## ----------------------------------------- ##
+# Variable Selection ----
+## ----------------------------------------- ##
+
+# Choose response/explanatory variables of interest & focal chemical
+response <- "FNConc_uM"
+explanatory <- "Year"
+element <- "DIN"
+
+# Check that combination of variables works
+var_check(data = wrtds_v3, chem = element, 
+          resp_var = response, exp_var = explanatory)
+
+# Prepare just the desired pieces of information
+wrtds_focal <- wrtds_v3 %>% 
+  dplyr::select(LTER:chemical, dplyr::contains(response)) %>% 
+  dplyr::filter(chemical == element)
+
+# Check structure
+dplyr::glimpse(wrtds_focal)
+
+# Create a folder for outputs
+(output_dir = paste0())
+
 # Basement ----
 
 
-
-
-## ----------------------------------------- ##
-# Pre-Loop Preparation ----
-## ----------------------------------------- ##
-
-# Identify response (Y) and explanatory (X) variables
-response_var <- "FNConc_uM"
-## Yield, Conc_uM, Discharge_cms
-explanatory_var <- "Year"
-
-# Identify which chemical you want to analyze
-unique(data_simp$chemical)
-element <- "DIN"
-
-
-# Do a quick typo check
-if(!response_var %in% names(data_simp)) {
-  message("Response not found in data! Check spelling.") } else {
-    message("Response variable looks good!") }
-if(!explanatory_var %in% names(data_simp)) {
-  message("Explanatory not found in data! Check spelling.") } else {
-    message("Explanatory variable looks good!") }
-if(!element %in% data_simp$chemical) {
-  message("Chemical not found in data! Check spelling.") } else {
-    message("Chemical looks good!") }
-
-# Identify the bandwidth to use with SiZer
-bandwidth <- 5
-
-# Carve data down to only needed bits
-data_short <- data_simp %>%
-  ## Keep only needed columns
-  dplyr::select(LTER:chemical, dplyr::starts_with(response_var)) %>%
-  ## And only chemical of interest
-  dplyr::filter(chemical == element)
-
-# Check that out
-dplyr::glimpse(data_short)
-
-# Make sure there are some non-NAs for the selected response/explanatory/chemical
-if(all(is.na(data_short[[response_var]])) == T){
-  message("No non-NA response values found in this subset of the data")
-} else { message("Data subset looks good!") }
 
 # Create a folder to save experimental outputs
 # Folder name is: [response]_bw[bandwidths]_[date]
