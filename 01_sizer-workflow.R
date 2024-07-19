@@ -29,7 +29,7 @@ dir.create(path = file.path("data"), showWarnings = F)
 source("00_data-download.R")
 
 # Load custom functions
-for(fxn in dir(path = file.path("tools"))){
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
   source(file.path("tools", fxn))
 }
 
