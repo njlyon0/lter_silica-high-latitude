@@ -228,41 +228,40 @@ for(place in "Iijoki Raasakan voimal"){
   ggplot2::ggsave(filename = file.path(output_dir, paste0(place_short, "_ggplot.png")),
                   height = 8, width = 8)
   
-  # Loop - Wrangle SiZer Data ----
+  # Wrangle SiZer output for export
   message("Wrangling SiZer data...")
   
   # Modify the columns in the provided sizer dataframes
-  sizer_export <- data_info %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(bandwidth_h = bandwidth,
-                  Stream_Name = place, 
-                  .before = dplyr::everything()) %>%
-    as.data.frame()
+  place_export <- place_info %>%
+    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
+    dplyr::mutate(bandwidth_h = 5,
+                  stream = place, 
+                  .before = dplyr::everything())
   
   # Add this tidied dataframe to our export list
-  giant_list[[paste0("data_", j)]] <- sizer_export
+  giant_list[[paste0("data_", j)]] <- place_export
   
-  # Loop - Fit Linear Models ----
+  # Fit linear models
   message("Fit regressions...")
   
   # Extract statistics/estimates from linear models
-  lm_obj <- HERON::sizer_lm(data = data_info, x = explanatory_var,
-                            y = response_var, group_col = "groups") %>%
+  lm_obj <- HERON::sizer_lm(data = place_info, x = explanatory,
+                            y = response, group_col = "groups") %>%
     # Then add column for bandwidth
-    purrr::map(.f = mutate, bandwidth_h = bandwidth,
+    purrr::map(.f = mutate, bandwidth_h = 5,
                .before = dplyr::everything())
   
   # Final dataframe processing for *statistics*
   stat_df <- lm_obj[[1]] %>%
     # Make all columns characters
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
+    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
     # Add a site column
-    dplyr::mutate(Stream_Name = place, .before = dplyr::everything())
+    dplyr::mutate(stream = place, .before = dplyr::everything())
   
   # Final dataframe processing for *estimates*
   est_df <- lm_obj[[2]] %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(Stream_Name = place, .before = dplyr::everything())
+    dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character)) %>%
+    dplyr::mutate(stream = place, .before = dplyr::everything())
   
   # Add this information to their respective lists
   giant_list[[paste0("stats_", j)]] <- stat_df
@@ -270,9 +269,6 @@ for(place in "Iijoki Raasakan voimal"){
   
   # Increase the counter by 1 (for the next iteration of the loop)
   j <- j + 1
-  
-  # Return a "finished" message!
-  message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
   
 } # Close loop
 
@@ -286,8 +282,6 @@ for(place in "Iijoki Raasakan voimal"){
   
   
   
-}
-
 
 
 
@@ -298,166 +292,6 @@ for(place in "Iijoki Raasakan voimal"){
 
 
 
-
-## ----------------------------------------- ##
-# Extract SiZer Data ----
-## ----------------------------------------- ##
-
-# Loop through sites and extract information
-for(place in unique(data_short$stream)) {
-  # for(place in c("Yukon", "Site 7")) {
-  
-  # Start with a message!
-  message("Processing begun for '", response_var, "' of '", element, "' at '", place, "'")
-  
-  # Subset the data
-  data_sub <- data_short %>%
-    dplyr::filter(stream == place) %>%
-    as.data.frame()
-  
-  # Loop - Get SiZer Object ----
-  message("Run SiZer...")
-  
-  # Invoke the SiZer::SiZer function
-  e <- SiZer::SiZer(x = data_sub[[explanatory_var]],
-                    y = data_sub[[response_var]],
-                    h = c(2, 10), degree = 1,
-                    derv = 1, grid.length = 100)
-  
-  # Make a shorter place name
-  place_short <- stringr::str_sub(string = place, start = 1, end = 8)
-  
-  # Plot (and export) the SiZer object with horizontal lines of interest
-  png(filename = file.path(export_folder, paste0(place_short, "_SiZer-plot.png")),
-      width = 5, height = 5, res = 720, units = 'in')
-  HERON::sizer_plot(sizer_object = e,
-                    bandwidth_vec = c(bandwidth))
-  dev.off()
-  
-  # Identify inflection points/slope changes
-  sizer_info <- HERON::sizer_slice(sizer_object = e, bandwidth = bandwidth)
-  
-  # Loop - No Changes Workflow ----
-  ## If no slope changes are found:
-  if(nrow(sizer_info) == 0){
-    
-    # Message this status
-    message("No slope changes/inflections found; Proceeding...")
-    
-    # Migrate "groups" over 
-    data_info <- HERON::id_slope_changes(raw_data = data_sub,
-                                         sizer_data = sizer_info,
-                                         x = explanatory_var,
-                                         y = response_var,
-                                         group_dig = 5)
-    
-    # Make plot
-    demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
-                                     sizer_data = sizer_info,
-                                     x = explanatory_var, y = response_var,
-                                     trendline = 'sharp', vline = "none") +
-      ggtitle(label = paste0("h = ", bandwidth, " Slope Changes (None)"))
-    
-  } else {
-    
-    # If there are changes and/or inflections, find inflections
-    inflects_raw <- c(sizer_info$neg_to_pos, sizer_info$pos_to_neg)
-    inflects <- inflects_raw[!is.na(inflects_raw)]
-    
-    # Loop - Inflection Point Workflow ----
-    # If any inflections *are* found:
-    if(length(inflects) > 0){
-      
-      # Message to this effect
-      message("Inflections found; Proceeding...")
-      
-      # Migrate groups over
-      data_info <- HERON::id_inflections(raw_data = data_sub,
-                                         sizer_data = sizer_info,
-                                         x = explanatory_var,
-                                         y = response_var,
-                                         group_dig = 5)
-      
-      # Make plot
-      demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
-                                       sizer_data = sizer_info,
-                                       x = explanatory_var, y = response_var,
-                                       trendline = 'sharp', vline = "inflections",
-                                       sharp_colors = c("#bbbbbb", "green")) +
-        ggtitle(label = paste0("h = ", bandwidth, " Inflection Points"))
-      
-    } else {
-      # Loop - Slope Change Workflow ----
-      
-      # Message
-      message("Slope changes found but no inflections; Proceeding...")
-      
-      # Strip group assignments
-      data_info <- HERON::id_slope_changes(raw_data = data_sub, sizer_data = sizer_info,
-                                           x = explanatory_var, y = response_var,
-                                           group_dig = 5)
-      
-      # Plot 
-      demo_plot <- HERON::sizer_ggplot(raw_data = data_info,
-                                       sizer_data = sizer_info,
-                                       x = explanatory_var, y = response_var,
-                                       trendline = 'sharp', vline = "changes",
-                                       sharp_colors = c("#bbbbbb", "green")) +
-        ggtitle(label = paste0("h = ", bandwidth, " Slope Changes"))
-    } } # Close tri-partite workflow splits
-  
-  # Export whichever graph got made
-  ggplot2::ggsave(filename = file.path(export_folder, 
-                                       paste0(place_short, "_ggplot.png")),
-                  height = 8, width = 8)
-  
-  # Loop - Wrangle SiZer Data ----
-  message("Wrangling SiZer data...")
-  
-  # Modify the columns in the provided sizer dataframes
-  sizer_export <- data_info %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(bandwidth_h = bandwidth,
-                  Stream_Name = place, 
-                  .before = dplyr::everything()) %>%
-    as.data.frame()
-  
-  # Add this tidied dataframe to our export list
-  giant_list[[paste0("data_", j)]] <- sizer_export
-  
-  # Loop - Fit Linear Models ----
-  message("Fit regressions...")
-  
-  # Extract statistics/estimates from linear models
-  lm_obj <- HERON::sizer_lm(data = data_info, x = explanatory_var,
-                            y = response_var, group_col = "groups") %>%
-    # Then add column for bandwidth
-    purrr::map(.f = mutate, bandwidth_h = bandwidth,
-               .before = dplyr::everything())
-  
-  # Final dataframe processing for *statistics*
-  stat_df <- lm_obj[[1]] %>%
-    # Make all columns characters
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    # Add a site column
-    dplyr::mutate(Stream_Name = place, .before = dplyr::everything())
-  
-  # Final dataframe processing for *estimates*
-  est_df <- lm_obj[[2]] %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character)) %>%
-    dplyr::mutate(Stream_Name = place, .before = dplyr::everything())
-  
-  # Add this information to their respective lists
-  giant_list[[paste0("stats_", j)]] <- stat_df
-  giant_list[[paste0("estimates_", j)]] <- est_df
-  
-  # Increase the counter by 1 (for the next iteration of the loop)
-  j <- j + 1
-  
-  # Return a "finished" message!
-  message("Processing complete for '", response_var, "' of '", element, "' at '", place, "'")
-  
-} # Close loop
 
 ## ----------------------------------------- ##
 # Process Loop Outputs ----
