@@ -87,7 +87,7 @@ place_export <- place_info %>%
   dplyr::mutate(dplyr::across(.cols = dplyr::everything(), .fns = as.character))
 
 # Add this tidied dataframe to our export list
-data_list[[paste0(place, "_", season, "_", Month)]] <- place_export
+data_list[[paste0(place, "_", focal_season, "_", focal_month)]] <- place_export
 
 # Fit linear models
 message("Fit regressions...")
@@ -112,5 +112,5 @@ est_df <- lm_obj[[2]] %>%
   dplyr::mutate(stream = place, .before = dplyr::everything())
 
 # Add this information to their respective lists
-statistic_list[[paste0(place, "_", season, "_", Month)]] <- stat_df
-estimate_list[[paste0(place, "_", season, "_", Month)]] <- est_df
+statistic_list[[paste0(place, "_", focal_season, "_", focal_month)]] <- stat_df
+estimate_list[[paste0(place, "_", focal_season, "_", focal_month)]] <- est_df
