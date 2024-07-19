@@ -87,9 +87,27 @@ wrtds_v3 %>%
 # Check lost/gained columns
 supportR::diff_check(old = names(wrtds_v1), new = names(wrtds_v3))
 
+# Duplicate the data object to reduce risk of accident
+wrtds_v4 <- wrtds_v3
+
+# If this dataset does not contain month/season columns (i.e., is annual) add them
+if(!"Month" %in% names(wrtds_v3)){
+  wrtds_v4 <- dplyr::mutate(.data = wrtds_v4, Month = "x", .before = Year)
+}
+if(!"season" %in% names(wrtds_v3)){
+  wrtds_v4 <- dplyr::mutate(.data = wrtds_v4, season = "x", .before = Year)
+}
+
+# Check structure
+dplyr::glimpse(wrtds_v4)
+
 ## ----------------------------------------- ##
-# Variable Selection ----
+          # Variable Selection ----
 ## ----------------------------------------- ##
+
+# What is the temporal resolution of the WRTDS output data?
+## *MUST* be one of "annual", "seasonal", or "monthly"
+temporal_res <- "annual"
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "FNConc_uM"
@@ -97,11 +115,11 @@ explanatory <- "Year"
 element <- "DIN"
 
 # Check that combination of variables works
-var_check(data = wrtds_v3, chem = element, 
+var_check(data = wrtds_v4, chem = element, 
           resp_var = response, exp_var = explanatory)
 
 # Prepare just the desired pieces of information
-wrtds_focal <- wrtds_v3 %>% 
+wrtds_focal <- wrtds_v4 %>% 
   dplyr::select(LTER:chemical, dplyr::contains(response)) %>% 
   dplyr::filter(chemical == element)
 
@@ -109,22 +127,31 @@ wrtds_focal <- wrtds_v3 %>%
 dplyr::glimpse(wrtds_focal)
 
 # Create a folder for outputs
-(output_dir = paste0())
+(output_dir = paste(temporal_res, response, element, sep = "_"))
+dir.create(path = file.path(output_dir), showWarnings = F)
+
+## ----------------------------------------- ##
+# Core SiZer Workflow ----
+## ----------------------------------------- ##
+
+# Make an empty list to store all of our extracted information
+giant_list <- list()
+
+# Make a counter and set it to 1 (the loop will add to it)
+j <- 1
+
+
+
+
+
+
+
+
 
 # Basement ----
 
 
 
-# Create a folder to save experimental outputs
-# Folder name is: [response]_bw[bandwidths]_[date]
-(export_folder <- paste0("annual_", response_var, "_", element, "_bw", bandwidth))
-dir.create(path = export_folder, showWarnings = FALSE)
-
-# Make an empty list to store all of our extracted information
-giant_list <- list()
-
-# Make a counter and set it to 1 (the list will add to it)
-j <- 1
 
 ## ----------------------------------------- ##
 # Extract SiZer Data ----
