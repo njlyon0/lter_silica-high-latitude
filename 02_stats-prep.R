@@ -32,7 +32,21 @@ sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 ## ----------------------------------------- ##
 
 # Read in the reference table
-ref_table <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
+ref_v1 <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
+
+# Process this for integration with the SiZer stuff
+ref_v2 <- ref_v1 %>% 
+  # Pare down to desired columns only
+  dplyr::select(LTER, Stream_Name, Latitude) %>% 
+  # Remove unwanted streams / duplicate rows
+  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::distinct() %>% 
+  # Remove any rows where Latitude is unknown
+  dplyr::filter(!is.na(Latitude))
+
+# Check structure
+dplyr::glimpse(ref_v2)
 
 ## ----------------------------------------- ##
 # Driver Data Prep ----
@@ -46,11 +60,9 @@ static_v1 <- drivers_v1 %>%
   # Pare down to needed columns
   dplyr::select(LTER, Stream_Name, elevation_mean_m, major_rock, 
                 major_land, major_soil, dplyr::starts_with("land_")) %>% 
-  # Keep only unique rows
+  # Remove unwanted streams / duplicate rows
   dplyr::distinct() %>% 
-  # Keep only LTERs in SiZer output
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  # Keep only streams in SiZer output
   dplyr::filter(Stream_Name %in% unique(sizer_v1$stream))
 
 # Check structure
@@ -138,14 +150,28 @@ wrtds_v2 <- wrtds_v1 %>%
 # Check structure
 dplyr::glimpse(wrtds_v2)
 
+## ----------------------------------------- ##
+# Integrate Data ----
+## ----------------------------------------- ##
+
+# Combine the SiZer ouputs with the various data files we prepared above
+## Note that each shares different columns with the SiZer outputs
+sizer_v2 <- sizer_v1 %>% 
+  # Rename 'stream' column for convenience
+  dplyr::rename(Stream_Name = stream) %>% 
+  # Integrate reference table
+  dplyr::left_join(y = ref_v2, by = c("LTER", "Stream_Name")) %>% 
+  # Integrate drivers (static & dynamic)
+  dplyr::left_join(y = static_v1, by = c("LTER", "Stream_Name")) %>% 
+  dplyr::left_join(y = dynamic_v1, by = c("LTER", "Stream_Name", "Year")) %>% 
+  # Integrate WRTDS
+  dplyr::left_join(y = wrtds_v2, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
+  
+# Check structure
+dplyr::glimpse(sizer_v2)
 
 
-
-
-
-
-
- # BASEMENT ----
+# BASEMENT ----
 
 
 
