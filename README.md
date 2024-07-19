@@ -12,9 +12,10 @@ This repository contains the code needed for one sub-project created by the Long
 
 The 'core' scripts in this repository are described below. Any script not described below is exploratory and should be treated as such.
 
-- `00_data-download.R` - Downloads the various source data from this working group's Shared Google Drive. Note that only those with access to that Drive will be able to run the script.
+- **`00_data-download.R`** - Downloads the various source data from this working group's Shared Google Drive. Note that only those with access to that Drive will be able to run the script.
 
-- `01_sizer-workflow.R` - Runs SiZer workflow to identify changes in slope for WRTDS time series. Works for monthly, seasonal (averaged across sub-season months), and annual input data.
+- **`01_sizer-workflow.R`** - Runs SiZer workflow to identify changes in slope for WRTDS time series. Works for monthly, seasonal (averaged across sub-season months), and annual input data.
+    - Assumes you have either run `00_data-download.R` or manually put the needed input files in a folder named "data"
 
 
 - **`stats-prep.R`** - Accepts outputs of _either_ `...-workflow.R` script and (1) attaches basin characteristics / climatic drivers extracted elsewhere and (2) does some summarizing / wrangling needed before stats / visualization.
