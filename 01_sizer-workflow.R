@@ -314,17 +314,17 @@ statistic_actual <- purrr::list_rbind(x = statistic_list) %>%
 dplyr::glimpse(statistic_actual)
 
 ## ----------------------------------------- ##
-# Combine Outputs ----
+            # Combine Outputs ----
 ## ----------------------------------------- ##
 
 # Combine these three types of output
 combo_v1 <- data_actual %>% 
   # Attach statistical information
   dplyr::left_join(y = statistic_actual,
-                   by = c("sizer_bandwidth", "stream", "section")) %>% 
+                   by = c("sizer_bandwidth", "stream", "section", "season", "Month")) %>% 
   # Attach estimate information too
-  dplyr::left_join(y = estimate_actual,
-                   by = c("sizer_bandwidth", "stream", "section"))
+  dplyr::left_join(y = estimate_actual, 
+                   by = c("sizer_bandwidth", "stream", "section", "season", "Month"))
 
 # Check structure
 dplyr::glimpse(combo_v1)
