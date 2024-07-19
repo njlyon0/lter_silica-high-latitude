@@ -21,18 +21,30 @@ librarian::shelf(tidyverse, readxl, magrittr, supportR)
 # Clear environment
 rm(list = ls())
 
-# Make needed folder(s)
-dir.create(path = file.path("data"), showWarnings = F)
+# Identify desired SiZer output
+sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 
 ## ----------------------------------------- ##
-# Data Loading / Prep ----
+# Reference Table Prep ----
 ## ----------------------------------------- ##
 
 # Read in the reference table
 ref_table <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
 
+## ----------------------------------------- ##
+# Driver Data Prep ----
+## ----------------------------------------- ##
+
 # Read in the driver data
-driver_v0 <- read.csv(file = file.path("data", "all-data_si-extract_2.csv"))
+drivers_v0 <- read.csv(file = file.path("data", "all-data_si-extract_2.csv"))
+
+
+## ----------------------------------------- ##
+# WRTDS Output Prep ----
+## ----------------------------------------- ##
 
 # Specify which original WRTDS outputs you wanted to use
 # wrtds_file <- "Full_Results_WRTDS_monthly.csv"
@@ -41,31 +53,31 @@ wrtds_file <- "Full_Results_WRTDS_annual.csv"
 # Read in that WRTDS data
 wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
 
-# Identify desired SiZer output
-sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+# Wrangle these data to just the bits we want to use as covariates with SiZer outputs
+wrtds_v2 <- wrtds_v1 %>% 
+  # Pare down to just needed columns
+  dplyr::select(LTER, Stream_Name, drainSqKm, Year, chemical, 
+                Discharge_cms, Conc_uM, FNConc_uM) %>% 
+  # Remove the colons from ratio chemicals
+  dplyr::mutate(chemical = gsub(pattern = ":", replacement = "_", x = chemical)) %>% 
+  # Remove whichever chemical is the focus of the chosen SiZer outputs
+  dplyr::filter(chemical != unique(sizer_v1$chemical))
 
-# Read in that SiZer output
-sizer_v1 <- read.csv(file = file.path("data", sizer_file))
+
+# Check structure
+dplyr::glimpse(wrtds_v2)
 
 
-## ----------------------------------------- ##
-          # SiZer Output Selection ----
-## ----------------------------------------- ##
 
 
-##--------------------------------------------------##
-#WRTDS output selection - grab P data
-##--------------------------------------------------##
 
-data_v0<-readr::read_csv('Full_Results_WRTDS_annual.csv')
-names(data_v0)
 
-#select just P data and stream
-data_v1 <- data_v0 %>%
-  dplyr::select(Stream_Name, Year, chemical, Conc_uM, FNConc_uM, Discharge_cms) %>%
-  dplyr::filter(chemical=="P")
 
-head(data_v1)
+
+ # BASEMENT ----
+
+
+
 
 ## ----------------------------------------- ##
           # Driver Data Prep ----
