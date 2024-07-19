@@ -11,60 +11,47 @@
 ## This script assumes you've run the "01_sizer-workflow.R" script
 
 ## ----------------------------------------- ##
-              # Housekeeping ----
+# Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, magrittr, supportR)
-
-# Make a folder for combined data / downloading drivers
-dir.create(path = file.path("drivers"), showWarnings = F)
-dir.create(path = file.path("tidy_data"), showWarnings = F)
-
-# Identify / download the driver data
-googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1Z-qlt9okoZ4eE-VVsbHiVVSu7V5nEkqK")) %>%
-  dplyr::filter(name == "all-data_si-extract.csv") %>%
-  googledrive::drive_download(file = .$id, overwrite = T,
-                              path = file.path("drivers", .$name))
-
-# Identify / download site reference table (for latitude info)
-googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA")) %>%
-  dplyr::filter(name == "Site_Reference_Table") %>%
-  googledrive::drive_download(file = .$id, overwrite = T, type = "csv",
-                              path = file.path("drivers", .$name))
+librarian::shelf(tidyverse, readxl, magrittr, supportR)
 
 # Clear environment
 rm(list = ls())
+
+# Make needed folder(s)
+dir.create(path = file.path("data"), showWarnings = F)
+
+## ----------------------------------------- ##
+# Data Loading / Prep ----
+## ----------------------------------------- ##
+
+# Read in the reference table
+ref_table <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
+
+# Read in the driver data
+driver_v0 <- read.csv(file = file.path("data", "all-data_si-extract_2.csv"))
+
+# Specify which original WRTDS outputs you wanted to use
+# wrtds_file <- "Full_Results_WRTDS_monthly.csv"
+wrtds_file <- "Full_Results_WRTDS_annual.csv"
+
+# Read in that WRTDS data
+wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
+
+# Identify desired SiZer output
+sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+sizer_v1 <- read.csv(file = file.path("data", sizer_file))
+
 
 ## ----------------------------------------- ##
           # SiZer Output Selection ----
 ## ----------------------------------------- ##
 
-# This script can handle either annual or seasonal data but you must make that choice here
-
-# Define file name
-sizer_filename <- "annual_Conc_uM_DSi_bw5.csv"
-# sizer_filename <- "seasonal_Yield_kmol_yr_km2_DSi_bw5.csv"
-#sizer_filename <- "monthly_Conc_uM_DSi_bw5.csv"
-
-# Read in SiZer output data
-sizer_v1 <- read.csv(file = file.path("sizer_outs", sizer_filename))
-
-# If the data doesn't have a "season" column, add one
-if(!"season" %in% names(sizer_v1)){
-  sizer_v1 %<>%
-    dplyr::mutate(season = "X", .before = chemical) }
-# Note: `%<>%` is a "hinge assignment pipe"
-## Equivalent to `df <- df %>% ...`
-
-# If the data doesn't have a "Month" column, add that too
-if(!"Month" %in% names(sizer_v1)){
-  sizer_v1 %<>%
-    dplyr::mutate(Month = "X", .before = chemical) }
-
-# Check structure
-dplyr::glimpse(sizer_v1)
 
 ##--------------------------------------------------##
 #WRTDS output selection - grab P data
