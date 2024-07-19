@@ -26,7 +26,7 @@ dir.create(path = file.path("data"), showWarnings = F)
 
 # Download the data you need (or put it in the "data" folder manually)
 ## Note that you *must* have access to the relevant Shared Google Drive for this to work
-source("00_data-download.R")
+# source("00_data-download.R")
 
 # Load custom functions
 for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
@@ -37,11 +37,15 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 ## ----------------------------------------- ##
-# General SiZer Prep ----
+          # General SiZer Prep ----
 ## ----------------------------------------- ##
 
+# Specify data file
+wrtds_file <- "Full_Results_WRTDS_monthly.csv"
+# wrtds_file <- "Full_Results_WRTDS_annual.csv"
+
 # Read in data & rename a column
-wrtds_v1 <- read.csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
+wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
 
 # Remove unwanted data / data that don't meet needed criteria
 wrtds_v2 <- wrtds_v1 %>% 
@@ -114,7 +118,7 @@ dplyr::glimpse(wrtds_v4)
 
 # What is the temporal resolution of the WRTDS output data?
 ## *MUST* be one of "annual", "seasonal", or "monthly"
-temporal_res <- "annual"
+temporal_res <- "monthly"
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Conc_uM"
@@ -166,14 +170,24 @@ for(place in unique(wrtds_focal$stream)){
     # Simply duplicate existing object
     wrtds_core <- wrtds_place
     
+    # Make some housekeeping objects that'll be useful in the processing script
+    focal_season <- "x"
+    focal_month <- "x"
+    
     # And run workflow script
     source(file.path("tools", "flow_core-sizer-process.R"))
     
     ## Seasonal
   } else if(temporal_res == "seasonal"){
     
+    # Make needed housekeeping object
+    focal_month <- "x"
+    
     # Loop across seasons
     for(focal_season in unique(wrtds_place$season)){
+      
+      # Message current season
+      message("Working on season: ", focal_season)
       
       # Creating a season-specific subset
       wrtds_core <- dplyr::filter(.data = wrtds_place, season == focal_season)
@@ -186,8 +200,14 @@ for(place in unique(wrtds_focal$stream)){
     ## Monthly
   } else if(temporal_res == "monthly") {
     
+    # Make needed housekeeping object
+    focal_season <- "x"
+    
     # Loop across months
     for(focal_month in unique(wrtds_place$Month)){
+      
+      # Message current month
+      message("Working on month: ", focal_month)
       
       # Creating a month-specific subset
       wrtds_core <- dplyr::filter(.data = wrtds_place, Month == focal_month)
