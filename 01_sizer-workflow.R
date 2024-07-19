@@ -4,11 +4,11 @@
 # Written by: Nick J Lyon & Joanna Carey
 
 # Purpose:
-## Run SiZer workflow on *annual* data produced by WRTDS
+## Run SiZer workflow on data produced by WRTDS
 ## WRTDS = Weighted Regressions on Time, Discharge, and Season
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Need to force an install of HERON to get an updated version?
@@ -16,37 +16,64 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, SiZer, tidyverse, lter/HERON, supportR)
+librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
 
 # Clear environment
 rm(list = ls())
 
-# Identify files in Drive folder
-ids <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk")) %>%
-  # Filter to desired data files
-  dplyr::filter(name %in% c("Full_Results_WRTDS_annual.csv"))
+# Read in data & rename a column
+wrtds_v1 <- read.csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
 
-# Check that includes all desired data files
-ids
+## ----------------------------------------- ##
+# SiZer Prep ----
+## ----------------------------------------- ##
 
-# Create a folder to save to
-dir.create(path = "data", showWarnings = F)
+# Remove unwanted data / data that don't meet needed criteria
+wrtds_v2 <- wrtds_v1 %>% 
+  # Keep only LTERs at high latitudes
+  dplyr::filter(LTER %in% c("MCM", "GRO", "NIVA", "Krycklan",
+                            "Finnish Environmental Institute", 
+                            "Canada", "Swedish Goverment")) %>% 
+  # Drop some problem sites within wanted LTERs
+  dplyr::filter(!Stream_Name %in% c("Site 69038", "Kymijoki Ahvenkoski 001", "Kymijoki Kokonkoski 014", "BEAVER RIVER ABOVE HIGHWAY 1 IN GLACIER NATIONAL PARK", "KICKING HORSE RIVER AT FIELD IN YOHO NATIONAL PARK", "SKEENA RIVER AT USK", "KOOTENAY RIVER ABOVE HIGHWAY 93 IN KOOTENAY NATIONAL PARK", "Helgean Hammarsjon", "Ronnean Klippan", "Morrumsan Morrum", "Lyckebyan Lyckeby", "Lagan Laholm", "Nissan Halmstad", "Atran Falkenberg", "Alsteran Getebro", "Eman Emsfors", "Viskan Asbro", "Gota Alv Trollhattan", "Rane alv Niemisel", "Raan Helsingborg")) %>% 
+  # Calculate number of years per stream
+  dplyr::group_by(LTER, Stream_Name) %>%
+  dplyr::mutate(num_years = length(unique(Year)), .after = Year) %>%
+  dplyr::ungroup() %>% 
+  # Keep only streams with more years than some threshold
+  dplyr::filter(num_years >= 12) %>% 
+  # Drop the year number column
+  dplyr::select(-num_years)
 
-# Download desired data
-purrr::walk2(.x = ids$id, .y = ids$name,
-             .f = ~ googledrive::drive_download(file = googledrive::as_id(.x), 
-                                                path = file.path("data", .y),
-                                                overwrite = T))
+# Do some unit conversions / tidying
+wrtds_v2 <- wrtds_v1 %>% 
+  # Convert all of the 10^6 columns
+  dplyr::mutate(
+    dplyr::across(.cols = dplyr::contains("10_6k"),
+                  .fns = ~ ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
+                                  yes = (.x * 10^6), no = NA)
+                  )) %>% 
+  # Rename those columns to reflect their new units
+  dplyr::rename_with(.fn = ~ gsub(pattern = "10_6k", replacement = "k", x = .x),
+                     .cols = dplyr::contains("10_6k")) %>% 
+  # Tidy the chemical ratio names
+  dplyr::mutate(chemical = dplyr::case_when(
+    chemical == "Si:DIN" ~ "Si_DIN",
+    chemical == "Si:P" ~ "Si_P",
+    TRUE ~ chemical))
 
-# Load data
-data_v0 <- readr::read_csv(file = file.path("data", "Full_Results_WRTDS_annual.csv"))
+# Check structure
+dplyr::glimpse(wrtds_v2)
 
-#jos method
-#setwd("~/LNO_Si_Synthesis/CryoAnalysis_2023")
-#data_v0<-readr::read_csv('Full_Results_WRTDS_kalman_annual.csv')
-data_v0<-readr::read_csv('Full_Results_WRTDS_annual.csv')
+# Check that worked as desired
+range(wrtds_v1$Yield_10_6kmol_yr_km2, na.rm = T)
+range(wrtds_v2$Yield_kmol_yr_km2, na.rm = T)
 
-names(data_v0)[names(data_v0) == "Stream_Name"] <- "stream"
+
+
+
+
+# Basement ----
 
 
 # Now subset to sites of interest
