@@ -1,15 +1,14 @@
 ## ------------------------------------------------------- ##
-            # Statistics & Visualization Prep
+# Statistics & Visualization Prep
 ## ------------------------------------------------------- ##
-# Written by: Nick J Lyon
+# Written by: Nick J Lyon & Joanna Carey
 
-# PURPOSE:
+# Purpose:
 ## Integrate basin characteristics / climatic "drivers" with the WRTDS data used in SiZer
 ## Do general wrangling operations required for some statistics / visualization
 
 # Pre-Requisites:
-## This script assumes you've run one of the "...-workflow.R" scripts
-## And have the relevant output in a "sizer_outs" folder
+## This script assumes you've run the "01_sizer-workflow.R" script
 
 ## ----------------------------------------- ##
               # Housekeeping ----

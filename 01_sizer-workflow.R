@@ -7,6 +7,11 @@
 ## Run SiZer workflow on data produced by WRTDS
 ## WRTDS = Weighted Regressions on Time, Discharge, and Season
 
+# Pre-Requisites:
+## This script assumes you've done one of the following options:
+### A) run the "00_data-download.R" script
+### B) manually downloaded any needed inputs and put them in a folder named "data"
+
 ## ----------------------------------------- ##
               # Housekeeping ----
 ## ----------------------------------------- ##
