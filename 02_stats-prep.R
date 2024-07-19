@@ -11,7 +11,7 @@
 ## This script assumes you've run the "01_sizer-workflow.R" script
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+                # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
@@ -28,7 +28,7 @@ sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 
 ## ----------------------------------------- ##
-# Reference Table Prep ----
+          # Reference Table Prep ----
 ## ----------------------------------------- ##
 
 # Read in the reference table
@@ -49,7 +49,7 @@ ref_v2 <- ref_v1 %>%
 dplyr::glimpse(ref_v2)
 
 ## ----------------------------------------- ##
-# Driver Data Prep ----
+            # Driver Data Prep ----
 ## ----------------------------------------- ##
 
 # Read in the driver data
@@ -79,9 +79,9 @@ dynamic_v1 <- drivers_v1 %>%
                                    "_may_", "_jun_", "_jul_", "_aug_",
                                    "_sep_", "_oct_", "_nov_", "_dec_"))) %>% 
   # Remove unwanted streams / duplicate rows
-  dplyr::distinct() %>% 
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
   dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::distinct() %>% 
   # Reshape longer
   tidyr::pivot_longer(cols = -LTER:-Stream_Name) %>% 
   # Remove NA values
@@ -113,7 +113,7 @@ dynamic_v1 <- drivers_v1 %>%
 dplyr::glimpse(dynamic_v1)
 
 ## ----------------------------------------- ##
-# WRTDS Output Prep ----
+          # WRTDS Output Prep ----
 ## ----------------------------------------- ##
 
 # Specify which original WRTDS outputs you wanted to use
@@ -129,6 +129,10 @@ wrtds_v2 <- wrtds_v1 %>%
   dplyr::select(LTER, Stream_Name, drainSqKm, Year, chemical, Conc_uM, FNConc_uM) %>% 
   # Remove the colons from ratio chemicals
   dplyr::mutate(chemical = gsub(pattern = ":", replacement = ".", x = chemical)) %>% 
+  # Remove unwanted streams / duplicate rows
+  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::distinct() %>% 
   # Remove whichever chemical is the focus of the chosen SiZer outputs
   dplyr::filter(chemical != unique(sizer_v1$chemical)) %>%
   # Reshape longer
@@ -151,7 +155,7 @@ wrtds_v2 <- wrtds_v1 %>%
 dplyr::glimpse(wrtds_v2)
 
 ## ----------------------------------------- ##
-# Integrate Data ----
+            # Integrate Data ----
 ## ----------------------------------------- ##
 
 # Combine the SiZer ouputs with the various data files we prepared above
