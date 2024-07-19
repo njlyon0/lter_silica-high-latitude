@@ -131,7 +131,7 @@ var_check(data = wrtds_v4, chem = element,
 
 # Prepare just the desired pieces of information
 wrtds_focal <- wrtds_v4 %>% 
-  dplyr::select(LTER:chemical, dplyr::contains(response)) %>% 
+  dplyr::select(LTER:chemical, dplyr::starts_with(response)) %>% 
   dplyr::filter(chemical == element)
 
 # Check structure
@@ -183,14 +183,31 @@ for(place in unique(wrtds_focal$stream)){
     # Make needed housekeeping object
     focal_month <- "x"
     
+    # Process the WRTDS place object to get one row / season
+    wrtds_place_v2 <- wrtds_place %>% 
+      # Remove all instances where season info is missing
+      dplyr::filter(!is.na(season)) %>%
+      # Drop some unwanted columns
+      dplyr::select(-nDays, -DecYear) %>% 
+      # Flip to long format to get all response variables into a single column
+      tidyr::pivot_longer(cols = dplyr::starts_with(response),
+                          names_to = "var",
+                          values_to = "value") %>%
+      # Group by everything *except month* and average response values
+      dplyr::group_by(LTER, stream, drainSqKm, season, Year, chemical, var) %>%
+      dplyr::summarize(value = mean(value, na.rm = T)) %>%
+      dplyr::ungroup() %>%
+      # Flip back to wide format
+      tidyr::pivot_wider(names_from = var, values_from = value)
+    
     # Loop across seasons
-    for(focal_season in unique(wrtds_place$season)){
+    for(focal_season in unique(wrtds_place_v2$season)){
       
       # Message current season
       message("Working on season: ", focal_season)
       
       # Creating a season-specific subset
-      wrtds_core <- dplyr::filter(.data = wrtds_place, season == focal_season)
+      wrtds_core <- dplyr::filter(.data = wrtds_place_v2, season == focal_season)
       
       # *Then* running the workflow script
       source(file.path("tools", "flow_core-sizer-process.R"))
@@ -203,14 +220,31 @@ for(place in unique(wrtds_focal$stream)){
     # Make needed housekeeping object
     focal_season <- "x"
     
+    # Process the WRTDS place object to get one row / month
+    wrtds_place_v2 <- wrtds_place %>% 
+      # Remove all instances where month info is missing
+      dplyr::filter(!is.na(Month)) %>%
+      # Drop some unwanted columns
+      dplyr::select(-nDays, -DecYear) %>% 
+      # Flip to long format to get all response variables into a single column
+      tidyr::pivot_longer(cols = dplyr::starts_with(response),
+                          names_to = "var",
+                          values_to = "value") %>%
+      # Group by everything *except season* and average response values
+      dplyr::group_by(LTER, stream, drainSqKm, Month, Year, chemical, var) %>%
+      dplyr::summarize(value = mean(value, na.rm = T)) %>%
+      dplyr::ungroup() %>%
+      # Flip back to wide format
+      tidyr::pivot_wider(names_from = var, values_from = value)
+    
     # Loop across months
-    for(focal_month in unique(wrtds_place$Month)){
+    for(focal_month in unique(wrtds_place_v2$Month)){
       
       # Message current month
       message("Working on month: ", focal_month)
       
       # Creating a month-specific subset
-      wrtds_core <- dplyr::filter(.data = wrtds_place, Month == focal_month)
+      wrtds_core <- dplyr::filter(.data = wrtds_place_v2, Month == focal_month)
       
       # *Then* running the workflow script
       source(file.path("tools", "flow_core-sizer-process.R"))
