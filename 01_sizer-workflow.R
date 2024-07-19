@@ -46,7 +46,7 @@ wrtds_v2 <- wrtds_v1 %>%
   dplyr::select(-num_years)
 
 # Do some unit conversions / tidying
-wrtds_v2 <- wrtds_v1 %>% 
+wrtds_v3 <- wrtds_v2 %>% 
   # Convert all of the 10^6 columns
   dplyr::mutate(
     dplyr::across(.cols = dplyr::contains("10_6k"),
@@ -60,83 +60,29 @@ wrtds_v2 <- wrtds_v1 %>%
   dplyr::mutate(chemical = dplyr::case_when(
     chemical == "Si:DIN" ~ "Si_DIN",
     chemical == "Si:P" ~ "Si_P",
-    TRUE ~ chemical))
+    TRUE ~ chemical)) %>% 
+  # Rename stream column
+  dplyr::rename(stream = Stream_Name)
 
 # Check structure
-dplyr::glimpse(wrtds_v2)
+dplyr::glimpse(wrtds_v3)
 
 # Check that worked as desired
-range(wrtds_v1$Yield_10_6kmol_yr_km2, na.rm = T)
-range(wrtds_v2$Yield_kmol_yr_km2, na.rm = T)
+range(wrtds_v2$Yield_10_6kmol_yr_km2, na.rm = T)
+range(wrtds_v3$Yield_kmol_yr_km2, na.rm = T)
 
-
-
-
-
-# Basement ----
-
-
-# Now subset to sites of interest
-data_simp <- data_v0 %>%
-  # Keep only cryosphere LTERs
-  dplyr::filter(LTER %in% c("MCM", "GRO", "NIVA", "Krycklan",
-                            "Finnish Environmental Institute", "Canada", "Swedish Goverment")) %>%
-  # But drop problem sites that are otherwise retained
-  dplyr::filter(!stream %in% c("Site 69038", "Kymijoki Ahvenkoski 001",
-                               "Kymijoki Kokonkoski 014",
-                               "BEAVER RIVER ABOVE HIGHWAY 1 IN GLACIER NATIONAL PARK",
-                               "KICKING HORSE RIVER AT FIELD IN YOHO NATIONAL PARK", 
-                               "SKEENA RIVER AT USK",
-                               "KOOTENAY RIVER ABOVE HIGHWAY 93 IN KOOTENAY NATIONAL PARK",
-                               "Helgean Hammarsjon", "Ronnean Klippan", "Morrumsan Morrum", "Lyckebyan Lyckeby",
-                               "Lagan Laholm", "Nissan Halmstad", "Atran Falkenberg", "Alsteran Getebro", "Eman Emsfors",
-                               "Viskan Asbro", "Gota Alv Trollhattan",
-                               "Rane alv Niemisel", "Raan Helsingborg")) %>%
-  # Calculate number of years
-  dplyr::group_by(LTER, stream) %>%
-  dplyr::mutate(num_years = length(unique(Year)), .after = Year) %>%
-  dplyr::ungroup() %>%
-  # Filter to only more than some threshold years
-  dplyr::filter(num_years >= 12) %>%
-  # Drop that column now that we've used it
-  dplyr::select(-num_years) %>%
-  # Convert 10^-6 xx to just xx
-  dplyr::mutate(Flux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                    yes = (Flux_10_6kg_yr * 10^6),
-                                    no = NA),
-                FNFlux_kg_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                      yes = (FNFlux_10_6kg_yr * 10^6),
-                                      no = NA),
-                Flux_kmol_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                      yes = (Flux_10_6kmol_yr * 10^6),
-                                      no = NA),
-                FNFlux_kmol_yr = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                        yes = (FNFlux_10_6kmol_yr * 10^6),
-                                        no = NA),
-                Yield_kmol_yr_km2 = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                           yes = (Yield_10_6kmol_yr_km2 * 10^6),
-                                           no = NA),
-                FNYield_kmol_yr_km2 = ifelse(test = !chemical %in% c("Si:P", "Si:DIN"),
-                                             yes = (FNYield_10_6kmol_yr_km2 * 10^6),
-                                             no = NA)) %>%
-  # Tweak chemical names to exclude `:` in ratio
-  dplyr::mutate(chemical = dplyr::case_when(
-    chemical == "Si:DIN" ~ "Si_DIN",
-    chemical == "Si:P" ~ "Si_P",
-    TRUE ~ chemical))
-
-# Take a look!
-dplyr::glimpse(data_simp)
-
-unique(data_simp$stream)
-
-# Take a look at LTERs / streams
-data_simp %>%
+# How many streams / LTER remaining?
+wrtds_v3 %>% 
   dplyr::group_by(LTER) %>%
   dplyr::summarize(stream_ct = length(unique(stream)))
 
 # Check lost/gained columns
-supportR::diff_check(old = names(data_v0), new = names(data_simp))
+supportR::diff_check(old = names(wrtds_v1), new = names(wrtds_v3))
+
+# Basement ----
+
+
+
 
 ## ----------------------------------------- ##
 # Pre-Loop Preparation ----
