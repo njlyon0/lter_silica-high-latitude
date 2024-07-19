@@ -21,6 +21,9 @@ librarian::shelf(tidyverse, googledrive, SiZer, supportR, lter/HERON)
 # Clear environment
 rm(list = ls())
 
+# Make needed folder(s)
+dir.create(path = file.path("data"), showWarnings = F)
+
 # Load custom functions
 for(fxn in dir(path = file.path("tools"))){
   source(file.path("tools", fxn))
@@ -393,21 +396,13 @@ length(unique(combo_v3$LTER_stream))
 # Check structure
 dplyr::glimpse(combo_v3)
 
-
-# BASEMENT ----
-
-
-
 ## ----------------------------------------- ##
-# Export ----
+                # Export ----
 ## ----------------------------------------- ##
-
-# Create folder to export this type of output too
-dir.create(path = file.path("sizer_outs"), showWarnings = F)
 
 # Export that combination object locally
 ## Can use special folder name as *file name* to ensure informative naming conventions
 write.csv(x = combo_v3, na = "", row.names = F,
-          file = file.path("sizer_outs", paste0(export_folder, ".csv")))
+          file = file.path("data", paste0("sizer-outs_", output_dir, ".csv")))
 
 # End ----
