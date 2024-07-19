@@ -24,6 +24,10 @@ rm(list = ls())
 # Make needed folder(s)
 dir.create(path = file.path("data"), showWarnings = F)
 
+# Download the data you need (or put it in the "data" folder manually)
+## Note that you *must* have access to the relevant Shared Google Drive for this to work
+source("00_data-download.R")
+
 # Load custom functions
 for(fxn in dir(path = file.path("tools"))){
   source(file.path("tools", fxn))
@@ -113,9 +117,9 @@ dplyr::glimpse(wrtds_v4)
 temporal_res <- "annual"
 
 # Choose response/explanatory variables of interest & focal chemical
-response <- "FNConc_uM"
+response <- "Conc_uM"
 explanatory <- "Year"
-element <- "DIN"
+element <- "DSi"
 
 # Check that combination of variables works
 var_check(data = wrtds_v4, chem = element, 
