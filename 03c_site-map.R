@@ -1,26 +1,54 @@
-## ------------------------------------------ ##
-          # High Latitude Site Map
-## ------------------------------------------ ##
-# Written by: Nick J Lyon, Joanna Carey
+## ------------------------------------------------------- ##
+                  # High Latitude Site Map
+## ------------------------------------------------------- ##
+# Written by: Nick J Lyon & Joanna Carey
 
-# PURPOSE
+# Purpose:
 ## Create publication-quality site map figure
+
+# Pre-Requisites:
+## This script assumes you've run the "02_stats-prep.R" script
 
 ## ------------------------------------------ ##
               # Housekeeping ----
 ## ------------------------------------------ ##
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(googledrive, tidyverse, readxl, sf, maps, terra, stars, supportR, cowplot)
+librarian::shelf(tidyverse, sf, maps, terra, stars, supportR, cowplot)
 
-# Clear environment
-rm(list = ls())
+# Clear environment & do garbage collection too
+rm(list = ls()); gc()
 
-# This map is very data hungry so we'll need to do garbage collection too
-gc()
+# Make a folder for exporting graphs
+dir.create(path = file.path("graphs"), showWarnings = F)
 
-# Create a folder to store necessary files (if it doesn't already exist)
-dir.create(path = file.path("map_data"), showWarnings = F)
+# Load custom functions
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
+
+# Identify desired prepared data
+prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+df_v1 <- read.csv(file = file.path("data", prepped_file))
+
+# Check structure
+dplyr::glimpse(df_v1)
+
+
+
+
+
+
+
+
+
+
+# Basement ----
 
 # Identify needed files
 (wanted_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA")) %>% 
