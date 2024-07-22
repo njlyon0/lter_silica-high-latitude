@@ -48,4 +48,14 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
+## ----------------------------------------- ##
+# `ggplot2` Theme
+## ----------------------------------------- ##
+
+# ggplot2 theme tweaks
+theme_high_lat <- theme_bw() +
+  theme(legend.title = element_blank())
+
+
+
 # End ----
