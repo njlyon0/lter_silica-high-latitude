@@ -130,14 +130,8 @@ bookmark_graph(data = sig_only, color_var = "dir_fit", colors = dir_fit_palt) +
 ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_fit-bookmark.png")),
        height = 8, width = 7, units = "in")
 
-# Basement ----
-
-# DONT USE THIS -- NOT YET REVISITED
-
-
-
 ## ----------------------------------------- ##
-# Slope + Duration - Sig. Only ----
+    # Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Pare down to needed columns and unique rows
@@ -152,13 +146,13 @@ ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
                     xmin = slope_estimate - slope_std_error),
                 width = 0.2, linewidth = 0.75, color = "gray66") +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
-  labs(title = paste("Significant changes in", chem, resp),
-       x = "Slope Estimate", y = "Stream") +
-  theme_bw()
+  labs(x = "Slope Estimate", y = "Stream", fill = "Duration (years)") +
+  theme_bw() +
+  theme(legend.position = "inside", legend.position.inside = c(0.9, 0.85))
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "slope-duration-barplot.png")),
-       width = 6, height = 8, units = "in")
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_slope-duration-barplot.png")),
+       width = 12, height = 8, units = "in")
 
 ## ----------------------------------------- ##
 # Perc. Change + Duration - Sig. Only ----
@@ -169,18 +163,16 @@ sig_simp <- sig_only %>%
   dplyr::select(stream, section_duration, percent_change) %>%
   dplyr::distinct()
 
-# Make an exploratory graph of duration for only significant line chunks
 # Make an exploratory graph of duration percent change for only significant line chunks
 ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
   geom_col() +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
-  labs(title = paste("Significant changes in", chem, resp),
-       x = "Percent Change (%)", y = "Stream") +
-  theme_bw()
+  labs(x = "Slope Estimate", y = "Stream", fill = "Duration (years)") +
+  theme_bw() +
+  theme(legend.position = "inside", legend.position.inside = c(0.1, 0.15))
 
-# Export this graph!
-ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "perc-change-duration-barplot.png")),
-       width = 6, height = 8, units = "in")
-
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_perc-change-duration-barplot.png")),
+       width = 12, height = 8, units = "in")
 
 # End ----
