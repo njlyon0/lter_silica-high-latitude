@@ -265,11 +265,84 @@ sizer_v4 <- sizer_v3 %>%
 # Check structure
 dplyr::glimpse(sizer_v4)
 
+## ----------------------------------------- ##
+# Calculate Covariate Slope ----
+## ----------------------------------------- ##
+
+# For which covariates do you want to extract slope (against relative year)?
+desired_vars <- c("evapotrans_kg.m2", "npp_kgC.m2.year", "precip_mm.per.day", 
+                  "temp_degC", "snow_max.prop.area", "snow_num.days",
+                  "DSi_Conc_uM", "DSi_FNConc_uM", "NO3_Conc_uM", "NO3_FNConc_uM", 
+                  "DIN_Conc_uM", "DIN_FNConc_uM", "NH4_Conc_uM", "NH4_FNConc_uM", 
+                  "NOx_Conc_uM", "NOx_FNConc_uM",  "P_Conc_uM", "P_FNConc_uM", 
+                  "Si.DIN_Conc_uM", "Si.DIN_FNConc_uM", "Si.P_Conc_uM", "Si.P_FNConc_uM")
+
+# Strip out any not found in data
+(actual_covars <- generics::intersect(x = desired_vars, y = names(sizer_v4)))
+
+# Make an empty list for storing outputs
+slope_list <- list()
+
+# Loop across sizer groups
+for(focal_gp in unique(sizer_v4$sizer_groups)){
+  
+  # Message
+  message("Calculating covariate slope for ", focal_gp)
+  
+  # Subset to that group
+  sizer_group_sub <- dplyr::filter(.data = sizer_v4, sizer_group == focal_gp)
+  
+  # And across seasons
+  for(focal_sea in unique(sizer_group_sub$season)){
+    
+    # Subset to that season
+    sizer_season_sub <- dplyr::filter(.data = sizer_group_sub, season == focal_sea)
+    
+    # And across months
+    for(focal_mon in unique(sizer_season_sub$Month)){
+      
+      # Subset to that month
+      sizer_mo_sub <- dplyr::filter(.data = sizer_season_sub, Month == focal_mon)
+      
+      # Loop across desired response variables
+      for(focal_var in actual_covars){
+        
+        # Extract slope for that covariate
+        focal_slope <- get_slope(data = sizer_mo_sub, resp_var = focal_var)
+        
+        # Assemble a small output dataframe
+        focal_out <- data.frame("sizer_groups" = focal_gp,
+                                "season" = focal_sea,
+                                "Month" = focal_mon,
+                                paste0("slope_", focal_var) = focal_slope)
+        
+        # Assemble a unique name for this list element
+        focal_list_name <- paste0(focal_gp, "_", focal_sea, "_", focal_mon, "_", focal_var)
+        
+        # Add to output list
+        slope_list[[focal_list_name]] <- focal_out
+        
+      } # Close variable loop
+    } # Close month loop
+  } # Close season loop
+} # Close sizer group loop
+
+
+
 
 # BASEMENT ----
 
 # Everything below here is not yet revisited and likely will not work as expected
 ## USE CAUTION -- or the unedited 'stats-prep.R' script :)
+
+
+sizer_sub <- filter(sizer_v4, sizer_groups == "ALSEK RIVER ABOVE BATES RIVER IN KLUANE NATIONAL PARK_(-Inf,2009.1]")
+
+
+
+
+as.data.frame(summary(lm(sizer_sub[["evapotrans_kg.m2"]] ~ relative_Year, 
+                         data = sizer_sub))$coefficients)$Estimate[2] 
 
 
 ## ----------------------------------------- ##
