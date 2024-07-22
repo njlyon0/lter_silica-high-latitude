@@ -27,7 +27,25 @@ dir_fit_levels <- c("pos-great", "pos-good", "pos-fine", "pos-bad",
                     "neg-bad", "neg-fine", "neg-good", "neg-great", 
                     "NA", "NS")
 
+## ----------------------------------------- ##
+# Colors ----
+## ----------------------------------------- ##
 
+# Define the missing and non significant colors
+na_col <- "#e5e5e5"
+nonsig_col <- "#6c757d"
 
+# Define color palettes
+p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
+r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
+             "good" = "#1a759f",  "great" = "#184e77")
+dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
+                "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
+                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8")
+dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
+                  "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
+                  "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
+                  "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
+                  "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 # End ----
