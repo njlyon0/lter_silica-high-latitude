@@ -16,7 +16,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, readxl, magrittr, supportR)
+librarian::shelf(tidyverse, readxl, supportR)
 
 # Clear environment
 rm(list = ls())
