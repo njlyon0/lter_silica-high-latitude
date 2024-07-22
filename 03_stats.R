@@ -12,7 +12,7 @@
 ## This script assumes you've run the "02_stats-prep.R" script
 
 ## ----------------------------------------- ##
-            # Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
@@ -43,38 +43,41 @@ df_v1 <- read.csv(file = file.path("data", prepped_file))
 # Check structure
 dplyr::glimpse(df_v1)
 
+## ----------------------------------------- ##
+# Data Wrangling ----
+## ----------------------------------------- ##
+
+# Disclaimer:
+## Yes, most of this is handled in '02_stats-prep.R'
+## However, some tweaks make more sense to do directly before analysis
+
+# Make a data object with one row / sizer group
+sizer_grp_df <- df_v1 %>% 
+  # Pare down to needed columns
+  dplyr::select(sizer_groups:season, dplyr::contains(c("_response", "section")),
+                F_statistic:adj_r_squared, slope_direction:slope_std_error,
+                Latitude, elevation_mean_m, dplyr::starts_with(c("major_", "land_")),
+                dplyr::starts_with(c("mean_", "sd_", "slope_"))) %>% 
+  # Drop non-unique rows
+  dplyr::distinct()
+  
+# Check structure
+dplyr::glimpse(sizer_grp_df)
+
+
+
+
+
+
+
+
+
 
 # BASEMENT ----
 
 ## Nothing below here has been revisited so it may yield unpredictable results
 ## USE WITH CAUTION - or use unmodified 'stats_dynamic_lmer.R' script
 
-## ----------------------------------------- ##
-              # Housekeeping ----
-## ----------------------------------------- ##
-
-# Load libraries
-# install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, RRPP)
-              library(Hmisc)
-              library(corrplot) #use this to identify correlations
-              require(MASS)
-              library(car)
-              require(lme4)
-              
-
-# Make a folder for outputting results
-dir.create(path = file.path("stats_results"), showWarnings = F)
-
-# Clear environment
-rm(list = ls())
-
-## ----------------------------------------- ##
-          # Silica Concentration ----
-## ----------------------------------------- ##
-# Read in ready data for this response variable
-si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv")) 
-names(si_conc)
 
 Driver1 <- si_conc %>%
   # Drop information not useful for regression model
