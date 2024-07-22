@@ -7,7 +7,7 @@
 ## Create publication-quality site map figure
 
 # Pre-Requisites:
-## This script assumes you've run the "02_stats-prep.R" script
+## This script assumes you've run *both* "00_data-download.R" and "02_stats-prep.R"
 
 ## ------------------------------------------ ##
               # Housekeeping ----
@@ -39,9 +39,27 @@ df_v1 <- read.csv(file = file.path("data", prepped_file))
 # Check structure
 dplyr::glimpse(df_v1)
 
+## ------------------------------------------ ##
+            # Coordinate Prep ----
+## ------------------------------------------ ##
 
+# Process the pre-wrangled data to be ready for use in map-making
+site_df <- df_v1 %>%
+  # Rename lat/long columns
+  dplyr::rename(lat = Latitude, lon = Longitude) %>% 
+  # Summarize within groups
+  dplyr::group_by(LTER_stream, LTER, stream, drainSqKm, lat, lon) %>% 
+  dplyr::summarize(mean_si = mean(Conc_uM, na.rm = T),
+                   mean_abs_change = mean(abs(percent_change), na.rm = T),
+                   .groups = "keep") %>% 
+  dplyr::ungroup()
 
-
+# Check structure
+dplyr::glimpse(site_df)
+  
+## ------------------------------------------ ##
+# Permafrost Prep ----
+## ------------------------------------------ ##
 
 
 
@@ -50,65 +68,7 @@ dplyr::glimpse(df_v1)
 
 # Basement ----
 
-# Identify needed files
-(wanted_files <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/0AIPkWhVuXjqFUk9PVA")) %>% 
-    dplyr::bind_rows(googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1V5EqmOlWA8U9NWfiBcWdqEH9aRAP-zCk"))) %>% 
-    # Filter to only desired files
-    dplyr::filter(name %in% c("Site_Reference_Table")))
 
-# Download those files
-purrr::walk2(.x = wanted_files$id, .y = wanted_files$name,
-             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("map_data", .y)))
-
-# Read in those files
-ref_v0 <- readxl::read_excel(path = file.path("map_data", "Site_Reference_Table.xlsx"))
-
-# Read in one of the SiZer outputs
-## Note this assumes that one of the `...-workflow.R` scripts has been run
-sizer_outs <- read.csv(file = file.path("sizer_outs", "annual_Conc_uM_DSi_bw5.csv"))
-
-# Wrangle the reference table to only the bits that we need
-ref_v1 <- ref_v0 %>% 
-  # Keep only a few columns
-  dplyr::select(LTER, Stream_Name, Latitude, Longitude) %>% 
-  # Pare down to only unique rows
-  dplyr::distinct() %>% 
-  # Simplify river names slightly
-  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>%
-  # Create a column that combines LTER and stream names
-  dplyr::mutate(LTER_abbrev = ifelse(nchar(LTER) > 4,
-                                     yes = stringr::str_sub(string = LTER, start = 1, end = 4),
-                                     no = LTER),
-                site_abbrev = ifelse(nchar(site_simp) > 14,
-                                     yes = stringr::str_sub(string = site_simp, start = 1, end = 14),
-                                     no = site_simp),
-                stream = paste0(LTER_abbrev, "_", site_abbrev), .after = Stream_Name) %>% 
-  # Drop intermediary columns
-  dplyr::select(-dplyr::ends_with("_abbrev"), -site_simp) %>% 
-  # Rename some of those
-  dplyr::rename(lat = Latitude, lon = Longitude) %>% 
-  # Filter to only streams in the SiZer outputs
-  dplyr::filter(stream %in% unique(sizer_outs$stream))
-
-# Check for mismatch between the two
-supportR::diff_check(old = unique(sizer_outs$stream), new = unique(ref_v1$stream))
-
-# Final pre-map creation steps
-site_df <- sizer_outs %>% 
-  # Combine the sizer outputs with the reference table
-  dplyr::left_join(y = ref_v1, by = c("LTER", "Stream_Name", "stream")) %>% 
-  # Group by key columns and calculate average silica concentration
-  dplyr::group_by(LTER, Stream_Name, stream, drainSqKm, lat, lon) %>% 
-  dplyr::summarize(mean_si = mean(Conc_uM, na.rm = T),
-                   mean_abs_change = mean(abs(percent_change), na.rm = T)) %>% 
-  dplyr::ungroup()
-
-# Check structure
-dplyr::glimpse(site_df)
-
-# Clean up environment
-rm(list = setdiff(x = ls(), y = c("site_df")))
 
 ## ------------------------------------------ ##
           # Permafrost Wrangling ----
