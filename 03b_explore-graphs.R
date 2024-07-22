@@ -32,13 +32,18 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 ## And remove loop index object from environment
 rm(list = "fxn")
 
+# Load graph helpers
+source(file.path("tools", "flow_graph-helpers.R"))
+
 # Identify desired prepared output
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 # prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", prepped_file))
-
+df_v1 <- read.csv(file = file.path("data", prepped_file)) %>% 
+  # Make certain columns into factors with ordered levels
+  dplyr::mutate(dir_sig = factor(dir_sig, levels = dir_sig_levels),
+                dir_fit = factor(dir_fit, levels = dir_fit_levels))
 # Check structure
 dplyr::glimpse(df_v1)
 
