@@ -31,11 +31,19 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired prepared output
-sizer_file <- "stats-ready_annual_Conc_uM_DSi.csv"
-# sizer_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
+prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+# prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", sizer_file))
+df_v1 <- read.csv(file = file.path("data", prepped_file))
+
+
+
+
+# BASEMENT ----
+
+## Nothing below here has been revisited so it may yield unpredictable results
+## USE WITH CAUTION - or use unmodified 'stats_dynamic_lmer.R' script
 
 ## ----------------------------------------- ##
               # Housekeeping ----
