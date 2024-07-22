@@ -18,11 +18,43 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, cowplot)
 
+# Clear environment
+rm(list = ls())
+
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs"), showWarnings = F)
 
-# Clear environment
-rm(list = ls())
+# Load custom functions
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
+
+# Identify desired prepared output
+prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+# prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+df_v1 <- read.csv(file = file.path("data", prepped_file))
+
+# Check structure
+dplyr::glimpse(df_v1)
+
+
+
+
+
+
+
+
+
+
+
+# Basement ----
+
+# DONT USE THIS -- NOT YET REVISITED
 
 ## ----------------------------------------- ##
 # Data Prep ----
