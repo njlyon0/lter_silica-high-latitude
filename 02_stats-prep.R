@@ -293,12 +293,12 @@ slope_list <- list()
 
 # Loop across sizer groups
 for(focal_gp in unique(sizer_v4$sizer_groups)){
-  
+
   # Message
   message("Calculating covariate slope for ", focal_gp)
   
   # Subset to that group
-  sizer_group_sub <- dplyr::filter(.data = sizer_v4, sizer_group == focal_gp)
+  sizer_group_sub <- dplyr::filter(.data = sizer_v4, sizer_groups == focal_gp)
   
   # And across seasons
   for(focal_sea in unique(sizer_group_sub$season)){
@@ -322,7 +322,8 @@ for(focal_gp in unique(sizer_v4$sizer_groups)){
         focal_out <- data.frame("sizer_groups" = focal_gp,
                                 "season" = focal_sea,
                                 "Month" = focal_mon,
-                                paste0("slope_", focal_var) = focal_slope)
+                                "variable" = focal_var,
+                                "slope" = focal_slope)
         
         # Assemble a unique name for this list element
         focal_list_name <- paste0(focal_gp, "_", focal_sea, "_", focal_mon, "_", focal_var)
@@ -335,8 +336,17 @@ for(focal_gp in unique(sizer_v4$sizer_groups)){
   } # Close season loop
 } # Close sizer group loop
 
+# Wrangle the list output of that loop
+slope_out <- slope_list %>% 
+  # Unlist that list
+  purrr::list_rbind(x = .) %>% 
+  # Reshape to wide format so each variable is its own column
+  dplyr::mutate(name = paste0("slope_", variable)) %>% 
+  dplyr::select(-variable) %>% 
+  tidyr::pivot_wider(names_from = name, values_from = slope)
 
-
+# Check structure
+dplyr::glimpse(slope_out)
 
 # BASEMENT ----
 
