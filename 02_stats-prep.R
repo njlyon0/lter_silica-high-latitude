@@ -174,23 +174,10 @@ sizer_v2 <- sizer_v1 %>%
 # Check structure
 dplyr::glimpse(sizer_v2)
 
-
-# BASEMENT ----
-
-# Everything below here is not yet revisited and likely will not work as expected
-## USE CAUTION -- or the unedited 'stats-prep.R' script :)
-
-## ----------------------------------------- ##
-          # Quality of Life Tweaks ----
-## ----------------------------------------- ##
-
-# We'll want a few combination columns to exist for QoL purposes down the line
-## Mostly to have easy things to map graphing aesthetics to but there are other benefits!
-
-# Do desired wrangling
-sizer_v5 <- sizer_v2 %>%
-  # Drop ARC streams
-  dplyr::filter(LTER != "ARC") %>%
+# Wrangle that output with some quality-of-life improvements
+sizer_v3 <- sizer_v2 %>% 
+  # Rename stream column
+  dplyr::rename(stream = Stream_Name) %>% 
   # Combine section with stream
   dplyr::mutate(sizer_groups = paste0(stream, "_", section), 
                 .before = dplyr::everything()) %>%
@@ -224,38 +211,66 @@ sizer_v5 <- sizer_v2 %>%
     significance == "NS" ~ "NS",
     T ~ paste0(slope_direction, "-", line_fit)), .after = line_fit)
 
-# Re-check structure
-dplyr::glimpse(sizer_v5)
+# Check structure
+dplyr::glimpse(sizer_v3)
 
 ## ----------------------------------------- ##
-       # Summarize Dynamic Drivers ----
+        # Summarize Covariates ----
 ## ----------------------------------------- ##
 
-# Wrangle seasonal data
-sizer_v6 <- sizer_v5 %>%
-  # Group by sizer groups 
+# Summarize co-variates within groups
+sizer_covars <- sizer_v3 %>% 
+  # Drop all but certain columns
+  dplyr::select(sizer_groups:Year, 
+                ## Dynamic drivers
+                dplyr::ends_with(c("_kg.m2", "_kgC.m2.year", "_mm.per.day",
+                                   "_max.prop.area", "_num.days", "_degC")),
+                ## Non-focal chemicals
+                dplyr::starts_with(c("DSi_", "NO3_", "DIN_", "NH4_", "NOx_",
+                                     "P_", "Si.DIN_", "Si.P_"))) %>% 
+  # Pivot to long format
+  tidyr::pivot_longer(cols = -sizer_groups:-Year) %>% 
+  # Filter out NAs
+  dplyr::filter(!is.na(value)) %>% 
+  # Summarize co-variates within groups
+  dplyr::group_by(sizer_groups, sizer_bandwidth, LTER, stream, LTER_stream, 
+                  drainSqKm, chemical, Month, season, name) %>% 
+  dplyr::summarize(mean = mean(value, na.rm = T),
+                   sd = sd(value, na.rm = T),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  # Pivot *that* to long format
+  tidyr::pivot_longer(cols = mean:sd, names_to = "stat") %>% 
+  # Assemble new column names
+  dplyr::mutate(name_actual = paste0(stat, "_", name)) %>% 
+  # Drop unwanted columns
+  dplyr::select(-name, -stat) %>% 
+  # Reshape back to wide format
+  tidyr::pivot_wider(names_from = name_actual, values_from = value)
+
+# Check structure
+dplyr::glimpse(sizer_covars)
+
+# Do some small wrangling of the 'actual' data object
+sizer_v4 <- sizer_v3 %>% 
+  # Group and calculate relative year within groups
   dplyr::group_by(sizer_groups, season, Month) %>%
-  # Do some calculations
-  ## Get a 'relative Year' for each sizer group so all time series start at 1
   dplyr::mutate(relative_Year = row_number() , .after = Year) %>%
-  ## Calculate average (and SD) dynamic drivers within sizer groups
-  dplyr::mutate(mean_evapotrans_kg.m2 = mean(evapotrans_kg.m2, na.rm = T),
-                sd_evapotrans_kg.m2 = sd(evapotrans_kg.m2, na.rm = T),
-                mean_npp_kg.C.m2.year = mean(npp_kg.C.m2.year, na.rm = T),
-                sd_npp_kg.C.m2.year = sd(npp_kg.C.m2.year, na.rm = T),
-                mean_precip_mm.per.day = mean(precip_mm.per.day, na.rm = T),
-                sd_precip_mm.per.day = sd(precip_mm.per.day, na.rm = T),
-                mean_temp_degC = mean(temp_degC, na.rm = T),
-                sd_temp_degC = sd(temp_degC, na.rm = T),
-                mean_snow_max.prop.area = mean(snow_max.prop.area, na.rm = T),
-                sd_snow_max.prop.area = sd(snow_max.prop.area, na.rm = T),
-                mean_snow_num.days = mean(snow_num.days, na.rm = T),
-                sd_snow_num.days = sd(snow_num.days, na.rm = T)) %>%
-  # Remember to ungroup when done with these calculations
-  dplyr::ungroup()
+  dplyr::ungroup() %>% 
+  # Attach covariate information
+  dplyr::left_join(y = sizer_covars, by = c("sizer_groups", "sizer_bandwidth", 
+                                            "LTER", "stream", "LTER_stream", 
+                                            "drainSqKm", "chemical", "Month", "season"))
 
-# Look at what that makes
-dplyr::glimpse(sizer_v6)
+# Check structure
+dplyr::glimpse(sizer_v4)
+
+
+# BASEMENT ----
+
+# Everything below here is not yet revisited and likely will not work as expected
+## USE CAUTION -- or the unedited 'stats-prep.R' script :)
+
 
 ## ----------------------------------------- ##
     # Calculate Dynamic Driver Slope ----
