@@ -1,5 +1,5 @@
 ## ------------------------------------------------------- ##
-# Statistics & Visualization Prep
+          # Statistics & Visualization Prep
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
@@ -30,7 +30,8 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired SiZer output
-sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
+# sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
