@@ -25,14 +25,6 @@ rm(list = ls()); gc()
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs"), showWarnings = F)
 
-# Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
-
 # Identify desired prepared data
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 
