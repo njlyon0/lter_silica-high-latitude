@@ -51,8 +51,26 @@ bookmark_graph <- function(data = NULL, color_var = NULL, colors = NULL){
     # Customize theme / formatting elements
     labs(x = "Year", y = "Stream")
   
+  # Make needed tweaks for temporal resolution of data
+  ## Monthly data
+  if(all(unique(data$Month) == "x") != TRUE){
+    
+    # Facet by month
+    bookmark_actual <- bookmark +
+      facet_wrap(. ~ Month)
+    
+    ## Seasonal data
+  } else if (all(unique(data$Month) == "x") != TRUE){
+    
+    # Facet by season
+    bookmark_actual <- bookmark +
+      facet_grid(. ~ season)
+    
+    ## Annual data is only data that won't meet preceding conditionals
+  } else { bookmark_actual <- bookmark }
+  
   # Return graph
-  return(bookmark)
+  return(bookmark_actual)
   
 }
 
