@@ -1,5 +1,5 @@
 ## ------------------------------------------------------- ##
-# Annual Data - Exploratory Graphing
+                  # Exploratory Graphing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
@@ -36,8 +36,8 @@ rm(list = "fxn")
 source(file.path("tools", "flow_graph-helpers.R"))
 
 # Identify desired prepared data
-prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
-# prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
+# prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
 
 # Wrangle that for graph outputs
 (graph_prefix <- gsub(pattern = "stats-ready_|\\.csv", replacement = "", x = prepped_file))
@@ -136,7 +136,8 @@ ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_fit-bookma
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, section_duration, slope_estimate, slope_std_error) %>%
+  dplyr::select(stream, season, Month, section_duration, 
+                slope_estimate, slope_std_error) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration for only significant line chunks
@@ -160,7 +161,8 @@ ggsave(filename = file.path("graphs", paste0(graph_prefix, "_slope-duration-barp
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, section_duration, percent_change) %>%
+  dplyr::select(stream, season, Month, section_duration, 
+                percent_change) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration percent change for only significant line chunks
