@@ -44,7 +44,7 @@ df_v1 <- read.csv(file = file.path("data", prepped_file))
 dplyr::glimpse(df_v1)
 
 ## ----------------------------------------- ##
-# Data Wrangling ----
+            # Data Wrangling ----
 ## ----------------------------------------- ##
 
 # Disclaimer:
@@ -60,12 +60,32 @@ sizer_grp_df <- df_v1 %>%
                 dplyr::starts_with(c("mean_", "sd_", "slope_"))) %>% 
   # Drop non-unique rows
   dplyr::distinct()
-  
+
+# What is excluded?
+supportR::diff_check(old = names(df_v1), new = names(sizer_grp_df))
+
 # Check structure
 dplyr::glimpse(sizer_grp_df)
 
+# Make another data object where annual information is retained
+year_df <- df_v1 %>% 
+  dplyr::select(sizer_groups:mean_response, dplyr::starts_with("section"),
+                F_statistic:adj_r_squared, slope_direction:slope_std_error,
+                dplyr::starts_with(c("temp_", "precip_", "npp_", "evapotrans_", 
+                                     "snow_", "Discharge_", "DSi_", "P_", "NO3_",
+                                     "NH4_", "NOx_", "DIN_", "Si.P_", "Si.DIN_"))) %>%
+  dplyr::select(-mean_response) %>% 
+  dplyr::distinct()
 
+# What is excluded?
+supportR::diff_check(old = names(df_v1), new = names(year_df))
 
+# Check structure
+dplyr::glimpse(year_df)
+
+## ----------------------------------------- ##
+# Stats ----
+## ----------------------------------------- ##
 
 
 
