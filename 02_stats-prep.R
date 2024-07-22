@@ -30,8 +30,8 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired SiZer output
-sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
-# sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+# sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
@@ -163,6 +163,25 @@ wrtds_v2 <- wrtds_v1 %>%
 # Check structure
 dplyr::glimpse(wrtds_v2)
 
+# Prepare discharge for inclusion too
+wrtds_disc <- wrtds_v1 %>% 
+  # Pare down to just needed columns
+  dplyr::select(LTER, Stream_Name, drainSqKm, Year, Discharge_cms) %>% 
+  # Remove unwanted streams / duplicate rows
+  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(wrtds_disc)
+
+# Combine discharge and non-focal chemical data
+wrtds_v3 <- wrtds_v2 %>% 
+  dplyr::left_join(y = wrtds_disc, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
+
+# Check structure
+dplyr::glimpse(wrtds_v3)
+
 ## ----------------------------------------- ##
             # Integrate Data ----
 ## ----------------------------------------- ##
@@ -178,7 +197,7 @@ sizer_v2 <- sizer_v1 %>%
   dplyr::left_join(y = static_v1, by = c("LTER", "Stream_Name")) %>% 
   dplyr::left_join(y = dynamic_v1, by = c("LTER", "Stream_Name", "Year")) %>% 
   # Integrate WRTDS
-  dplyr::left_join(y = wrtds_v2, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
+  dplyr::left_join(y = wrtds_v3, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
   
 # Check structure
 dplyr::glimpse(sizer_v2)
@@ -236,7 +255,9 @@ sizer_covars <- sizer_v3 %>%
                                    "_max.prop.area", "_num.days", "_degC")),
                 ## Non-focal chemicals
                 dplyr::starts_with(c("DSi_", "NO3_", "DIN_", "NH4_", "NOx_",
-                                     "P_", "Si.DIN_", "Si.P_"))) %>% 
+                                     "P_", "Si.DIN_", "Si.P_")),
+                ## Discharge information
+                Discharge_cms) %>% 
   # Pivot to long format
   tidyr::pivot_longer(cols = -sizer_groups:-Year) %>% 
   # Filter out NAs
@@ -280,7 +301,7 @@ dplyr::glimpse(sizer_v4)
 
 # For which covariates do you want to extract slope (against relative year)?
 desired_vars <- c("evapotrans_kg.m2", "npp_kgC.m2.year", "precip_mm.per.day", 
-                  "temp_degC", "snow_max.prop.area", "snow_num.days",
+                  "temp_degC", "snow_max.prop.area", "snow_num.days", "Discharge_cms",
                   "DSi_Conc_uM", "DSi_FNConc_uM", "NO3_Conc_uM", "NO3_FNConc_uM", 
                   "DIN_Conc_uM", "DIN_FNConc_uM", "NH4_Conc_uM", "NH4_FNConc_uM", 
                   "NOx_Conc_uM", "NOx_FNConc_uM",  "P_Conc_uM", "P_FNConc_uM", 
@@ -373,7 +394,9 @@ tot_forest <- sizer_v5 %>%
                   land_deciduous_needleleaf_forest +
                   land_mixed_forest) %>% 
   # Drop all columns except total forest and group columns
-  dplyr::select(sizer_groups:Year, land_total_forest)
+  dplyr::select(sizer_groups:season, land_total_forest) %>% 
+  # Drop non-unique rows
+  dplyr::distinct()
   
 # Check structure
 dplyr::glimpse(tot_forest)
@@ -383,7 +406,7 @@ sizer_v6 <- sizer_v5 %>%
   dplyr::left_join(y = tot_forest, 
                    by = c("sizer_groups", "sizer_bandwidth", "LTER", 
                           "stream", "LTER_stream", "drainSqKm", "chemical", 
-                          "Month", "season", "Year"))
+                          "Month", "season"))
 
 # Check structure
 dplyr::glimpse(sizer_v6)
@@ -403,23 +426,25 @@ sizer_v7 <- sizer_v6 %>%
   dplyr::relocate(dplyr::contains("npp_kgC.m2.year"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("precip_mm.per.day"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("temp_degC"), .after = major_soil) %>% 
+  ## Discharge
+  dplyr::relocate(dplyr::contains("Discharge_cms"), .after = slope_snow_num.days) %>% 
   ## Non-focal chemicals
-  dplyr::relocate(dplyr::contains("Si.DIN_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("Si.DIN_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("Si.P_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("Si.P_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NOx_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NOx_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NH4_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NH4_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("DIN_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("DIN_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NO3_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("NO3_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("P_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("P_FNConc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("DSi_Conc_uM"), .after = slope_snow_num.days) %>% 
-  dplyr::relocate(dplyr::contains("DSi_FNConc_uM"), .after = slope_snow_num.days)
+  dplyr::relocate(dplyr::contains("Si.DIN_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("Si.DIN_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NOx_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NOx_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NH4_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NH4_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("DIN_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("DIN_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NO3_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("NO3_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("P_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("P_FNConc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("DSi_Conc_uM"), .after = slope_Discharge_cms) %>% 
+  dplyr::relocate(dplyr::contains("DSi_FNConc_uM"), .after = slope_Discharge_cms)
 
 # Check structure
 dplyr::glimpse(sizer_v7)
