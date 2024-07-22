@@ -30,7 +30,8 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired SiZer output
-sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+# sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+sizer_file <- "sizer-outs_seasonal_Conc_uM_DSi.csv"
 # sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
@@ -46,7 +47,7 @@ ref_v1 <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx
 # Process this for integration with the SiZer stuff
 ref_v2 <- ref_v1 %>% 
   # Pare down to desired columns only
-  dplyr::select(LTER, Stream_Name, Latitude) %>% 
+  dplyr::select(LTER, Stream_Name, Latitude, Longitude) %>% 
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
   dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
@@ -125,11 +126,12 @@ dplyr::glimpse(dynamic_v1)
           # WRTDS Output Prep ----
 ## ----------------------------------------- ##
 
-# Specify which original WRTDS outputs you wanted to use
-# wrtds_file <- "Full_Results_WRTDS_monthly.csv"
-wrtds_file <- "Full_Results_WRTDS_annual.csv"
+# Flexibly determine the needed resolution of WRTDS output
+if(stringr::str_detect(string = sizer_file, pattern = "annual")){
+  wrtds_file <- "Full_Results_WRTDS_annual.csv"
+} else { wrtds_file <- "Full_Results_WRTDS_monthly.csv" }
 
-# Read in that WRTDS data
+# Read in the specified WRTDS data
 wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
 
 # Wrangle these data to just the bits we want to use as covariates with SiZer outputs
@@ -155,7 +157,7 @@ wrtds_v2 <- wrtds_v1 %>%
   dplyr::summarize(value = mean(value, na.rm = T),
                    .groups = "keep") %>%
   dplyr::ungroup() %>%
-  # Remove invalid
+  # Remove invalid values
   dplyr::filter(value >= 0 & value <= Inf) %>% 
   # Reshape wider
   tidyr::pivot_wider(names_from = name_fix, values_from = value, values_fill = NA)
@@ -170,7 +172,12 @@ wrtds_disc <- wrtds_v1 %>%
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
   dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
-  dplyr::distinct()
+  dplyr::distinct() %>% 
+  # Average discharge within groups
+  dplyr::group_by(dplyr::across(-c(Discharge_cms))) %>%
+  dplyr::summarize(Discharge_cms = mean(Discharge_cms, na.rm = T),
+                   .groups = "keep") %>%
+  dplyr::ungroup()
 
 # Check structure
 dplyr::glimpse(wrtds_disc)
