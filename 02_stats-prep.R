@@ -21,6 +21,14 @@ librarian::shelf(tidyverse, readxl, magrittr, supportR)
 # Clear environment
 rm(list = ls())
 
+# Load custom functions
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
+
 # Identify desired SiZer output
 sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
 
