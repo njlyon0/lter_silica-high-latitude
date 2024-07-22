@@ -84,14 +84,31 @@ supportR::diff_check(old = names(df_v1), new = names(year_df))
 dplyr::glimpse(year_df)
 
 ## ----------------------------------------- ##
-# Stats ----
+# SiZer "Group" Stats ----
 ## ----------------------------------------- ##
 
+# Check structure of relevant data object
+dplyr::glimpse(sizer_grp_df)
+
+
+
+
+# Clear environment of unneeded things
+rm(list = setdiff(ls(), c("df_v1", "sizer_grp_df", "year_df")))
+
+## ----------------------------------------- ##
+# Yearly Stats ----
+## ----------------------------------------- ##
+
+# Check structure of relevant data object
+dplyr::glimpse(year_df)
 
 
 
 
 
+# Clear environment of unneeded things
+rm(list = setdiff(ls(), c("df_v1", "sizer_grp_df", "year_df")))
 
 # BASEMENT ----
 
