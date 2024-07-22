@@ -1,19 +1,41 @@
 ## ------------------------------------------------------- ##
-                  # Statistical Testing - Linear models of dynamic predictors
+                    # Statistical Testing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
-#add stream into data frame to use as random effect
-#try multiple random effects first, then use AIC to choose predictors
-#summarize change by stream and then run antoher model with static drivers
-
-# PURPOSE:
+# Purpose:
 ## Do statistical testing to test hypotheses
 ## May include frequentist stats (P values) and model selection
+## Focus is on linear models of dynamic predictors
 
 # Pre-Requisites:
-## This script assumes you've run the "stats-prep.R" script
-## And have the relevant output in a "tidy_data" folder
+## This script assumes you've run the "02_stats-prep.R" script
+
+## ----------------------------------------- ##
+            # Housekeeping ----
+## ----------------------------------------- ##
+
+# Load libraries
+# install.packages("librarian")
+librarian::shelf(tidyverse, RRPP, Hmisc, corrplot, MASS, car, lme4)
+            
+# Clear environment
+rm(list = ls())
+
+# Load custom functions
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
+
+# Identify desired prepared output
+sizer_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+# sizer_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+df_v1 <- read.csv(file = file.path("data", sizer_file))
 
 ## ----------------------------------------- ##
               # Housekeeping ----
