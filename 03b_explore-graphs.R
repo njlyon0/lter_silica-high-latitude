@@ -35,12 +35,19 @@ rm(list = "fxn")
 # Load graph helpers
 source(file.path("tools", "flow_graph-helpers.R"))
 
-# Identify desired prepared output
+# Identify desired prepared data
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 # prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
 
+# Wrangle that for graph outputs
+(graph_prefix <- gsub(pattern = "stats-ready_|\\.csv", replacement = "", x = prepped_file))
+
 # Read in that SiZer output
 df_v1 <- read.csv(file = file.path("data", prepped_file)) %>% 
+  # Replace NAs with "NA" in some columns
+  dplyr::mutate(dplyr::across(.cols = c(dir_sig, dir_fit),
+                              .fns = ~ ifelse(test = is.na(.x) == T,
+                                              yes = "NA", no = .x)) ) %>% 
   # Make certain columns into factors with ordered levels
   dplyr::mutate(dir_sig = factor(dir_sig, levels = dir_sig_levels),
                 dir_fit = factor(dir_fit, levels = dir_fit_levels))
@@ -83,8 +90,17 @@ sig_only <- core_df %>%
 # Check it out
 dplyr::glimpse(sig_only)
 
+## ----------------------------------------- ##
+          # Bookmark Graphs ----
+## ----------------------------------------- ##
 
+# Create a bookmark graph for line direction + P value
+bookmark_graph(data = core_df, colors = dir_p_palt) +
+  theme_high_lat
 
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-bookmark.png")),
+       height = 8, width = 7, units = "in")
 
 
 
@@ -93,50 +109,6 @@ dplyr::glimpse(sig_only)
 
 # DONT USE THIS -- NOT YET REVISITED
 
-## ----------------------------------------- ##
-# Data Prep ----
-## ----------------------------------------- ##
-
-# Grab the desired data file
-full_df <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Yield_kmol_yr_km2_DSi_bw5.csv")) %>%
-  # Make both 'direction + X' columns into factors so we can pick an informative order
-  dplyr::mutate(dir_sig = factor(dir_sig, levels = c("pos-sig", "pos-marg", 
-                                                     "neg-marg", "neg-sig", "NA", "NS")),
-                dir_fit = factor(dir_fit, 
-                                 levels = c("pos-great", "pos-good", "pos-fine", "pos-bad",
-                                            "neg-bad", "neg-fine", "neg-good", "neg-great", 
-                                            "NA", "NS")))
-
-# Check structure
-dplyr::glimpse(full_df)
-
-# Make a data object with only the columns that we'll want
-core_df <- full_df %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, Stream_Name) %>%
-  # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, stream, chemical:section_duration, 
-                F_statistic:line_fit, slope_estimate:slope_std_error,
-                dplyr::starts_with("dir_")) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# Check structure
-dplyr::glimpse(core_df)
-
-# Filter the simplified data object to only significant rivers with a good fit
-sig_only <- core_df %>%
-  # Keep only significant slopes
-  dplyr::filter(significance %in% c("sig", "marg")) %>%
-  # Keep only certain durations of trends
-  dplyr::filter(section_duration >= 5) %>%
-  # Arrange by LTER and site
-  dplyr::arrange(LTER, Stream_Name) %>%
-  # Drop non-unique rows
-  dplyr::distinct()
-
-# Check it out
-dplyr::glimpse(sig_only)
 
 ## ----------------------------------------- ##
 # Plotting Prep ----
@@ -151,22 +123,6 @@ resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_
 # Assemble this into a file prefix
 (file_prefix <- paste0("_", chem, "_", resp, "_"))
 
-# Pick a missing and non significant color
-na_col <- "#e5e5e5"
-nonsig_col <- "#6c757d"
-
-# Define color palettes
-p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
-r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
-             "good" = "#1a759f",  "great" = "#184e77")
-dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
-                "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
-                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8")
-dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
-                  "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
-                  "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
-                  "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
-                  "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 ## ----------------------------------------- ##
 # 'Bookmark Graphs' - Full Data ----
