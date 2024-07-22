@@ -91,122 +91,50 @@ sig_only <- core_df %>%
 dplyr::glimpse(sig_only)
 
 ## ----------------------------------------- ##
-          # Bookmark Graphs ----
+      # Bookmark Graphs - Full Data ----
 ## ----------------------------------------- ##
 
 # Create a bookmark graph for line direction + P value
-bookmark_graph(data = core_df, colors = dir_p_palt) +
+bookmark_graph(data = core_df, color_var = "dir_sig", colors = dir_p_palt) +
   theme_high_lat
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-bookmark.png")),
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_full-data_sig-bookmark.png")),
        height = 8, width = 7, units = "in")
 
+# Make another for line direction & R2 (instead of P value)
+bookmark_graph(data = core_df, color_var = "dir_fit", colors = dir_fit_palt) +
+  theme_high_lat
 
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_full-data_fit-bookmark.png")),
+       height = 8, width = 7, units = "in")
 
+## ----------------------------------------- ##
+# Bookmark Graphs - Significant Only ----
+## ----------------------------------------- ##
+
+# Create a bookmark graph for line direction + P value
+bookmark_graph(data = sig_only, color_var = "dir_sig", colors = dir_p_palt) +
+  theme_high_lat
+
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_sig-bookmark.png")),
+       height = 8, width = 7, units = "in")
+
+# Make another for line direction & R2 (instead of P value)
+bookmark_graph(data = sig_only, color_var = "dir_fit", colors = dir_fit_palt) +
+  theme_high_lat
+
+# Export this graph
+ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_fit-bookmark.png")),
+       height = 8, width = 7, units = "in")
 
 # Basement ----
 
 # DONT USE THIS -- NOT YET REVISITED
 
 
-## ----------------------------------------- ##
-# Plotting Prep ----
-## ----------------------------------------- ##
-
-# Grab useful information for informative file names for these graphs
-chem <- unique(full_df$chemical)
-resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-             replacement = "", x = names(full_df)[9])
-## Note response identification is dependent upon column order!
-
-# Assemble this into a file prefix
-(file_prefix <- paste0("_", chem, "_", resp, "_"))
-
-
-## ----------------------------------------- ##
-# 'Bookmark Graphs' - Full Data ----
-## ----------------------------------------- ##
-
-# Count numbers of streams at each LTER
-core_hlines <- core_df %>%
-  dplyr::select(LTER, stream) %>%
-  dplyr::distinct() %>%
-  dplyr::group_by(LTER) %>%
-  dplyr::summarize(stream_ct = dplyr::n()) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
-
-# Make a graph showing the slope direction and significance for all streams
-ggplot(core_df, aes(x = Year, y = stream, color = dir_sig)) +
-  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
-  scale_color_manual(values = dir_p_palt) +
-  # Put in horizontal lines between LTERs
-  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
-  geom_hline(yintercept = (core_hlines$stream_cumulative + 0.5)) +
-  # Customize theme / formatting elements
-  labs(x = "Year", y = "Stream") +
-  theme_bw() +
-  theme(legend.title = element_blank())
-
-# Export this graph
-ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "sig-bookmark.png")),
-       height = 8, width = 7, units = "in")
-
-# Make the same graph for r2 + slope direction
-ggplot(core_df, aes(x = Year, y = stream, color = dir_fit)) +
-  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
-  scale_color_manual(values = dir_fit_palt) +
-  geom_hline(yintercept = (core_hlines$stream_cumulative + 0.5)) +
-  labs(x = "Year", y = "Stream") +
-  theme_bw() +
-  theme(legend.title = element_blank())
-
-# Export this graph too
-ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "fit-bookmark.png")),
-       height = 8, width = 7, units = "in")
-
-## ----------------------------------------- ##
-# 'Bookmark Graphs' - Sig. Only ----
-## ----------------------------------------- ##
-
-# Count numbers of streams at each LTER
-sig_hlines <- sig_only %>%
-  dplyr::select(LTER, stream) %>%
-  dplyr::distinct() %>%
-  dplyr::group_by(LTER) %>%
-  dplyr::summarize(stream_ct = dplyr::n()) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(stream_cumulative = cumsum(x = stream_ct))
-
-# Make a graph showing the slope direction and significance for all streams
-ggplot(sig_only, aes(x = Year, y = stream, color = dir_sig)) +
-  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
-  scale_color_manual(values = dir_p_palt) +
-  # Put in horizontal lines between LTERs
-  ## Add 0.5 to number of streams in that LTER and preceding (alphabetical) LTERs
-  geom_hline(yintercept = (sig_hlines$stream_cumulative + 0.5)) +
-  # Customize theme / formatting elements
-  labs(x = "Year", y = "Stream") +
-  theme_bw() +
-  theme(legend.title = element_blank())
-
-# Export this graph
-ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "sig-bookmark.png")),
-       height = 5, width = 6, units = "in")
-
-# Make the same graph for r2 + slope direction
-ggplot(sig_only, aes(x = Year, y = stream, color = dir_fit)) +
-  geom_path(aes(group = sizer_groups), lwd = 3.5, lineend = 'square') +
-  scale_color_manual(values = dir_fit_palt) +
-  geom_hline(yintercept = (sig_hlines$stream_cumulative + 0.5)) +
-  labs(x = "Year", y = "Stream") +
-  theme_bw() +
-  theme(legend.title = element_blank())
-
-# Export this graph too
-ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "fit-bookmark.png")),
-       height = 5, width = 6, units = "in")
 
 ## ----------------------------------------- ##
 # Slope + Duration - Sig. Only ----
