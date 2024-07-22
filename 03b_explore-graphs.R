@@ -11,7 +11,7 @@
 ## This script assumes you've run the "02_stats-prep.R" script
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+              # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
@@ -44,12 +44,44 @@ df_v1 <- read.csv(file = file.path("data", prepped_file)) %>%
   # Make certain columns into factors with ordered levels
   dplyr::mutate(dir_sig = factor(dir_sig, levels = dir_sig_levels),
                 dir_fit = factor(dir_fit, levels = dir_fit_levels))
+
 # Check structure
 dplyr::glimpse(df_v1)
 
+## ----------------------------------------- ##
+                  # Data Prep ----
+## ----------------------------------------- ##
+# Disclaimer:
+## Yes, most of this is handled in '02_stats-prep.R'
+## However, some tweaks make more sense to do directly before exploratory visualization
 
+# Make a data object with only the columns that we'll want
+core_df <- df_v1 %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, stream) %>%
+  # Pare down to only needed columns
+  dplyr::select(sizer_groups, LTER, stream, LTER_stream, chemical:section_duration, 
+                F_statistic:line_fit, slope_estimate:slope_std_error,
+                dplyr::starts_with("dir_")) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
 
+# Check structure
+dplyr::glimpse(core_df)
 
+# Filter the simplified data object to only significant rivers with a good fit
+sig_only <- core_df %>%
+  # Keep only significant slopes
+  dplyr::filter(significance %in% c("sig", "marg")) %>%
+  # Keep only certain durations of trends
+  dplyr::filter(section_duration >= 5) %>%
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, stream) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# Check it out
+dplyr::glimpse(sig_only)
 
 
 
