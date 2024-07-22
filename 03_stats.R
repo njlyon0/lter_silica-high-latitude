@@ -22,6 +22,9 @@ librarian::shelf(tidyverse, RRPP, Hmisc, corrplot, MASS, car, lme4)
 # Clear environment
 rm(list = ls())
 
+# Make needed folder(s)
+dir.create(path = file.path("stats_results"), showWarnings = F)
+
 # Load custom functions
 for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
   source(file.path("tools", fxn))
@@ -37,7 +40,8 @@ prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 # Read in that SiZer output
 df_v1 <- read.csv(file = file.path("data", prepped_file))
 
-
+# Check structure
+dplyr::glimpse(df_v1)
 
 
 # BASEMENT ----
