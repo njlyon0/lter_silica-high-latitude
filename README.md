@@ -17,8 +17,10 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`01_sizer-workflow.R`** - Runs SiZer workflow to identify changes in slope for WRTDS time series. Works for monthly, seasonal (averaged across sub-season months), and annual input data.
     - Assumes you have either run `00_data-download.R` or manually put the needed input files in a folder named "data"
 
+- **`02_stats-prep.R`** - Combines various data files and calculates covariate columns likely to be useful in the analysis script. Just like `01_sizer-workflow.R`, works for annual/seasonal/monthly input data
+    - Assumes you have run `01_sizer-workflow.R`
 
-- **`stats-prep.R`** - Accepts outputs of _either_ `...-workflow.R` script and (1) attaches basin characteristics / climatic drivers extracted elsewhere and (2) does some summarizing / wrangling needed before stats / visualization.
+
 
 - **`stats.R`** - Do desired hypothesis testing. Requires `stats-prep.R` be run before.
 
