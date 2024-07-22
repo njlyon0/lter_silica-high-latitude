@@ -16,6 +16,9 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, sf, maps, terra, stars, supportR, cowplot)
 
+# Get around weird issue with scientific notation
+options(scipen = 10000)
+
 # Clear environment & do garbage collection too
 rm(list = ls()); gc()
 
@@ -61,18 +64,6 @@ dplyr::glimpse(site_df)
 # Permafrost Prep ----
 ## ------------------------------------------ ##
 
-
-
-
-
-
-# Basement ----
-
-
-
-## ------------------------------------------ ##
-          # Permafrost Wrangling ----
-## ------------------------------------------ ##
 # For more information on permafrost data see:
 ## https://apgc.awi.de/dataset/pex
 ## Note that I re-projected into WGS84 to match CRS of rivers
@@ -110,18 +101,12 @@ if("permafrost-simple.tif" %in% dir(path = file.path("map_data")) != T){
   # Clean up environment & collect garbage
   rm(list = setdiff(x = ls(), y = c("site_df"))); gc() }
 
-# Read permafrost tif back in as a stars object
-pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
-
-# One final demo plot
-ggplot() + 
-  stars::geom_stars(data = pf_stars, downsample = 10) +
-  scale_fill_continuous(na.value = "transparent") +
-  theme(legend.position = "none")
-
 ## ------------------------------------------ ##
               # Site Map Prep ----
 ## ------------------------------------------ ##
+
+# Read in permafrost data
+pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
 
 # Get country & US state borders
 borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
@@ -138,13 +123,6 @@ range(high_lats$lat); range(high_lats$lon)
 # Define borders of maps so that the site points will be nicely inside the borders
 low_lims <- list("lat" = c(-80, -60), "lon" = c(-180, 180))
 high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170)) 
-
-## ------------------------------------------ ##
-            # Site Map Creation ----
-## ------------------------------------------ ##
-
-# Get around weird issue with scientific notation
-options(scipen = 10000)
 
 # Define the bits of the map that all sub-maps will want to re-use
 core_map <-  borders %>% 
@@ -206,11 +184,8 @@ map_low <- core_map +
 # Combine these map panels in an intuitive way
 cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
 
-# Make a folder for these
-dir.create(path = file.path("map_images"), showWarnings = F)
-
 # Save map
-ggsave(filename = file.path("map_images", "high-latitude_map.jpg"),
+ggsave(filename = file.path("graphs", "map_global.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
 ## ------------------------------------------ ##
@@ -242,7 +217,7 @@ map_lo <- core_map +
   theme(legend.position = "below"); map_lo
 
 # Save map - why isn't this saving correctly - dots are enormous
-ggsave(filename = file.path("map_images", "mcm_map.jpg"),
+ggsave(filename = file.path("graphs", "map_mcmurdo.jpg"),
        plot = last_plot(), width = 6, height = 5, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
