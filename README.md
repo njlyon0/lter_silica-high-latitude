@@ -26,7 +26,8 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
     - Assumes you have run `02_stats-prep.R`
 
-
+- **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration.
+    - Assumes you have either run `00_data-download.R` _and_ `02_stats-prep.R`
 
 - **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin characteristics and slope estimates of SiZer-identified time series chunks. Contains sections for both annual and seasonal data so there are not twin scripts for this component.
 
