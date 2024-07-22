@@ -23,6 +23,7 @@ rm(list = ls())
 
 # Make needed folder(s)
 dir.create(path = file.path("data"), showWarnings = F)
+dir.create(path = file.path("map_data"), showWarnings = F)
 
 ## ----------------------------------------- ##
         # WRTDS Outputs Download ----
@@ -82,6 +83,25 @@ ref_out
 purrr::walk2(.x = ref_out$id, .y = ref_out$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
                                                 path = file.path("data", .y)))
+
+# Clear environment
+rm(list = ls())
+
+## ----------------------------------------- ##
+      # Permafrost Raster Download ----
+## ----------------------------------------- ##
+
+# Identify ref. table file
+pf_out <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1YwVpzL9cGINyadparC5L8NaHMZF3vPa4")) %>%
+  dplyr::filter(name == "permafrost-probability.tif")
+
+# Check it
+pf_out
+
+# Download it
+purrr::walk2(.x = pf_out$id, .y = pf_out$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+                                                path = file.path("map_data", .y)))
 
 # Clear environment
 rm(list = ls())
