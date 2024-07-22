@@ -1,45 +1,55 @@
 ## ------------------------------------------------------- ##
-                  # Statistical Testing - Linear models of dynamic predictors
+# Statistical Testing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
-#add stream into data frame to use as random effect
-#try multiple random effects first, then use AIC to choose predictors
-#summarize change by stream and then run antoher model with static drivers
-
-# PURPOSE:
+# Purpose:
 ## Do statistical testing to test hypotheses
 ## May include frequentist stats (P values) and model selection
+## Focus is on linear models of dynamic predictors
 
 # Pre-Requisites:
-## This script assumes you've run the "stats-prep.R" script
-## And have the relevant output in a "tidy_data" folder
+## This script assumes you've run the "02_stats-prep.R" script
 
 ## ----------------------------------------- ##
-              # Housekeeping ----
+# Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, RRPP)
-              library(Hmisc)
-              library(corrplot) #use this to identify correlations
-              require(MASS)
-              library(car)
-              require(lme4)
-              
-
-# Make a folder for outputting results
-dir.create(path = file.path("stats_results"), showWarnings = F)
+librarian::shelf(tidyverse, car, lme4, lmerTest, ggResidpanel)
+librarian::shelf(RRPP, Hmisc, corrplot, MASS)
 
 # Clear environment
 rm(list = ls())
+
+# Make needed folder(s)
+dir.create(path = file.path("stats_results"), showWarnings = F)
+
+# Load custom functions
+for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
+  source(file.path("tools", fxn))
+}
+
+## And remove loop index object from environment
+rm(list = "fxn")
+
+# Identify desired prepared output
+prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
+# prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
+
+# Read in that SiZer output
+df_v1 <- read.csv(file = file.path("data", prepped_file))
+
+# Check structure
+dplyr::glimpse(df_v1)
 
 ## ----------------------------------------- ##
           # Silica Concentration ----
 ## ----------------------------------------- ##
 # Read in ready data for this response variable
-si_conc <- read.csv(file = file.path("tidy_data", "stats-ready_annual_Conc_uM_DSi_bw5.csv")) 
+si_conc <- df_v1
+
 names(si_conc)
 
 Driver1 <- si_conc %>%
@@ -47,7 +57,7 @@ Driver1 <- si_conc %>%
   # When doing non-conc data need to change "conc_uM" to appropriate term
   dplyr::select(-relative_Year, -Conc_uM, -season:-Year, -temp_degC, -section:-section_end, -F_statistic:-slope_direction,
                 -term_statistic:-term_p_value, -temp_degC, -sd_temp_degC, -precip_mm.per.day, -sd_precip_mm.per.day,
-                -npp_kg.C.m2.year, -sd_npp_kg.C.m2.year, -evapotrans_kg.m2,
+                -npp_kgC.m2.year, -sd_npp_kgC.m2.year, -evapotrans_kg.m2,
                 -sd_evapotrans_kg.m2, -snow_max.prop.area, sd_snow_max.prop.area, -snow_num.days, -sd_snow_num.days) %>%
   #drop even more columns
   dplyr::select(-sizer_bandwidth, -sd_response, -section_duration, -slope_std_error,
@@ -69,7 +79,7 @@ names(Driver1)
 
 #isolate numeric data
 Driver_numeric <- Driver1 %>%
-  dplyr::select(-sizer_groups, -percent_change, -slope_estimate, -LTER, -Stream_Name) %>%
+  dplyr::select(-sizer_groups, -percent_change, -slope_estimate, -LTER, -stream) %>%
   dplyr::select(-contains ("major_"))
    
 names(Driver_numeric)
@@ -93,16 +103,16 @@ Driver_numeric_meterol2 <- Driver_numeric %>%
   corrplot(method = "number") #highest value -0.51
 
 Driver_numeric2 <- Driver_numeric %>%
-  dplyr::select(mean_precip_mm.per.day, mean_npp_kg.C.m2.year, mean_evapotrans_kg.m2, 
+  dplyr::select(mean_precip_mm.per.day, mean_npp_kgC.m2.year, mean_evapotrans_kg.m2, 
   mean_snow_max.prop.area, slope_precip_mm.per.day, slope_evapotrans_kg.m2,
-  slope_npp_kg.C.m2.year, slope_temp_degC) %>%
+  slope_npp_kgC.m2.year, slope_temp_degC) %>%
   cor(use="complete.obs") %>%
   corrplot(method = "number") #all together can see highest correlation is -0.58
 
 #combining final predictors into one dataframe
 ModelPrep <- Driver1 %>%
-  dplyr::select(sizer_groups, Stream_Name, percent_change, LTER,  
-                mean_precip_mm.per.day, mean_npp_kg.C.m2.year, mean_evapotrans_kg.m2, 
+  dplyr::select(sizer_groups, stream, percent_change, LTER,  
+                mean_precip_mm.per.day, mean_npp_kgC.m2.year, mean_evapotrans_kg.m2, 
                 mean_snow_max.prop.area, contains("slope_")) %>%
   dplyr::select(-slope_snow_num.days, -slope_estimate) 
 names(ModelPrep)
@@ -117,16 +127,16 @@ ModelPrep[,c(5:13)]  <- scale(ModelPrep[,c(5:13)], center = T, scale = T)
 #remove NAs
 ModelPrep1 <- ModelPrep[complete.cases(ModelPrep),]
 names(ModelPrep1)
-unique(ModelPrep1$Stream_Name)
+unique(ModelPrep1$stream)
 
 #running various mixed models to see impact of various random effects
-lmer2 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kg.C.m2.year + mean_evapotrans_kg.m2 + 
+lmer2 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + mean_evapotrans_kg.m2 + 
                mean_snow_max.prop.area + slope_precip_mm.per.day + slope_evapotrans_kg.m2 +
-               slope_npp_kg.C.m2.year + slope_temp_degC + (1|LTER), ModelPrep1)
+               slope_npp_kgC.m2.year + slope_temp_degC + (1|LTER), ModelPrep1)
 
-lmer3 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kg.C.m2.year + mean_evapotrans_kg.m2 + 
+lmer3 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + mean_evapotrans_kg.m2 + 
                mean_snow_max.prop.area + slope_precip_mm.per.day + slope_evapotrans_kg.m2 +
-               slope_npp_kg.C.m2.year + slope_temp_degC + (1|LTER/Stream_Name), ModelPrep1)
+               slope_npp_kgC.m2.year + slope_temp_degC + (1|LTER/stream), ModelPrep1)
 
 AIC_model<-AIC(lmer1, lmer2, lmer3) #lowest AIC is best - these are basically equal
 
@@ -137,43 +147,43 @@ vif(lmer_dynamic)
 r.squaredGLMM(lmer1)
 
 #trying regular lm model
-lm <-lm(percent_change ~ mean_precip_mm.per.day + mean_npp_kg.C.m2.year + mean_evapotrans_kg.m2 + 
+lm <-lm(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + mean_evapotrans_kg.m2 + 
                mean_snow_max.prop.area + slope_precip_mm.per.day + slope_evapotrans_kg.m2 +
-               slope_npp_kg.C.m2.year + slope_temp_degC, ModelPrep1)
+               slope_npp_kgC.m2.year + slope_temp_degC, ModelPrep1)
 
 AIC_model<-stepAIC(object = lm, direction = "both", trace = TRUE)
 
 lm2 <-lm(percent_change ~ mean_evapotrans_kg.m2 + 
           slope_precip_mm.per.day + 
-          slope_npp_kg.C.m2.year + slope_temp_degC, ModelPrep1)
+          slope_npp_kgC.m2.year + slope_temp_degC, ModelPrep1)
 summary(lm2) #R2 = 0.22
 hist(resid(lm2)) #looks good
 
 # Exploratory graph
-ggplot(ModelPrep1, aes(x = slope_npp_kg.C.m2.year, y = percent_change)) +
+ggplot(ModelPrep1, aes(x = slope_npp_kgC.m2.year, y = percent_change)) +
   geom_point(pch = 21, size = 3, fill = "blue") 
   
 #===================================================
 #===================================================
 #lm model w/ just slopes- USE THIS ONE but need to add P 
 lm1<-lm(percent_change ~ slope_precip_mm.per.day +
-              slope_npp_kg.C.m2.year + slope_evapotrans_kg.m2 +
+              slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 +
               slope_snow_max.prop.area + slope_temp_degC, ModelPrep1)
 summary(lm1) #adj r2 = 0.27, p value sig for everything except et
 AIC_model<-stepAIC(object = lm1, direction = "both", trace = TRUE)
 
 #post AIC
 lm1<-lm(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kg.C.m2.year + 
+          slope_npp_kgC.m2.year + 
           slope_snow_max.prop.area + slope_temp_degC, ModelPrep1)
 
 #add LTER as fixed effect
 lm2<-lm(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kg.C.m2.year + 
+          slope_npp_kgC.m2.year + 
           slope_snow_max.prop.area + slope_temp_degC + LTER, ModelPrep1)
 #add LTER as random effect
 lmer2<-lmer(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kg.C.m2.year + 
+          slope_npp_kgC.m2.year + 
           slope_snow_max.prop.area + slope_temp_degC + (1|LTER), ModelPrep1)
 summary(lm1) #adj r2 = 0.27, p value sig
 summary(lm2) #adj r2 = 0.27, p value sig
@@ -189,9 +199,9 @@ summary(lmer2)
 # Fit a model of interest
 si_mod1 <- RRPP::lm.rrpp(percent_change ~ LTER +
                                 ## Dynamic drivers
-                           mean_npp_kg.C.m2.year +
+                           mean_npp_kgC.m2.year +
                            mean_evapotrans_kg.m2 + mean_snow_max.prop.area + slope_precip_mm.per.day +
-                           slope_npp_kg.C.m2.year + slope_evapotrans_kg.m2 +
+                           slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 +
                            slope_snow_max.prop.area + slope_temp_degC,
                               data = ModelPrep1, iter = 999)
 
@@ -201,7 +211,7 @@ si_aov1 <- anova(si_mod1, effect.type = "F",
                         "land_total_forest", # 'random' effect for LTER
                         "LTER", # random effect for 'slope_temp_degC'
                         "LTER", # random effect for 'slope_precip_mm.per.day'
-                        "LTER", # random effect for 'slope_npp_kg.C.m2.year'
+                        "LTER", # random effect for 'slope_npp_kgC.m2.year'
                         "LTER", # random effect for 'slope_evapotrans_kg.m2'
                         "LTER", # random effect for 'slope_snow_max.prop.area'
                         "LTER", # random effect for 'slope_snow_num.days'
@@ -237,14 +247,14 @@ write.csv(x = si_conc_table1, row.names = F, na = '',
 one_lter <- dplyr::filter(si_conc, LTER == "NIVA")
 
 # Fit model
-test_mod <- RRPP::lm.rrpp(percent_change ~ Stream_Name,
+test_mod <- RRPP::lm.rrpp(percent_change ~ stream,
                           data = one_lter, iter = 999)
 
 # Assess model
 summary(test_mod, formula = F)
 
 # Get pairwise comparisons
-test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$Stream_Name)
+test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$stream)
 summary(test_pw)
 
 # End ----
