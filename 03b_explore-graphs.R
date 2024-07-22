@@ -1,24 +1,22 @@
 ## ------------------------------------------------------- ##
-          # Annual Data - Exploratory Graphing
+# Annual Data - Exploratory Graphing
 ## ------------------------------------------------------- ##
 # Written by: Nick J Lyon & Joanna Carey
 
-# PURPOSE:
-## Make exploratory data visualizations for *annual* data
+# Purpose:
+## Make exploratory graphs for statistics-ready data
 ## "Exploratory" in that they may not be publication quality but are still useful tools
 
 # Pre-Requisites:
-## This script assumes you've run one of the "...-workflow.R" scripts
-## And have subsequently run the "stats-prep.R" script
-## So you have the relevant output in the "tidy_data" folder
+## This script assumes you've run the "02_stats-prep.R" script
 
 ## ----------------------------------------- ##
-              # Housekeeping ----
+# Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, googledrive, cowplot)
+librarian::shelf(tidyverse, cowplot)
 
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs"), showWarnings = F)
@@ -27,7 +25,7 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 rm(list = ls())
 
 ## ----------------------------------------- ##
-              # Data Prep ----
+# Data Prep ----
 ## ----------------------------------------- ##
 
 # Grab the desired data file
@@ -72,13 +70,13 @@ sig_only <- core_df %>%
 dplyr::glimpse(sig_only)
 
 ## ----------------------------------------- ##
-            # Plotting Prep ----
+# Plotting Prep ----
 ## ----------------------------------------- ##
 
 # Grab useful information for informative file names for these graphs
 chem <- unique(full_df$chemical)
 resp <- gsub(pattern = "_mgL|_uM|_10_6kg_yr|_10_6kmol_yr|_kmol_yr_km2|_kmol_yr|_kg_yr", 
-              replacement = "", x = names(full_df)[9])
+             replacement = "", x = names(full_df)[9])
 ## Note response identification is dependent upon column order!
 
 # Assemble this into a file prefix
@@ -102,7 +100,7 @@ dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "neg-good" = "#722e9a", "neg-great" = "#47297b")
 
 ## ----------------------------------------- ##
-     # 'Bookmark Graphs' - Full Data ----
+# 'Bookmark Graphs' - Full Data ----
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
@@ -144,7 +142,7 @@ ggsave(filename = file.path("graphs", paste0("annual_full", file_prefix, "fit-bo
        height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
-    # 'Bookmark Graphs' - Sig. Only ----
+# 'Bookmark Graphs' - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Count numbers of streams at each LTER
@@ -186,7 +184,7 @@ ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "fi
        height = 5, width = 6, units = "in")
 
 ## ----------------------------------------- ##
-      # Slope + Duration - Sig. Only ----
+# Slope + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Pare down to needed columns and unique rows
@@ -210,7 +208,7 @@ ggsave(filename = file.path("graphs", paste0("annual_sig-only", file_prefix, "sl
        width = 6, height = 8, units = "in")
 
 ## ----------------------------------------- ##
-  # Perc. Change + Duration - Sig. Only ----
+# Perc. Change + Duration - Sig. Only ----
 ## ----------------------------------------- ##
 
 # Pare down to needed columns and unique rows
