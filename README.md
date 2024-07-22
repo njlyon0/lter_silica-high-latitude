@@ -20,11 +20,13 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`02_stats-prep.R`** - Combines various data files and calculates covariate columns likely to be useful in the analysis script. Just like `01_sizer-workflow.R`, works for annual/seasonal/monthly input data
     - Assumes you have run `01_sizer-workflow.R`
 
-- **`03_stats.R`** - Performs desired statistical analysis and correlation checks
+- **`03a_stats-dynamic-lmer.R`** - Performs desired statistical analysis and correlation checks
+    - Assumes you have run `02_stats-prep.R`
+
+- **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
     - Assumes you have run `02_stats-prep.R`
 
 
-- **`...-explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Temporal granularity of source data is specified in file prefix ("seasonal" or "annual"). Note that these scripts expect that _both_ the corresponding `...-workflow.R` script and the `stats-prep.R` script have been run and their outputs are in the correct (i.e., default) folders.
 
 - **`ordinations.R`** - Creates ordinations (e.g, PCoA, etc.) of basin characteristics and slope estimates of SiZer-identified time series chunks. Contains sections for both annual and seasonal data so there are not twin scripts for this component.
 
