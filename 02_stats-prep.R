@@ -356,7 +356,7 @@ sizer_v5 <- sizer_v4 %>%
 dplyr::glimpse(sizer_v5)
 
 ## ----------------------------------------- ##
-# Calculate 'Total Forest' ----
+        # Calculate 'Total Forest' ----
 ## ----------------------------------------- ##
 
 # Want to summarize across multiple land categories to just 'forest'
@@ -387,70 +387,56 @@ sizer_v6 <- sizer_v5 %>%
 # Check structure
 dplyr::glimpse(sizer_v6)
 
+## ----------------------------------------- ##
+            # Final Wrangling ----
+## ----------------------------------------- ##
 
-
-
-
-# BASEMENT ----
-
-# Everything below here is not yet revisited and likely will not work as expected
-## USE CAUTION -- or the unedited 'stats-prep.R' script :)
-
-
-# Attach to data
-sizer_v7 <- sizer_v6 %>%
+# Do final tidying before export
+sizer_v7 <- sizer_v6 %>% 
   # Move related columns next to one another
+  ## Drivers
+  dplyr::relocate(dplyr::contains("land_"), .after = major_land) %>% 
   dplyr::relocate(dplyr::contains("snow_num.days"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("snow_max.prop.area"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("evapotrans_kg.m2"), .after = major_soil) %>%
-  dplyr::relocate(dplyr::contains("npp_kg.C.m2.year"), .after = major_soil) %>%
+  dplyr::relocate(dplyr::contains("npp_kgC.m2.year"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("precip_mm.per.day"), .after = major_soil) %>%
-  dplyr::relocate(dplyr::contains("temp_degC"), .after = major_soil)
-  
-# Re-check structure
+  dplyr::relocate(dplyr::contains("temp_degC"), .after = major_soil) %>% 
+  ## Non-focal chemicals
+  dplyr::relocate(dplyr::contains("Si.DIN_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("Si.DIN_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NOx_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NOx_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NH4_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NH4_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("DIN_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("DIN_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NO3_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("NO3_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("P_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("P_FNConc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("DSi_Conc_uM"), .after = slope_snow_num.days) %>% 
+  dplyr::relocate(dplyr::contains("DSi_FNConc_uM"), .after = slope_snow_num.days)
+
+# Check structure
 dplyr::glimpse(sizer_v7)
-
-## ----------------------------------------- ##
-        # Calculate 'Total Forest' ----
-## ----------------------------------------- ##
-
-# We want to calculate 'total forest' by summing relevant land cover categories
-sizer_v8 <- sizer_v7 %>%
-  # Flip land columns to long format
-  tidyr::pivot_longer(cols = dplyr::starts_with("land_")) %>%
-  # If the value is NA, replace with 0
-  dplyr::mutate(value = ifelse(is.na(value),
-                                yes = 0, no = value)) %>%
-  # Flip back to wide format
-  tidyr::pivot_wider(names_from = name, values_from = value) %>%
-  # Move land columns back after 'major X' columns
-  dplyr::relocate(dplyr::starts_with("land_"), 
-                  .after = dplyr::starts_with("major_")) %>%
-  # Sum forest columns into a 'total forest' column
-  dplyr::mutate(land_total_forest = land_evergreen_needleleaf_forest +
-                  land_evergreen_broadleaf_forest +
-                  land_deciduous_broadleaf_forest +
-                  land_deciduous_needleleaf_forest +
-                  land_mixed_forest,
-                .before = dplyr::starts_with("land_"))
-
-# Re-check structure
-dplyr::glimpse(sizer_v8)
 
 ## ----------------------------------------- ##
                   # Export ----
 ## ----------------------------------------- ##
 
-# Re-name this object
-stats_ready <- sizer_v8 
-  # And choose a minimum chunk duration for inclusion
-  #dplyr::filter(section_duration >= 5)
+# Make a final object
+stats_ready <- sizer_v7
 
-# Make a file name for this file
-(ready_filename <- paste0("stats-ready_", sizer_filename))
+# Check column names/order
+names(stats_ready)
+
+# Create an informative file name for this file
+(ready_file <- gsub(pattern = "sizer-outs", replacement = "stats-ready", sizer_file))
 
 # Save it locally
-write.csv(x = stats_ready, na = "", row.names = F,
-          file = file.path("tidy_data", ready_filename))
+write.csv(x = stats_ready, na = "", row.names = F, file = file.path("data", ready_file))
 
 # End ----
