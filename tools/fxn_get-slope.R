@@ -7,9 +7,6 @@
 #' 
 get_slope <- function(data = NULL, resp_var = NULL){
   
-  # resp_var <- "evapotrans_kg.m2"
-  # data <- sizer_sub
-  
   # Errors for missing arguments
   if(any(is.null(data) | is.null(resp_var)))
     stop("All arguments must be specified")
