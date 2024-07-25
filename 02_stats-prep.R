@@ -42,15 +42,20 @@ sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 ## ----------------------------------------- ##
 
 # Read in the reference table
-ref_v1 <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
+# two versions - csv and xls
+ref_file <- "Site_Reference_Table.csv"
+ref_v1 <- read.csv(file = file.path("data", ref_file))
+#ref_v1 <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
 
+names(sizer_v1)
+names(ref_v1)
 # Process this for integration with the SiZer stuff
 ref_v2 <- ref_v1 %>% 
   # Pare down to desired columns only
   dplyr::select(LTER, Stream_Name, Latitude, Longitude) %>% 
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
   dplyr::distinct() %>% 
   # Remove any rows where Latitude is unknown
   dplyr::filter(!is.na(Latitude))
@@ -73,7 +78,7 @@ static_v1 <- drivers_v1 %>%
   # Remove unwanted streams / duplicate rows
   dplyr::distinct() %>% 
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream))
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name))
 
 # Check structure
 dplyr::glimpse(static_v1)
@@ -90,7 +95,7 @@ dynamic_v1 <- drivers_v1 %>%
                                    "_sep_", "_oct_", "_nov_", "_dec_"))) %>% 
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
   dplyr::distinct() %>% 
   # Reshape longer
   tidyr::pivot_longer(cols = -LTER:-Stream_Name) %>% 
@@ -142,7 +147,7 @@ wrtds_v2 <- wrtds_v1 %>%
   dplyr::mutate(chemical = gsub(pattern = ":", replacement = ".", x = chemical)) %>% 
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
   dplyr::distinct() %>% 
   # Remove whichever chemical is the focus of the chosen SiZer outputs
   dplyr::filter(chemical != unique(sizer_v1$chemical)) %>%
@@ -171,7 +176,7 @@ wrtds_disc <- wrtds_v1 %>%
   dplyr::select(LTER, Stream_Name, drainSqKm, Year, Discharge_cms) %>% 
   # Remove unwanted streams / duplicate rows
   dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$stream)) %>% 
+  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
   dplyr::distinct() %>% 
   # Average discharge within groups
   dplyr::group_by(dplyr::across(-c(Discharge_cms))) %>%
@@ -197,7 +202,7 @@ dplyr::glimpse(wrtds_v3)
 ## Note that each shares different columns with the SiZer outputs
 sizer_v2 <- sizer_v1 %>% 
   # Rename 'stream' column for convenience
-  dplyr::rename(Stream_Name = stream) %>% 
+  #dplyr::rename(Stream_Name = stream) %>% 
   # Integrate reference table
   dplyr::left_join(y = ref_v2, by = c("LTER", "Stream_Name")) %>% 
   # Integrate drivers (static & dynamic)
@@ -212,7 +217,7 @@ dplyr::glimpse(sizer_v2)
 # Wrangle that output with some quality-of-life improvements
 sizer_v3 <- sizer_v2 %>% 
   # Rename stream column
-  dplyr::rename(stream = Stream_Name) %>% 
+  #dplyr::rename(stream = Stream_Name) %>% 
   # Combine section with stream
   dplyr::mutate(sizer_groups = paste0(stream, "_", section), 
                 .before = dplyr::everything()) %>%
@@ -270,8 +275,9 @@ sizer_covars <- sizer_v3 %>%
   # Filter out NAs
   dplyr::filter(!is.na(value)) %>% 
   # Summarize co-variates within groups
-  dplyr::group_by(sizer_groups, sizer_bandwidth, LTER, stream, LTER_stream, 
-                  drainSqKm, chemical, Month, season, name) %>% 
+  # Jo removed "LTER_stream, Month, season because doesn't exist
+  dplyr::group_by(sizer_groups, sizer_bandwidth, LTER, stream,  
+                  drainSqKm, chemical, name) %>% 
   dplyr::summarize(mean = mean(value, na.rm = T),
                    sd = sd(value, na.rm = T),
                    .groups = "keep") %>% 
@@ -291,13 +297,15 @@ dplyr::glimpse(sizer_covars)
 # Do some small wrangling of the 'actual' data object
 sizer_v4 <- sizer_v3 %>% 
   # Group and calculate relative year within groups
-  dplyr::group_by(sizer_groups, season, Month) %>%
+  # Jo removed "season" and "Month" below in group_by
+  dplyr::group_by(sizer_groups) %>%
   dplyr::mutate(relative_Year = row_number() , .after = Year) %>%
   dplyr::ungroup() %>% 
   # Attach covariate information
+  # Jo removed "season" and "Month" and LTER_stream below
   dplyr::left_join(y = sizer_covars, by = c("sizer_groups", "sizer_bandwidth", 
-                                            "LTER", "stream", "LTER_stream", 
-                                            "drainSqKm", "chemical", "Month", "season"))
+                                            "LTER", "stream",  
+                                            "drainSqKm", "chemical"))
 
 # Check structure
 dplyr::glimpse(sizer_v4)
