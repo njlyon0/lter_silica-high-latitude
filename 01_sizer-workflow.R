@@ -46,8 +46,8 @@ rm(list = "fxn")
 ## ----------------------------------------- ##
 
 # Specify data file
-wrtds_file <- "Full_Results_WRTDS_monthly.csv"
-# wrtds_file <- "Full_Results_WRTDS_annual.csv"
+# wrtds_file <- "Full_Results_WRTDS_monthly.csv"
+wrtds_file <- "Full_Results_WRTDS_annual.csv"
 
 # Read in data & rename a column
 wrtds_v1 <- read.csv(file = file.path("data", wrtds_file))
@@ -124,12 +124,12 @@ dplyr::glimpse(wrtds_v4)
 
 # What is the temporal resolution of the WRTDS output data?
 ## *MUST* be one of "annual", "seasonal", or "monthly"
-temporal_res <- "monthly"
+temporal_res <- "annual"
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Conc_uM"
 explanatory <- "Year"
-element <- "DSi"
+element <- "P"
 
 # Check that combination of variables works
 var_check(data = wrtds_v4, chem = element, 
