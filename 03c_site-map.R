@@ -43,7 +43,7 @@ site_df <- df_v1 %>%
   # Rename lat/long columns
   dplyr::rename(lat = Latitude, lon = Longitude) %>% 
   # Summarize within groups
-  dplyr::group_by(LTER_stream, LTER, stream, drainSqKm, lat, lon) %>% 
+  dplyr::group_by(LTER_stream, LTER, Stream_Name, drainSqKm, lat, lon) %>% 
   dplyr::summarize(mean_si = mean(Conc_uM, na.rm = T),
                    mean_abs_change = mean(abs(percent_change), na.rm = T),
                    .groups = "keep") %>% 

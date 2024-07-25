@@ -65,9 +65,9 @@ dplyr::glimpse(df_v1)
 # Make a data object with only the columns that we'll want
 core_df <- df_v1 %>%
   # Arrange by LTER and site
-  dplyr::arrange(LTER, stream) %>%
+  dplyr::arrange(LTER, Stream_Name) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, stream, LTER_stream, chemical:section_duration, 
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, chemical:section_duration, 
                 F_statistic:line_fit, slope_estimate:slope_std_error,
                 dplyr::starts_with("dir_")) %>%
   # Drop non-unique rows
@@ -83,7 +83,7 @@ sig_only <- core_df %>%
   # Keep only certain durations of trends
   dplyr::filter(section_duration >= 5) %>%
   # Arrange by LTER and site
-  dplyr::arrange(LTER, stream) %>%
+  dplyr::arrange(LTER, Stream_Name) %>%
   # Drop non-unique rows
   dplyr::distinct()
 
@@ -136,12 +136,12 @@ ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_fit-bookma
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, season, Month, section_duration, 
+  dplyr::select(Stream_Name, season, Month, section_duration, 
                 slope_estimate, slope_std_error) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration for only significant line chunks
-ggplot(sig_simp, aes(x = slope_estimate, y = stream, fill = section_duration)) +
+ggplot(sig_simp, aes(x = slope_estimate, y = Stream_Name, fill = section_duration)) +
   geom_col() +
   geom_errorbar(aes(xmax = slope_estimate + slope_std_error,
                     xmin = slope_estimate - slope_std_error),
@@ -161,12 +161,12 @@ ggsave(filename = file.path("graphs", paste0(graph_prefix, "_slope-duration-barp
 
 # Pare down to needed columns and unique rows
 sig_simp <- sig_only %>%
-  dplyr::select(stream, season, Month, section_duration, 
+  dplyr::select(Stream_Name, season, Month, section_duration, 
                 percent_change) %>%
   dplyr::distinct()
 
 # Make an exploratory graph of duration percent change for only significant line chunks
-ggplot(sig_simp, aes(x = percent_change, y = stream, fill = section_duration)) +
+ggplot(sig_simp, aes(x = percent_change, y = Stream_Name, fill = section_duration)) +
   geom_col() +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(x = "Slope Estimate", y = "Stream", fill = "Duration (years)") +

@@ -79,7 +79,7 @@ names(Driver1)
 
 #isolate numeric data
 Driver_numeric <- Driver1 %>%
-  dplyr::select(-sizer_groups, -percent_change, -slope_estimate, -LTER, -stream) %>%
+  dplyr::select(-sizer_groups, -percent_change, -slope_estimate, -LTER, -Stream_Name) %>%
   dplyr::select(-contains ("major_"))
    
 names(Driver_numeric)
@@ -111,7 +111,7 @@ Driver_numeric2 <- Driver_numeric %>%
 
 #combining final predictors into one dataframe
 ModelPrep <- Driver1 %>%
-  dplyr::select(sizer_groups, stream, percent_change, LTER,  
+  dplyr::select(sizer_groups, Stream_Name, percent_change, LTER,  
                 mean_precip_mm.per.day, mean_npp_kgC.m2.year, mean_evapotrans_kg.m2, 
                 mean_snow_max.prop.area, contains("slope_")) %>%
   dplyr::select(-slope_snow_num.days, -slope_estimate) 
@@ -127,7 +127,7 @@ ModelPrep[,c(5:13)]  <- scale(ModelPrep[,c(5:13)], center = T, scale = T)
 #remove NAs
 ModelPrep1 <- ModelPrep[complete.cases(ModelPrep),]
 names(ModelPrep1)
-unique(ModelPrep1$stream)
+unique(ModelPrep1$Stream_Name)
 
 #running various mixed models to see impact of various random effects
 lmer2 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + mean_evapotrans_kg.m2 + 
@@ -136,7 +136,7 @@ lmer2 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + me
 
 lmer3 <-lmer(percent_change ~ mean_precip_mm.per.day + mean_npp_kgC.m2.year + mean_evapotrans_kg.m2 + 
                mean_snow_max.prop.area + slope_precip_mm.per.day + slope_evapotrans_kg.m2 +
-               slope_npp_kgC.m2.year + slope_temp_degC + (1|LTER/stream), ModelPrep1)
+               slope_npp_kgC.m2.year + slope_temp_degC + (1|LTER/Stream_Name), ModelPrep1)
 
 AIC_model<-AIC(lmer1, lmer2, lmer3) #lowest AIC is best - these are basically equal
 
@@ -247,14 +247,14 @@ write.csv(x = si_conc_table1, row.names = F, na = '',
 one_lter <- dplyr::filter(si_conc, LTER == "NIVA")
 
 # Fit model
-test_mod <- RRPP::lm.rrpp(percent_change ~ stream,
+test_mod <- RRPP::lm.rrpp(percent_change ~ Stream_Name,
                           data = one_lter, iter = 999)
 
 # Assess model
 summary(test_mod, formula = F)
 
 # Get pairwise comparisons
-test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$stream)
+test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$Stream_Name)
 summary(test_pw)
 
 # End ----
