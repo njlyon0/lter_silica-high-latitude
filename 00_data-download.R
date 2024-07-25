@@ -80,7 +80,8 @@ ref_out <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google
 ref_out
 
 # Download it
-purrr::walk2(.x = ref_out$id, .y = ref_out$name,
+purrr::walk2(.x = ref_out$id, 
+             .y = paste0(ref_out$name, ".csv"),
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
                                                 path = file.path("data", .y)))
 
