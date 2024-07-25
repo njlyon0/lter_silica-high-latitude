@@ -398,9 +398,16 @@ supportR::diff_check(old = unique(c(names(data_actual), names(estimate_actual), 
                 # Export ----
 ## ----------------------------------------- ##
 
+# Tweak the 'stream' column name to be more explicit
+combo_v4 <- combo_v3 %>% 
+  dplyr::rename(Stream_Name = stream)
+
+# Final structure check
+dplyr::glimpse(combo_v4)
+
 # Export that combination object locally
 ## Can use special folder name as *file name* to ensure informative naming conventions
-write.csv(x = combo_v3, na = "", row.names = F,
+write.csv(x = combo_v4, na = "", row.names = F,
           file = file.path("data", paste0("sizer-outs_", output_dir, ".csv")))
 
 # End ----
