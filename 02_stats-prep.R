@@ -288,8 +288,7 @@ dplyr::glimpse(sizer_covars)
 # Do some small wrangling of the 'actual' data object
 sizer_v4 <- sizer_v3 %>% 
   # Group and calculate relative year within groups
-  # Jo removed "season" and "Month" below in group_by
-  dplyr::group_by(sizer_groups) %>%
+  dplyr::group_by(sizer_groups, season, Month) %>%
   dplyr::mutate(relative_Year = row_number() , .after = Year) %>%
   dplyr::ungroup() %>% 
   # Attach covariate information
