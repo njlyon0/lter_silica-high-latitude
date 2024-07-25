@@ -30,9 +30,9 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired SiZer output
-sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+# sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
 # sizer_file <- "sizer-outs_seasonal_Conc_uM_DSi.csv"
-# sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
+sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
@@ -42,13 +42,8 @@ sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 ## ----------------------------------------- ##
 
 # Read in the reference table
-# two versions - csv and xls
-ref_file <- "Site_Reference_Table.csv"
-ref_v1 <- read.csv(file = file.path("data", ref_file))
-#ref_v1 <- readxl::read_excel(path = file.path("data", "Site_Reference_Table.xlsx"))
+ref_v1 <- read.csv(file = file.path("data", "Site_Reference_Table.csv"))
 
-names(sizer_v1)
-names(ref_v1)
 # Process this for integration with the SiZer stuff
 ref_v2 <- ref_v1 %>% 
   # Pare down to desired columns only
