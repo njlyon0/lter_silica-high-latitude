@@ -37,6 +37,15 @@ sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
 
+# If this dataset does not contain month/season columns (i.e., is annual) add them
+## Should be added in '01' but better safe than sorry
+if(!"Month" %in% names(sizer_v1)){
+  sizer_v1 <- dplyr::mutate(.data = sizer_v1, Month = "x", .before = Year)
+}
+if(!"season" %in% names(sizer_v1)){
+  sizer_v1 <- dplyr::mutate(.data = sizer_v1, season = "x", .before = Year)
+}
+
 ## ----------------------------------------- ##
           # Reference Table Prep ----
 ## ----------------------------------------- ##
