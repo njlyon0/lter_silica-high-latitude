@@ -196,8 +196,6 @@ dplyr::glimpse(wrtds_v3)
 # Combine the SiZer ouputs with the various data files we prepared above
 ## Note that each shares different columns with the SiZer outputs
 sizer_v2 <- sizer_v1 %>% 
-  # Rename 'stream' column for convenience
-  #dplyr::rename(Stream_Name = stream) %>% 
   # Integrate reference table
   dplyr::left_join(y = ref_v2, by = c("LTER", "Stream_Name")) %>% 
   # Integrate drivers (static & dynamic)
@@ -211,10 +209,8 @@ dplyr::glimpse(sizer_v2)
 
 # Wrangle that output with some quality-of-life improvements
 sizer_v3 <- sizer_v2 %>% 
-  # Rename stream column
-  #dplyr::rename(stream = Stream_Name) %>% 
   # Combine section with stream
-  dplyr::mutate(sizer_groups = paste0(stream, "_", section), 
+  dplyr::mutate(sizer_groups = paste0(Stream_Name, "_", section), 
                 .before = dplyr::everything()) %>%
   # Categorize P values
   dplyr::mutate(significance = dplyr::case_when(
@@ -271,8 +267,8 @@ sizer_covars <- sizer_v3 %>%
   dplyr::filter(!is.na(value)) %>% 
   # Summarize co-variates within groups
   # Jo removed "LTER_stream, Month, season because doesn't exist
-  dplyr::group_by(sizer_groups, sizer_bandwidth, LTER, stream,  
-                  drainSqKm, chemical, name) %>% 
+  dplyr::group_by(sizer_groups, sizer_bandwidth, LTER, Stream_Name, LTER_stream,  
+                  drainSqKm, chemical, Month, season, name) %>% 
   dplyr::summarize(mean = mean(value, na.rm = T),
                    sd = sd(value, na.rm = T),
                    .groups = "keep") %>% 
@@ -299,8 +295,8 @@ sizer_v4 <- sizer_v3 %>%
   # Attach covariate information
   # Jo removed "season" and "Month" and LTER_stream below
   dplyr::left_join(y = sizer_covars, by = c("sizer_groups", "sizer_bandwidth", 
-                                            "LTER", "stream",  
-                                            "drainSqKm", "chemical"))
+                                            "LTER", "Stream_Name",  "LTER_stream",
+                                            "drainSqKm", "chemical", "Month", "season"))
 
 # Check structure
 dplyr::glimpse(sizer_v4)
@@ -415,7 +411,7 @@ dplyr::glimpse(tot_forest)
 sizer_v6 <- sizer_v5 %>% 
   dplyr::left_join(y = tot_forest, 
                    by = c("sizer_groups", "sizer_bandwidth", "LTER", 
-                          "stream", "LTER_stream", "drainSqKm", "chemical", 
+                          "Stream_Name", "LTER_stream", "drainSqKm", "chemical", 
                           "Month", "season"))
 
 # Check structure
