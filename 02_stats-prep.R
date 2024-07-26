@@ -30,9 +30,9 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 rm(list = "fxn")
 
 # Identify desired SiZer output
-# sizer_file <- "sizer-outs_annual_Conc_uM_DSi.csv"
+sizer_file <- "sizer-outs_annual_Discharge_cms_DSi.csv"
 # sizer_file <- "sizer-outs_seasonal_Conc_uM_DSi.csv"
-sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
+# sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
@@ -174,26 +174,32 @@ wrtds_v2 <- wrtds_v1 %>%
 # Check structure
 dplyr::glimpse(wrtds_v2)
 
-# Prepare discharge for inclusion too
-wrtds_disc <- wrtds_v1 %>% 
-  # Pare down to just needed columns
-  dplyr::select(LTER, Stream_Name, drainSqKm, Year, Discharge_cms) %>% 
-  # Remove unwanted streams / duplicate rows
-  dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
-  dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
-  dplyr::distinct() %>% 
-  # Average discharge within groups
-  dplyr::group_by(dplyr::across(-c(Discharge_cms))) %>%
-  dplyr::summarize(Discharge_cms = mean(Discharge_cms, na.rm = T),
-                   .groups = "keep") %>%
-  dplyr::ungroup()
-
-# Check structure
-dplyr::glimpse(wrtds_disc)
-
-# Combine discharge and non-focal chemical data
-wrtds_v3 <- wrtds_v2 %>% 
-  dplyr::left_join(y = wrtds_disc, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
+# If discharge wasn't the response variable...
+if(!"Discharge_cms" %in% names(sizer_v1)){
+  
+  # Prepare discharge for inclusion too
+  wrtds_disc <- wrtds_v1 %>% 
+    # Pare down to just needed columns
+    dplyr::select(LTER, Stream_Name, drainSqKm, Year, Discharge_cms) %>% 
+    # Remove unwanted streams / duplicate rows
+    dplyr::filter(LTER %in% unique(sizer_v1$LTER)) %>% 
+    dplyr::filter(Stream_Name %in% unique(sizer_v1$Stream_Name)) %>% 
+    dplyr::distinct() %>% 
+    # Average discharge within groups
+    dplyr::group_by(dplyr::across(-c(Discharge_cms))) %>%
+    dplyr::summarize(Discharge_cms = mean(Discharge_cms, na.rm = T),
+                     .groups = "keep") %>%
+    dplyr::ungroup()
+  
+  # Check structure
+  dplyr::glimpse(wrtds_disc)
+  
+  # Combine discharge and non-focal chemical data
+  wrtds_v3 <- wrtds_v2 %>% 
+    dplyr::left_join(y = wrtds_disc, by = c("LTER", "Stream_Name", "drainSqKm", "Year"))
+  
+  # Otherwise skip that whole step
+} else { wrtds_v3 <- wrtds_v2 }
 
 # Check structure
 dplyr::glimpse(wrtds_v3)
@@ -294,6 +300,14 @@ sizer_covars <- sizer_v3 %>%
 # Check structure
 dplyr::glimpse(sizer_covars)
 
+# If discharge was the original response variable...
+if("Discharge_cms" %in% names(sizer_v1)){
+  
+  # Drop its average from the covariates
+  sizer_covars <- sizer_covars %>%
+    dplyr::select(-mean_Discharge_cms, -sd_Discharge_cms)
+}
+
 # Do some small wrangling of the 'actual' data object
 sizer_v4 <- sizer_v3 %>% 
   # Group and calculate relative year within groups
@@ -323,6 +337,11 @@ desired_vars <- c("evapotrans_kg.m2", "npp_kgC.m2.year", "precip_mm.per.day",
 
 # Strip out any not found in data
 (actual_covars <- generics::intersect(x = desired_vars, y = names(sizer_v4)))
+
+# If Discharge was the actual response, cut it out of this
+if("Discharge_cms" %in% names(sizer_v1)){
+  actual_covars <- generics::setdiff(x = actual_covars, y = "Discharge_cms")
+}
 
 # Make an empty list for storing outputs
 slope_list <- list()
@@ -440,25 +459,46 @@ sizer_v7 <- sizer_v6 %>%
   dplyr::relocate(dplyr::contains("npp_kgC.m2.year"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("precip_mm.per.day"), .after = major_soil) %>%
   dplyr::relocate(dplyr::contains("temp_degC"), .after = major_soil) %>% 
-  ## Discharge
-  dplyr::relocate(dplyr::contains("Discharge_cms"), .after = slope_snow_num.days) %>% 
   ## Non-focal chemicals
-  dplyr::relocate(dplyr::contains("Si.DIN_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("Si.DIN_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("Si.P_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("Si.P_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NOx_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NOx_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NH4_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NH4_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("DIN_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("DIN_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NO3_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("NO3_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("P_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("P_FNConc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("DSi_Conc_uM"), .after = slope_Discharge_cms) %>% 
-  dplyr::relocate(dplyr::contains("DSi_FNConc_uM"), .after = slope_Discharge_cms)
+  dplyr::relocate(dplyr::contains("Si.DIN_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("Si.DIN_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("Si.P_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NOx_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NOx_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NH4_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NH4_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("DIN_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("DIN_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NO3_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("NO3_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("P_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("P_FNConc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("DSi_Conc_uM"), 
+                  .after = land_deciduous_needleleaf_forest) %>% 
+  dplyr::relocate(dplyr::contains("DSi_FNConc_uM"),
+                  .after = land_deciduous_needleleaf_forest)
+
+# If Discharge *wasn't* the focal response variable, reorder it too
+if(!"Discharge_cms" %in% names(sizer_v1)){
+  sizer_v7 <- sizer_v7 %>%
+    dplyr::relocate(dplyr::contains("Discharge_cms"), 
+                    .after = slope_snow_num.days)
+}
 
 # Check structure
 dplyr::glimpse(sizer_v7)
