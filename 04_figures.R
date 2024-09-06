@@ -72,20 +72,26 @@ dplyr::glimpse(df_q_simp)
 
 # Create a bookmark graph for line direction alone (but only when significant)
 ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_direction)) +
+  # Add paths for 'long' duration SiZer chunks
   geom_path(data = df_q_simp[df_q_simp$duration_bin == "long", ], 
             mapping = aes(group = sizer_groups), 
             lwd = 3.5, lineend = 'square') +
+  # Add *semi-transparent* paths for short duration chunks
   geom_path(data = df_q_simp[df_q_simp$duration_bin == "short", ], 
             mapping = aes(group = sizer_groups), 
             lwd = 3.5, lineend = 'square', alpha = 0.5) +
+  # Manually define colors
   scale_color_manual(values = dir_palt) +
+  # Add lines between streams from different LTERs
   geom_hline(yintercept = streams_per_lter$line_positions) +
   ## Add LTER-specific annotations
   geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
   annotate(geom = "text", x = 1993, color = "black", angle = 90, hjust = "center",
            y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
            label = c("Finnish Environ. Institute", "GRO", "Krycklan", "McMurdo", "NIVA", "Swedish Gov't")) +
+  # Customize labels and axis titles
   labs(x = "Year", y = "Stream", title = "Discharge (cms)") +
+  # Modify theme elements for preferred aesthetics
   guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(panel.background = element_blank(),
         plot.title = element_text(hjust = 0.5),
@@ -100,6 +106,9 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
 # Export graph
 ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
        height = 8, width = 5, units = "in")
+
+# Remove some items from the environment
+rm(list = c("streams_per_lter", "df_q", "df_q_simp"))
 
 ## ----------------------------------------- ##
 # Data Prep ----
