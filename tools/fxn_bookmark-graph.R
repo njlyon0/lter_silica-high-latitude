@@ -22,13 +22,13 @@ bookmark_graph <- function(data = NULL, color_var = NULL, colors = NULL){
     stop("'color_var' and 'colors' must be characters")
   
   # Error for not all needed columns included
-  if(all(c('LTER', 'stream', 'Year', 'LTER_stream', color_var) %in% names(data)) != TRUE)
-    stop(paste0("'data' must include all of the following columns: 'LTER', 'stream', 'Year', 'LTER_stream', ", color_var))
+  if(all(c('LTER', 'Stream_Name', 'Year', 'LTER_stream', color_var) %in% names(data)) != TRUE)
+    stop(paste0("'data' must include all of the following columns: 'LTER', 'Stream_Name', 'Year', 'LTER_stream', ", color_var))
   
   # Identify placement of group lines for graph
   group_lines <- data %>%
     # Pare down to desired columns / rows
-    dplyr::select(LTER, stream) %>%
+    dplyr::select(LTER, Stream_Name) %>%
     dplyr::distinct() %>%
     # Count the number of streams / LTER
     dplyr::group_by(LTER) %>%
