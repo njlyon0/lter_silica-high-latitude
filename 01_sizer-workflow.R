@@ -130,7 +130,7 @@ dplyr::glimpse(wrtds_v4)
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Conc_uM"
 explanatory <- "Year"
-element <- "DSi"
+element <- "P"
 
 # Check that combination of variables works
 var_check(data = wrtds_v4, chem = element, 
