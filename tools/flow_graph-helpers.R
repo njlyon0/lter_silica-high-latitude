@@ -41,6 +41,8 @@ p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsi
 ## R2 palette
 r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
              "good" = "#1a759f",  "great" = "#184e77")
+## Slope direction palette
+dir_palt <- c("NA" = na_col, "NS" = nonsig_col, "pos" = "#ff5400", "neg" = "#03045e")
 ## Direction + P value palette
 dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
                 "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
