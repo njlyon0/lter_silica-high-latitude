@@ -37,22 +37,22 @@ nonsig_col <- "#6c757d"
 
 # Define color palettes
 ## P value palette
-p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
+p_palt <- c("sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col, "NA" = na_col)
 ## R2 palette
-r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
-             "good" = "#1a759f",  "great" = "#184e77")
+r2_palt <- c("great" = "#184e77", "good" = "#1a759f", "fine" = "#76c893", 
+             "bad" = "#b5e48c", "NA" = na_col)
 ## Slope direction palette
-dir_palt <- c("NA" = na_col, "NS" = nonsig_col, "pos" = "#ff5400", "neg" = "#03045e")
+dir_palt <- c("pos" = "#ff5400", "neg" = "#03045e", "NS" = nonsig_col, "NA" = na_col, )
 ## Direction + P value palette
-dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
-                "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
-                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8")
+dir_p_palt <- c("pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
+                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8",
+                "NS" = nonsig_col, "NA" = na_col)
 ## Direction + R2 palette
-dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
-                  "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
-                  "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
-                  "neg-bad" = "#e4afff", "neg-fine" = "#c86bfa", 
-                  "neg-good" = "#722e9a", "neg-great" = "#47297b")
+dir_fit_palt <- c("pos-great" = "#f5bd1f", "pos-good" = "#facb2e", 
+                  "pos-fine" = "#ffe150", "pos-bad" = "#ffe863", 
+                  "neg-great" = "#47297b", "neg-good" = "#722e9a", 
+                  "neg-fine" = "#c86bfa", "neg-bad" = "#e4afff",
+                  "NS" = nonsig_col, "NA" = na_col)
 
 ## ----------------------------------------- ##
 # `ggplot2` Theme
