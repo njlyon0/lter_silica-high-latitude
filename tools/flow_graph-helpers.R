@@ -36,12 +36,16 @@ na_col <- "#e5e5e5"
 nonsig_col <- "#6c757d"
 
 # Define color palettes
+## P value palette
 p_palt <- c("NA" = na_col, "sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col)
+## R2 palette
 r2_palt <- c("NA" = na_col,  "bad" = "#b5e48c",  "fine" = "#76c893", 
              "good" = "#1a759f",  "great" = "#184e77")
+## Direction + P value palette
 dir_p_palt <- c("NA" = na_col, "NS" = nonsig_col,
                 "pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
                 "neg-sig" = "#03045e", "neg-marg" = "#00b4d8")
+## Direction + R2 palette
 dir_fit_palt <- c("NA" = na_col, "NS" = nonsig_col,
                   "pos-bad" = "#ffe863", "pos-fine" = "#ffe150", 
                   "pos-good" = "#facb2e", "pos-great" = "#f5bd1f",
