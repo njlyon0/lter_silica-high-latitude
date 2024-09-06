@@ -47,7 +47,7 @@ rm(list = "fxn")
 
 # What is the temporal resolution of the WRTDS output data?
 ## *MUST* be one of "annual", "seasonal", or "monthly"
-temporal_res <- "monthly"
+temporal_res <- "annual"
 
 # Flexibly determine the needed resolution of WRTDS output
 if(stringr::str_detect(string = temporal_res, pattern = "annual")){
@@ -128,7 +128,7 @@ dplyr::glimpse(wrtds_v4)
 ## ----------------------------------------- ##
 
 # Choose response/explanatory variables of interest & focal chemical
-response <- "Discharge_cms"
+response <- "Conc_uM"
 explanatory <- "Year"
 element <- "DSi"
 
