@@ -29,6 +29,9 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration.
     - Assumes you have either run `00_data-download.R` _and_ `02_stats-prep.R`
 
+- **`04_figures.R`** - Makes publication-quality figures from extracted SiZer information. Written for _only annual_ data
+    - Assumes you have run `02_stats-prep.R`
+
 ## Related Repositories
 
 This working group has several repositories. All are linked and described (briefly) below.
