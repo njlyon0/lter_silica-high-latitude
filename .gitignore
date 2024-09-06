@@ -41,9 +41,6 @@ vignettes/*.pdf
 # R project
 *.Rproj
 
-# Testing files/folders
-permafrost_test/
-
 # Ignore all data files
 *.csv
 *.xlsx
@@ -58,3 +55,8 @@ permafrost_test/
 # Ignore knit .Rmd files
 *.pdf
 *.html
+
+# Folders
+permafrost_test/
+graphs/
+figures/
