@@ -267,6 +267,7 @@ ggplot(df_conc, aes(x = LTER_stream, y = Conc_uM, fill = LTER)) +
   labs(x = "Stream", y = "Conc (uM)") +
   # Add lines between streams from different LTERs
   geom_vline(xintercept = streams_per_lter$line_positions, linetype = 2) +
+  geom_vline(xintercept = streams_per_lter$line_positions[7]) +
   # Add LTER-specific annotations
   geom_text(label = "Can.", x = 1.25, y = 275, angle = 90) + 
   geom_text(label = "Finnish Institute", x = 14.15, y = 300) + 
