@@ -105,7 +105,7 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
 
 # Export graph
 ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
-       height = 8, width = 5, units = "in")
+       height = 9, width = 5, units = "in")
 
 ## ----------------------------------------- ##
         # Chemical Bookmark Figures ----
@@ -185,7 +185,7 @@ for(chem in unique(df_chem_simp$chemical)){
     # Add lines between streams from different LTERs
     geom_hline(yintercept = streams_per_lter$line_positions) +
     ## Add LTER-specific annotations
-    geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
+    geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
     annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
              y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
              label = c("Finnish Environ. Institute", "GRO", "Krycklan", 
@@ -221,13 +221,15 @@ cowplot::plot_grid(chem_bookmarks[["DSi"]], chem_bookmarks[["DIN"]], chem_bookma
                    nrow = 1, labels = "")
 
 # And export it
-ggsave(filename = file.path("figures", "fig_bookmark-chemicals.png"),
-       height = 8, width = 15, units = "in")
+ggsave(filename = file.path("figures", paste0("fig_bookmark-chemicals_", 
+                                              tolower(file_resp), ".png")),
+       height = 9, width = 15, units = "in")
 
 # Assemble & export the second figure (ratios only)
 cowplot::plot_grid(chem_bookmarks[["Si_DIN"]], chem_bookmarks[["Si_P"]], nrow = 1)
-ggsave(filename = file.path("figures", "fig_bookmark-chemical-ratios.png"),
-       height = 8, width = 10, units = "in")
+ggsave(filename = file.path("figures", paste0("fig_bookmark-chemical-ratios_", 
+                                              tolower(file_resp), ".png")),
+       height = 9, width = 10, units = "in")
 
 
 
