@@ -107,9 +107,6 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
 ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
        height = 8, width = 5, units = "in")
 
-# Remove some items from the environment
-rm(list = c("streams_per_lter", "df_q", "df_q_simp"))
-
 ## ----------------------------------------- ##
         # Chemical Bookmark Figures ----
 ## ----------------------------------------- ##
@@ -162,17 +159,25 @@ for(chem in unique(df_chem_simp$chemical)){
   message("Creating bookmark graph for ", chem)
   
   # Subset data
-  df_chem_sub <- dplyr::filter(.data = df_chem_simp, chemical == chem)
+  df_chem_sub <- dplyr::filter(df_chem_simp, chemical == chem)
+  
+  # Identify any streams that don't have data for this chemical
+  df_missing <- df_q_simp %>% 
+    dplyr::filter(!LTER_stream %in% unique(df_chem_sub$LTER_stream)) %>% 
+    dplyr::mutate(significance = "NA", slope_direction = "NA")
+    
+  # Re-attach any streams that were dropped (we want the same number of 'rows' in all graphs)
+  df_chem <- dplyr::bind_rows(df_chem_sub, df_missing)
   
   # Create the bookmark graph 
-  q <- ggplot(data = df_chem_sub, mapping = aes(x = Year, y = LTER_stream, 
+  q <- ggplot(data = df_chem, mapping = aes(x = Year, y = LTER_stream, 
                                                 color = slope_direction)) +
     # Add paths for 'long' duration SiZer chunks
-    geom_path(data = df_chem_sub[df_chem_sub$duration_bin == "long", ], 
+    geom_path(data = df_chem[df_chem$duration_bin == "long", ], 
               mapping = aes(group = sizer_groups), 
               lwd = 3.5, lineend = 'square') +
     # Add *semi-transparent* paths for short duration chunks
-    geom_path(data = df_chem_sub[df_chem_sub$duration_bin == "short", ], 
+    geom_path(data = df_chem[df_chem$duration_bin == "short", ], 
               mapping = aes(group = sizer_groups), 
               lwd = 3.5, lineend = 'square', alpha = 0.5) +
     # Manually define colors
@@ -181,7 +186,7 @@ for(chem in unique(df_chem_simp$chemical)){
     geom_hline(yintercept = streams_per_lter$line_positions) +
     ## Add LTER-specific annotations
     geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
-    annotate(geom = "text", x = 1993, color = "black", angle = 90, hjust = "center",
+    annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
              y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
              label = c("Finnish Environ. Institute", "GRO", "Krycklan", 
                        "McMurdo", "NIVA", "Swedish Gov't")) +
@@ -198,7 +203,7 @@ for(chem in unique(df_chem_simp$chemical)){
           legend.title = element_blank(),
           legend.background = element_blank(),
           legend.position = "inside",
-          legend.position.inside = c(0.425, 0.88))
+          legend.position.inside = c(0.225, 0.88))
 
   # Remove the legend from all but specified chemicals
   if(!chem %in% c("DSi", "Si_DIN")){
@@ -224,8 +229,6 @@ cowplot::plot_grid(chem_bookmarks[["Si_DIN"]], chem_bookmarks[["Si_P"]], nrow = 
 ggsave(filename = file.path("figures", "fig_bookmark-chemical-ratios.png"),
        height = 8, width = 10, units = "in")
 
-# Remove some items from the environment
-# rm(list = c("streams_per_lter", "df_q", "df_q_simp"))
 
 
 # End ----
