@@ -32,7 +32,7 @@ dir_fit_levels <- c("pos-great", "pos-good", "pos-fine", "pos-bad",
 ## ----------------------------------------- ##
 
 # Define the missing and non significant colors
-na_col <- "#e5e5e5"
+na_col <- "#fff"
 nonsig_col <- "#6c757d"
 
 # Define color palettes
