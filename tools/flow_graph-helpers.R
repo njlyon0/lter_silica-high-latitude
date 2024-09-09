@@ -56,7 +56,7 @@ dir_fit_palt <- c("pos-great" = "#f5bd1f", "pos-good" = "#facb2e",
 ## LTER palette
 lter_palt <- c("Canada" = "#fff", "Finnish Environmental Institute" = "#374c80",
                "GRO" = "#7a5195", "Krycklan" = "#bc5090", "MCM" = "#ef5675",
-               "NIVA" = "#ff764a", "Swedish Government" = "#ffa600")
+               "NIVA" = "#ff764a", "Swedish Goverment" = "#ffa600")
 
 ## ----------------------------------------- ##
 # `ggplot2` Theme
