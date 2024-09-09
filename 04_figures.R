@@ -231,6 +231,62 @@ ggsave(filename = file.path("figures", paste0("fig_bookmark-chemical-ratios_",
                                               tolower(file_resp), ".png")),
        height = 9, width = 10, units = "in")
 
+## ----------------------------------------- ##
+          # Strip Boxplot Figure ----
+## ----------------------------------------- ##
 
+# Read in specifically the annual concentration data for the three chemicals
+df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DIN.csv"))
+df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv"))
+
+# Bind them together
+df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p)
+
+# And do some minor tidying
+df_conc <- df_conc_all %>% 
+  # Remove an N outlier
+  dplyr::filter(chemical != "DIN" | (chemical == "DIN" & Conc_uM <= 250)) %>% 
+  # Create factor order of chemicals to get right order of strips
+  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "P")))
+
+# Check the structure
+dplyr::glimpse(df_conc)
+
+# Count streams / LTER
+(streams_per_lter <- lter_ct(data = df_conc))
+
+# Create the boxplot strips
+ggplot(df_conc, aes(x = LTER_stream, y = Conc_uM, fill = LTER)) +
+  # Add boxplots (with fill-able points for outliers)
+  geom_boxplot(outlier.shape = 21) +
+  # Facet into three stacked strips
+  facet_grid(chemical ~ ., scales = "free", axes = "all") +
+  # Customize color & label titles
+  scale_fill_manual(values = lter_palt) +
+  labs(x = "Stream", y = "Conc (uM)") +
+  # Add lines between streams from different LTERs
+  geom_vline(xintercept = streams_per_lter$line_positions, linetype = 2) +
+  # Add LTER-specific annotations
+  geom_text(label = "Can.", x = 1.25, y = 275, angle = 90) + 
+  geom_text(label = "Finnish Institute", x = 14.15, y = 300) + 
+  geom_text(label = "GRO", x = 27, y = 300) + 
+  geom_text(label = "Krycklan", x = 35.5, y = 300) + 
+  geom_text(label = "MCM", x = 46.5, y = 300) + 
+  geom_text(label = "NIVA", x = 56.5, y = 300) + 
+  geom_text(label = "Swedish", x = 68.5, y = 300) + 
+  # Customize the legend
+  theme(legend.position = "none",
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 15))
+
+# Export graph
+ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
+       height = 7, width = 10, units = "in")
 
 # End ----
