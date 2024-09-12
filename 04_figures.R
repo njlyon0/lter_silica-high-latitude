@@ -88,7 +88,7 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
   geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
   annotate(geom = "text", x = 1993, color = "black", angle = 90, hjust = "center",
            y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
-           label = c("Finnish Environ. Institute", "GRO", "Krycklan", "McMurdo", "NIVA", "Swedish Gov't")) +
+           label = c("Finland", "GRO", "Krycklan", "McMurdo", "Norway", "Sweden")) +
   # Customize labels and axis titles
   labs(x = "Year", y = "Stream", title = "Discharge (cms)") +
   # Modify theme elements for preferred aesthetics
@@ -100,6 +100,7 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
         axis.title.y = element_blank(),
         legend.title = element_blank(),
         legend.background = element_blank(),
+        legend.key = element_rect(color = "black"),
         legend.position = "inside",
         legend.position.inside = c(0.425, 0.88))
 
@@ -117,6 +118,11 @@ file_stem <- "stats-ready_annual_"
 # Identify response variable
 file_resp <- "Conc_uM"
 
+# Generate a version of this for including in plots
+resp_lab_v1 <- paste0(gsub(pattern = "_", replacement = " (", x = file_resp), ")")
+resp_lab_v2 <- gsub(pattern = "Conc", replacement = "Concentration", x = resp_lab_v1)
+(resp_lab <- gsub(pattern = "FN", replacement = "Flow Normalized ", x = resp_lab_v2))
+
 # Assemble into a full file for each chemical
 df_si <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_DSi.csv")))
 df_n <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_DIN.csv")))
@@ -131,6 +137,7 @@ df_chem_all <- dplyr::bind_rows(df_si, df_n, df_p, df_si.n, df_si.p)
 df_chem_simp <- df_chem_all %>% 
   dplyr::arrange(LTER, Stream_Name) %>%
   dplyr::mutate(
+    chemical = gsub(pattern = "_", replacement = ":", x = chemical),
     slope_direction = dplyr::case_when(
       significance == "NS" ~ "NS",
       significance == "marg" ~ "NS",
@@ -188,11 +195,10 @@ for(chem in unique(df_chem_simp$chemical)){
     geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
     annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
              y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
-             label = c("Finnish Environ. Institute", "GRO", "Krycklan", 
-                       "McMurdo", "NIVA", "Swedish Gov't")) +
+             label = c("Finland", "GRO", "Krycklan", "McMurdo", "Norway", "Sweden")) +
     # Customize labels and axis titles
     labs(x = "Year", y = "Stream", 
-         title = paste0(chem, " ", gsub(pattern = "_", replacement = " (", x = file_resp), ")")) +
+         title = paste0(chem, " ", resp_lab)) +
     # Modify theme elements for preferred aesthetics
     guides(color = guide_legend(override.aes = list(alpha = 1))) +
     theme(panel.background = element_blank(),
@@ -202,11 +208,12 @@ for(chem in unique(df_chem_simp$chemical)){
           axis.title.y = element_blank(),
           legend.title = element_blank(),
           legend.background = element_blank(),
+          legend.key = element_rect(color = "black"),
           legend.position = "inside",
           legend.position.inside = c(0.225, 0.88))
-
+  
   # Remove the legend from all but specified chemicals
-  if(!chem %in% c("DSi", "Si_DIN")){
+  if(!chem %in% c("DSi", "Si:DIN")){
     q <- q +
       theme(legend.position = "none")
   }
@@ -226,7 +233,7 @@ ggsave(filename = file.path("figures", paste0("fig_bookmark-chemicals_",
        height = 9, width = 15, units = "in")
 
 # Assemble & export the second figure (ratios only)
-cowplot::plot_grid(chem_bookmarks[["Si_DIN"]], chem_bookmarks[["Si_P"]], nrow = 1)
+cowplot::plot_grid(chem_bookmarks[["Si:DIN"]], chem_bookmarks[["Si:P"]], nrow = 1)
 ggsave(filename = file.path("figures", paste0("fig_bookmark-chemical-ratios_", 
                                               tolower(file_resp), ".png")),
        height = 9, width = 10, units = "in")
@@ -259,23 +266,22 @@ dplyr::glimpse(df_conc)
 # Create the boxplot strips
 ggplot(df_conc, aes(x = LTER_stream, y = Conc_uM, fill = LTER)) +
   # Add boxplots (with fill-able points for outliers)
-  geom_boxplot(outlier.shape = 21) +
+  geom_boxplot(outlier.shape = 21, lwd = 0.2) +
   # Facet into three stacked strips
   facet_grid(chemical ~ ., scales = "free", axes = "all") +
   # Customize color & label titles
   scale_fill_manual(values = lter_palt) +
   labs(x = "Stream", y = "Conc (uM)") +
   # Add lines between streams from different LTERs
-  geom_vline(xintercept = streams_per_lter$line_positions, linetype = 2) +
-  geom_vline(xintercept = streams_per_lter$line_positions[7]) +
+  geom_vline(xintercept = streams_per_lter$line_positions[-7], linetype = 2, color = "gray66") +
   # Add LTER-specific annotations
-  geom_text(label = "Can.", x = 1.25, y = 275, angle = 90) + 
-  geom_text(label = "Finnish Institute", x = 14.15, y = 300) + 
-  geom_text(label = "GRO", x = 27, y = 300) + 
-  geom_text(label = "Krycklan", x = 35.5, y = 300) + 
-  geom_text(label = "MCM", x = 46.5, y = 300) + 
-  geom_text(label = "NIVA", x = 56.5, y = 300) + 
-  geom_text(label = "Swedish", x = 68.5, y = 300) + 
+  geom_text(label = "Can.", x = 1.25, y = 275, angle = 90, hjust = "center") + 
+  geom_text(label = "Finland", x = 11.5, y = 300, hjust = "center") + 
+  geom_text(label = "GRO", x = 27.5, y = 300, hjust = "center") + 
+  geom_text(label = "Krycklan", x = 35.5, y = 300, hjust = "center") + 
+  geom_text(label = "MCM", x = 46.5, y = 300, hjust = "center") + 
+  geom_text(label = "Norway", x = 56.5, y = 300, hjust = "center") + 
+  geom_text(label = "Sweden", x = 69, y = 300, hjust = "center") + 
   # Customize the legend
   theme(legend.position = "none",
         panel.background = element_blank(),
