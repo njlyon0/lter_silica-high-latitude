@@ -117,12 +117,13 @@ file_stem <- "stats-ready_annual_"
 
 # Loop across response variables
 for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
+  # file_resp <- "Conc_uM"
   
   # Generate a version of response variable name for plot labels
   resp_lab_v1 <- paste0(gsub(pattern = "_", replacement = " (", x = file_resp))
   resp_lab_v2 <- gsub(pattern = "Conc", replacement = "Concentration", x = resp_lab_v1)
   resp_lab_v3 <- gsub(pattern = "uM", replacement = "uM)", x = resp_lab_v2)
-  (resp_lab <- gsub(pattern = "FN", replacement = "Flow Normalized ", x = resp_lab_v3))
+  resp_lab <- gsub(pattern = "FN", replacement = "Flow Normalized ", x = resp_lab_v3)
   
   # Assemble into a full file for each chemical
   df_si <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_DSi.csv")))
@@ -159,6 +160,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
   
   # Loop across chemicals
   for(chem in unique(df_chem_simp$chemical)){
+    # chem <- "DSi"
     
     # Message
     message("Creating bookmark graph for ", chem, " (", resp_lab, ")")
