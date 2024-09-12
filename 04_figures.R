@@ -81,7 +81,7 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
             mapping = aes(group = sizer_groups), 
             lwd = 3.5, lineend = 'square', alpha = 0.5) +
   # Manually define colors
-  scale_color_manual(values = dir_palt) +
+  scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS")) +
   # Add lines between streams from different LTERs
   geom_hline(yintercept = streams_per_lter$line_positions) +
   ## Add LTER-specific annotations
@@ -100,7 +100,6 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
         axis.title.y = element_blank(),
         legend.title = element_blank(),
         legend.background = element_blank(),
-        legend.key = element_rect(color = "black"),
         legend.position = "inside",
         legend.position.inside = c(0.425, 0.88))
 
@@ -140,6 +139,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
     dplyr::arrange(LTER, Stream_Name) %>%
     dplyr::mutate(
       chemical = gsub(pattern = "_", replacement = ":", x = chemical),
+      chemical = gsub(pattern = "P", replacement = "DIP", x = chemical),
       slope_direction = dplyr::case_when(
         significance == "NS" ~ "NS",
         significance == "marg" ~ "NS",
@@ -188,7 +188,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
                 mapping = aes(group = sizer_groups), 
                 lwd = 3.5, lineend = 'square', alpha = 0.5) +
       # Manually define colors
-      scale_color_manual(values = dir_palt) +
+      scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS")) +
       # Add lines between streams from different LTERs
       geom_hline(yintercept = streams_per_lter$line_positions) +
       ## Add LTER-specific annotations
@@ -208,7 +208,6 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
             axis.title.y = element_blank(),
             legend.title = element_blank(),
             legend.background = element_blank(),
-            legend.key = element_rect(color = "black"),
             legend.position = "inside",
             legend.position.inside = c(0.225, 0.88))
     
@@ -224,7 +223,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
   } # Close chem loop
   
   # Assemble the first figure (non-ratios only)
-  cowplot::plot_grid(chem_bookmarks[["DSi"]], chem_bookmarks[["DIN"]], chem_bookmarks[["P"]],
+  cowplot::plot_grid(chem_bookmarks[["DSi"]], chem_bookmarks[["DIN"]], chem_bookmarks[["DIP"]],
                      nrow = 1, labels = "")
   
   # And export it
@@ -233,7 +232,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
          height = 9, width = 15, units = "in")
   
   # Assemble & export the second figure (ratios only)
-  cowplot::plot_grid(chem_bookmarks[["Si:DIN"]], chem_bookmarks[["Si:P"]], nrow = 1)
+  cowplot::plot_grid(chem_bookmarks[["Si:DIN"]], chem_bookmarks[["Si:DIP"]], nrow = 1)
   ggsave(filename = file.path("figures", paste0("fig_bookmark-chemical-ratios_", 
                                                 tolower(file_resp), ".png")),
          height = 9, width = 10, units = "in")
@@ -250,7 +249,8 @@ df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DIN.c
 df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv"))
 
 # Bind them together
-df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p)
+df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p) %>% 
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical))
 
 # Want to order boxplots by median silica (within LTER)
 df_si_rank <- df_conc_all %>% 
@@ -282,7 +282,7 @@ df_conc <- df_conc_all %>%
   # Remove an N outlier
   dplyr::filter(chemical != "DIN" | (chemical == "DIN" & Conc_uM <= 250)) %>% 
   # Create factor order of chemicals to get right order of strips
-  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "P"))) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "DIP"))) %>% 
   # Attach Si "rankings"
   dplyr::left_join(y = df_si_rank, by = c("LTER", "Stream_Name"))
 
