@@ -266,12 +266,14 @@ df_si_rank <- df_conc_all %>%
   dplyr::group_by(LTER) %>% 
   dplyr::mutate(si_rank = seq_along(along.with = median_si)) %>% 
   # Create a new 'lter + stream' column that incorporates this ranking
-  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>% 
-  dplyr::mutate(LTER_simp = ifelse(nchar(LTER) <= 4, yes = LTER,
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name),
+                LTER_simp = ifelse(nchar(LTER) <= 4, yes = LTER,
                                    no = stringr::str_sub(LTER, start = 1, end = 4)),
                 site_simp = ifelse(nchar(site_simp) <= 14, yes = site_simp,
                                    no = stringr::str_sub(site_simp, start = 1, end = 14)),
-                LTER_stream_ranked = paste0(LTER_simp, "_", si_rank, "_", site_simp)) %>% 
+                si_rank_char = ifelse(test = (nchar(si_rank) == 1), 
+                                      yes = paste0("0", si_rank), no = as.character(si_rank)),
+                LTER_stream_ranked = paste0(LTER_simp, "_", si_rank_char, "_", site_simp)) %>% 
   # Drop unwanted columns
   dplyr::select(-dplyr::ends_with("_simp"), -LTER_stream, -median_si, si_rank)
 
