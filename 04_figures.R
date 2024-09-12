@@ -250,12 +250,37 @@ df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv
 # Bind them together
 df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p)
 
+# Want to order boxplots by median silica (within LTER)
+df_si_rank <- df_conc_all %>% 
+  # Filter to Si only and calculate median / stream
+  dplyr::filter(chemical == "DSi") %>% 
+  dplyr::group_by(LTER, Stream_Name, LTER_stream) %>% 
+  dplyr::summarize(median_si = stats::median(x = Conc_uM, na.rm = T),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  # Rank from highest to lowest
+  dplyr::arrange(dplyr::desc(median_si)) %>% 
+  # Order within LTER
+  dplyr::group_by(LTER) %>% 
+  dplyr::mutate(si_rank = seq_along(along.with = median_si)) %>% 
+  # Create a new 'lter + stream' column that incorporates this ranking
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name)) %>% 
+  dplyr::mutate(LTER_simp = ifelse(nchar(LTER) <= 4, yes = LTER,
+                                   no = stringr::str_sub(LTER, start = 1, end = 4)),
+                site_simp = ifelse(nchar(site_simp) <= 14, yes = site_simp,
+                                   no = stringr::str_sub(site_simp, start = 1, end = 14)),
+                LTER_stream_ranked = paste0(LTER_simp, "_", si_rank, "_", site_simp)) %>% 
+  # Drop unwanted columns
+  dplyr::select(-dplyr::ends_with("_simp"), -LTER_stream, -median_si, si_rank)
+
 # And do some minor tidying
 df_conc <- df_conc_all %>% 
   # Remove an N outlier
   dplyr::filter(chemical != "DIN" | (chemical == "DIN" & Conc_uM <= 250)) %>% 
   # Create factor order of chemicals to get right order of strips
-  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "P")))
+  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "P"))) %>% 
+  # Attach Si "rankings"
+  dplyr::left_join(y = df_si_rank, by = c("LTER", "Stream_Name"))
 
 # Check the structure
 dplyr::glimpse(df_conc)
@@ -264,14 +289,14 @@ dplyr::glimpse(df_conc)
 (streams_per_lter <- lter_ct(data = df_conc))
 
 # Create the boxplot strips
-ggplot(df_conc, aes(x = LTER_stream, y = Conc_uM, fill = LTER)) +
+ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
   # Add boxplots (with fill-able points for outliers)
   geom_boxplot(outlier.shape = 21, lwd = 0.2) +
   # Facet into three stacked strips
   facet_grid(chemical ~ ., scales = "free", axes = "all") +
   # Customize color & label titles
   scale_fill_manual(values = lter_palt) +
-  labs(x = "Stream", y = "Conc (uM)") +
+  labs(x = "Stream", y = "Concentration (uM)") +
   # Add lines between streams from different LTERs
   geom_vline(xintercept = streams_per_lter$line_positions[-7], linetype = 2, color = "gray66") +
   # Add LTER-specific annotations
