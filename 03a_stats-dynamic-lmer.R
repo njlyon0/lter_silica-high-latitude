@@ -83,21 +83,30 @@ Driver2 <- Driver1 %>%
   dplyr::select(-contains ("major_")) %>%
   dplyr::select(-contains ("land_")) %>%
   dplyr::select(-contains ("sd_"))
-   
 
+names(Driver2)
+
+#examining correlation among variables for time-varying variables
 CorExplore <- Driver1 %>%
   dplyr::select(contains("slope_"), starts_with("P_"), Discharge_cms) %>%
   dplyr::select(-contains(c("DIN", "NO3", "NH4", "NOx", "estimate", "FNConc", "Si.")))
-
 CorExplore %>%   
   cor(use="complete.obs") %>%
   corrplot(method = "number") #highest value 0.46 (change in temp and ET) once exclude num snow days (correlated to snow area) 
 
+#examining correlation among variables for static variables
+CorExplore2 <- Driver2 %>%
+  dplyr::select(mean_npp_kgC.m2.year, mean_precip_mm.per.day, mean_snow_max.prop.area, mean_temp_degC, mean_P_Conc_uM,
+                mean_Discharge_cms)
+CorExplore2 %>%   
+  cor(use="complete.obs") %>%
+  corrplot(method = "number") #mean temp correlated w/ mean npp (r = 0.79) and Q (r = 0.61) so if remove temp, highest is 0.51
 
 #combining final predictors into one dataframe
 ModelPrep <- Driver1 %>%
-  dplyr::select(sizer_groups, Stream_Name, percent_change, LTER, 
-                contains("slope_"), starts_with("mean_P_"), mean_Discharge_cms) %>%
+  dplyr::select(sizer_groups, Stream_Name, percent_change, LTER, mean_response,
+                contains("slope_"), starts_with("mean_P_"), mean_Discharge_cms, 
+                mean_npp_kgC.m2.year, mean_precip_mm.per.day, mean_snow_max.prop.area, mean_temp_degC, mean_P_Conc_uM) %>%
   dplyr::select(-contains(c("DIN", "NO3", "NH4", "NOx", "estimate", "FNConc", "Si."))) %>%
   dplyr::distinct()
   
@@ -106,39 +115,14 @@ names(ModelPrep)
 
 #=======================================================
 #scaling
-#this over-writes columns 5-13 w scaled data
-ModelPrep[,c(5:14)]  <- scale(ModelPrep[,c(5:14)], center = T, scale = T) 
+#this over-writes columns 5-18 w scaled data
+ModelPrep[,c(6:19)]  <- scale(ModelPrep[,c(6:19)], center = T, scale = T) 
 
 #remove NAs
 ModelPrep1 <- ModelPrep[complete.cases(ModelPrep),]
 names(ModelPrep1)
 unique(ModelPrep1$LTER)
 
-#running various mixed models to see impact of various random effects
-lmer1 <-lmer(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 + 
-               slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + 
-               mean_P_Conc_uM + (1|LTER), ModelPrep1)
-lmer1.5 <-lmer(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 + 
-               slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + (1|LTER), ModelPrep1)
-
-#best one for random intercept below
-lmer1.8 <-lmer(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + 
-                 slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + (1|LTER), ModelPrep1)
-
-#these below aren't great b/c not enough replication for each stream
-lmer2 <-lmer(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 + 
-               slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + 
-               mean_P_Conc_uM + (1|LTER/Stream_Name), ModelPrep1)
-lmer3 <-lmer(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 + 
-               slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + 
-               mean_P_Conc_uM + (1|Stream_Name), ModelPrep1)
-
-#below trying random slopes, not intercepts
-lmer2.0 <-lmer(percent_change ~ slope_npp_kgC.m2.year +
-                 slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms 
-               + (0 + slope_precip_mm.per.day|LTER), ModelPrep1)
-
-#below modeling with interaction term of LTER rather than random intercepts or slopes
 #keep LTER to say "the relationship differs among LTERs..."
 #does change over time in spatial covariates impact the percent change in DSi?
 lm2.0 <-lm(percent_change ~ slope_npp_kgC.m2.year + slope_precip_mm.per.day +
@@ -146,26 +130,34 @@ lm2.0 <-lm(percent_change ~ slope_npp_kgC.m2.year + slope_precip_mm.per.day +
            slope_npp_kgC.m2.year:LTER + slope_precip_mm.per.day:LTER +
              slope_snow_max.prop.area:LTER + slope_temp_degC:LTER + slope_P_Conc_uM:LTER + slope_Discharge_cms:LTER, ModelPrep1)
 
-#does average mean value of spatial covarites impact the percent change in DSi? 
-#run same thing as above - but "mean" rather than "slope"
-
-#need to add "mean" to main data frame
-lm2.5 <-lm(percent_change ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
-             mean_snow_max.prop.area + mean_temp_degC + mean_P_Conc_uM + mean_Discharge_cms + LTER +
-             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
-             mean_snow_max.prop.area:LTER + mean_temp_degC:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
-names(ModelPrep1)
-anova(lm2.0)
 #relationship between P and %change doesn't vary by LTER
 #if interaction term is significant, don't intererpt those variables by themselves (don't look at first couple of rows in this test)
 #so can interpret P and Q across all LTERs but not other variables
 
-summary(lmer1.8)
 summary(lm2.0) #base level (estimate for fixed effect) is value for Finland - add estimate of interaction to get coefficent for each LTER
 #p values for interaction - not adjusted higher type 1 error (more likely to be sign b/c asking more questions)
 # to handle that do pairwise comparisons
 #use pavalue from anova - don't need to be adjusted
 # for a paper - f value (or t value for pairwise) and p value. don't report Sum Sq. don't need to report DF. 
+
+
+#does average mean value of spatial covarites impact the percent change in DSi? 
+#run same thing as above - but "mean" rather than "slope"
+
+lm2.5 <-lm(percent_change ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
+             mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
+             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
+             mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
+lm2.6 <-lm(mean_response ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
+             mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
+             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
+             mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
+#adj r2 = 0.86
+
+summary(lm2.5)
+anova(lm2.5)
+names(ModelPrep1)
+anova(lm2.0)
 
 
 #below trying to do pairwise comparisons
