@@ -123,6 +123,11 @@ ModelPrep1 <- ModelPrep[complete.cases(ModelPrep),]
 names(ModelPrep1)
 unique(ModelPrep1$LTER)
 
+
+##======================================================
+## two good linear models below - one for percent change and one for mean response
+##======================================================
+
 #keep LTER to say "the relationship differs among LTERs..."
 #does change over time in spatial covariates impact the percent change in DSi?
 lm2.0 <-lm(percent_change ~ slope_npp_kgC.m2.year + slope_precip_mm.per.day +
@@ -154,6 +159,7 @@ lm2.6 <-lm(mean_response ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
 summary(lm2.6)
 anova(lm2.6)
 resid_panel(lm2.6)
+
 
 ##=======================================
 #pairwise comparisons
@@ -208,69 +214,5 @@ ggplot(ModelPrep1, aes(x = LTER, y = slope_precip_mm.per.day)) +
   geom_boxplot() 
 #facet_wrap(~ LTER, scales = "free_y",
   
-
-
-###==============================
-# Trying RRPP - old IGNORE
-# Fit a model of interest
-si_mod1 <- RRPP::lm.rrpp(percent_change ~ LTER +
-                                ## Dynamic drivers
-                           mean_npp_kgC.m2.year +
-                           mean_evapotrans_kg.m2 + mean_snow_max.prop.area + slope_precip_mm.per.day +
-                           slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 +
-                           slope_snow_max.prop.area + slope_temp_degC,
-                              data = ModelPrep1, iter = 999)
-
-# Get ANOVA table for that model
-si_aov1 <- anova(si_mod1, effect.type = "F",
-                      error = c(
-                        "land_total_forest", # 'random' effect for LTER
-                        "LTER", # random effect for 'slope_temp_degC'
-                        "LTER", # random effect for 'slope_precip_mm.per.day'
-                        "LTER", # random effect for 'slope_npp_kgC.m2.year'
-                        "LTER", # random effect for 'slope_evapotrans_kg.m2'
-                        "LTER", # random effect for 'slope_snow_max.prop.area'
-                        "LTER", # random effect for 'slope_snow_num.days'
-                        "LTER", # random effect for 'Latitude'
-                        "LTER", # random effect for 'elevation_mean_m'
-                        "LTER", # random effect for 'land_total_forest'
-                        "LTER")) # random effect for 'land_barren_or_sparsely_vegetated'
-
-# Specifying "Residuals" in error argument means NO random effect is used
-# Specifying any other fixed effect name means that is used as a random effect *for that term*
-
-# Summarize that output (and check it out)
-( si_conc_table1 <- aov_process(si_aov1) )
-
-summary(si_mod1, formula = F)
-predicted.values <- predict(si_mod1, confidence = 0.95)
-plot(ModelPrep3$percent_change, predicted.values$mean)
-a<-(predicted.values$mean)
-
-# Export locally
-write.csv(x = si_conc_table1, row.names = F, na = '',
-          file = file.path("stats_results", "annual_DSi_conc_slope.csv"))
-
-
-
-
-
-## ----------------------------------------- ##
-# Within-LTER Tests ----
-## ----------------------------------------- ##
-
-# Subset to a particular LTER
-one_lter <- dplyr::filter(si_conc, LTER == "NIVA")
-
-# Fit model
-test_mod <- RRPP::lm.rrpp(percent_change ~ Stream_Name,
-                          data = one_lter, iter = 999)
-
-# Assess model
-summary(test_mod, formula = F)
-
-# Get pairwise comparisons
-test_pw <- RRPP::pairwise(fit = test_mod, groups = one_lter$Stream_Name)
-summary(test_pw)
 
 # End ----
