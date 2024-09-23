@@ -16,7 +16,7 @@
 ## ----------------------------------------- ##
 
 # Load libraries
-install.packages("librarian")
+#install.packages("librarian")
 librarian::shelf(tidyverse, car, lme4, lmerTest, ggResidpanel)
 librarian::shelf(Hmisc, corrplot, MASS, MuMIn)
 
@@ -115,7 +115,7 @@ names(ModelPrep)
 
 #=======================================================
 #scaling
-#this over-writes columns 5-18 w scaled data
+#this over-writes columns 6-19 w scaled data
 ModelPrep[,c(6:19)]  <- scale(ModelPrep[,c(6:19)], center = T, scale = T) 
 
 #remove NAs
@@ -139,28 +139,26 @@ summary(lm2.0) #base level (estimate for fixed effect) is value for Finland - ad
 # to handle that do pairwise comparisons
 #use pavalue from anova - don't need to be adjusted
 # for a paper - f value (or t value for pairwise) and p value. don't report Sum Sq. don't need to report DF. 
+anova(lm2.0)
+resid_panel(lm2.0)
 
 
-#does average mean value of spatial covarites impact the percent change in DSi? 
-#run same thing as above - but "mean" rather than "slope"
-
-lm2.5 <-lm(percent_change ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
-             mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
-             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
-             mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
+#does average mean value of spatial covarites impact the percent change in DSi?
+#no - model terrible fit (adj r2<0)
+#but the average values do HIGHLY explain avg Si behavior: 
 lm2.6 <-lm(mean_response ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
              mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
              mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
              mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
-#adj r2 = 0.86
+#adj r2 = 0.86!
+summary(lm2.6)
+anova(lm2.6)
+resid_panel(lm2.6)
 
-summary(lm2.5)
-anova(lm2.5)
-names(ModelPrep1)
-anova(lm2.0)
-
-
-#below trying to do pairwise comparisons
+##=======================================
+#pairwise comparisons
+##=======================================
+#below not using
 library(emmeans)
 emm1 <- emmeans(lm2.0, pairwise ~ LTER)
 emm2 <- emmeans(lm2.0, specs = pairwise ~ slope_snow_max.prop.area:LTER)
@@ -174,8 +172,9 @@ emms$contrasts
 contrast(emms, interaction = "pairwise")
 
 library(rstatix)
-emmeans_test(data = ModelPrep1, formula = percent_change ~ slope_temp_degC, covariate = LTER, p.adjust.method = "fdr")
-#use this below - but why do pvalues differ compared to "summary"
+#emmeans_test(data = ModelPrep1, formula = percent_change ~ slope_temp_degC, covariate = LTER, p.adjust.method = "fdr")
+
+#USE THIS BELOW - pvalues differ compared to "summary" prob b/c using diff method
 emtrends(lm2.0, pairwise~LTER, var = "slope_temp_degC")
 emtrends(lm2.0, pairwise~LTER, var = "slope_snow_max.prop.area")
 emtrends(lm2.0, pairwise~LTER, var = "slope_P_Conc_uM")
@@ -183,94 +182,32 @@ emtrends(lm2.0, pairwise~LTER, var = "slope_precip_mm.per.day")
 emtrends(lm2.0, pairwise~LTER, var = "slope_npp_kgC.m2.year") #anova says significant, but pairwise says not
 #in paper say, "ANCOVA shows significant interaction but pairwise does not after performing the tukey correction for multiple comparisons"
 
-
 #visualize the lm results
 #maybe use uncentered data (use real data) for intuition
-#but our stats account for variation for center and scaling
+#bc our stats account for variation for center and scaling
 ggplot(ModelPrep1, aes(y = percent_change, x = slope_npp_kgC.m2.year)) +
   geom_point(aes(color = LTER, shape = LTER)) +
   geom_smooth(aes(color = LTER), method = "lm", se = F)
 
-
-
-
-
-AIC(lmer1, lmer1.5, lmer2, lmer3) #lowest AIC is best - these are basically equal
-
-resid_panel(lmer1.8)
-resid_panel(lm2.0)
-
-vif(lmer1.5)
-#r2 marginal explains the variance explained by fixed effects
-#r2 conditional explains variance explianed by entire model, including fixed and random effects
-r.squaredGLMM(lmer1.5) #R2m = 0.35, R2c = 0.38
-r.squaredGLMM(lmer1.8) #R2m = 0.35, R2c = 0.38
-#this is random slope not intercept
-r.squaredGLMM(lmer2.0)
-
-
-#trying regular lm model
-lm1 <-lm(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 + 
-           slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms + 
-           mean_P_Conc_uM, ModelPrep1)
-AIC_model<-stepAIC(object = lm1, direction = "both", trace = TRUE)
-
-#this model is what step AIC says is best
-lm2 <-lm(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year +  
-           slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM, ModelPrep1)
-
-#adding back in Q here b/c impt for hypotheses
-lm3 <-lm(percent_change ~ slope_precip_mm.per.day + slope_npp_kgC.m2.year +  
-           slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms, ModelPrep1)
-#trying LTER as fixed effect
-lm4 <-lm(percent_change ~ LTER + slope_precip_mm.per.day + slope_npp_kgC.m2.year +  
-           slope_snow_max.prop.area + slope_temp_degC + slope_P_Conc_uM + slope_Discharge_cms, ModelPrep1)
-
-summary(lm2) #adj R2 = 0.31
-summary(lm3) #adj R2 = 0.31
-summary(lm4) #adj R2 = 0.31
-hist(resid(lm2)) #looks good
+#pairwise for lm predicting avg response (not change)
+#USE THIS BELOW - pvalues differ compared to "summary" prob b/c using diff method
+emtrends(lm2.6, pairwise~LTER, var = "mean_Discharge_cms") 
+emtrends(lm2.6, pairwise~LTER, var = "mean_snow_max.prop.area")
+emtrends(lm2.6, pairwise~LTER, var = "mean_P_Conc_uM")
+emtrends(lm2.6, pairwise~LTER, var = "mean_precip_mm.per.day")
+emtrends(lm2.6, pairwise~LTER, var = "mean_npp_kgC.m2.year")
 
 # Exploratory graph
 ggplot(ModelPrep1, aes(x = slope_P_Conc_uM, y = percent_change)) +
   geom_point(pch = 21, size = 3, fill = "blue") 
 #add a trendline - "if there is a line, it's a sign relationship"
 
-names(ModelPrep1)
+
 ggplot(ModelPrep1, aes(x = LTER, y = slope_precip_mm.per.day)) +
   #geom_violin() +
   geom_boxplot() 
 #facet_wrap(~ LTER, scales = "free_y",
   
-#===================================================
-#===================================================
-#lm model w/ just slopes- USE THIS ONE but need to add P 
-lm1<-lm(percent_change ~ slope_precip_mm.per.day +
-              slope_npp_kgC.m2.year + slope_evapotrans_kg.m2 +
-              slope_snow_max.prop.area + slope_temp_degC, ModelPrep1)
-summary(lm1) #adj r2 = 0.27, p value sig for everything except et
-AIC_model<-stepAIC(object = lm1, direction = "both", trace = TRUE)
-
-#post AIC
-lm1<-lm(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kgC.m2.year + 
-          slope_snow_max.prop.area + slope_temp_degC, ModelPrep1)
-
-#add LTER as fixed effect
-lm2<-lm(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kgC.m2.year + 
-          slope_snow_max.prop.area + slope_temp_degC + LTER, ModelPrep1)
-#add LTER as random effect
-lmer2<-lmer(percent_change ~ slope_precip_mm.per.day +
-          slope_npp_kgC.m2.year + 
-          slope_snow_max.prop.area + slope_temp_degC + (1|LTER), ModelPrep1)
-summary(lm1) #adj r2 = 0.27, p value sig
-summary(lm2) #adj r2 = 0.27, p value sig
-vif(lm1) #looks good
-hist(resid(lm1)) #ok
-r.squaredGLMM(lmer2)
-summary(lmer2)
-
 
 
 ###==============================
