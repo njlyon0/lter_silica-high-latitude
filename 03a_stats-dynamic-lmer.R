@@ -95,6 +95,8 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_npp_kgC.m2.year +
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
+ggplot2::ggsave(filename = file.path("stats_results", "perc_change_residuals.png"),
+                height = 5, width = 5, units = "in")
 
 # Extract top-level results
 perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
