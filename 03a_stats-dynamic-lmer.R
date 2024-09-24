@@ -1,11 +1,10 @@
 ## ------------------------------------------------------- ##
-# Statistical Testing
+                # Hypothesis Testing
 ## ------------------------------------------------------- ##
-# Written by: Nick J Lyon & Joanna Carey
+# Written by: Joanna Carey & Nick J Lyon
 
 # Purpose:
 ## Do statistical testing to test hypotheses
-## May include frequentist stats (P values) and model selection
 ## Focus is on linear models of dynamic predictors
 
 # Pre-Requisites:
@@ -17,8 +16,7 @@
 
 # Load libraries
 #install.packages("librarian")
-librarian::shelf(tidyverse, car, lme4, lmerTest, ggResidpanel)
-librarian::shelf(Hmisc, corrplot, MASS, MuMIn)
+librarian::shelf(tidyverse, car, lme4, lmerTest, ggResidpanel, Hmisc, emmeans, corrplot, MASS, MuMIn)
 
 # Clear environment
 rm(list = ls())
@@ -34,15 +32,119 @@ for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
 ## And remove loop index object from environment
 rm(list = "fxn")
 
-# Identify desired prepared output
-prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
-# prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
-
-# Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", prepped_file))
+# Read in desired (prepared) output
+df_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
 
 # Check structure
 dplyr::glimpse(df_v1)
+
+## ----------------------------------------- ##
+# Wrangling ----
+## ----------------------------------------- ##
+
+# Pre-statistics wrangling
+si_conc_v1 <- df_v1 %>% 
+  # Pare down to only what is needed
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
+                mean_response, percent_change,
+                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+  dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
+                -dplyr::contains("_FNConc_"),
+                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
+                -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
+                -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
+  # Change certain column names to be more informative
+  dplyr::rename(mean_si_conc = mean_response,
+                perc.change_si_conc = percent_change) %>% 
+  # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
+  dplyr::distinct()
+
+# Scale & center the driver variables
+scaled_df <- si_conc_v1 %>% 
+  dplyr::mutate(dplyr::across(.cols = slope_P_Conc_uM:mean_Discharge_cms,
+                              .fns = ~ as.numeric(scale(x = ., center = T, scale = T)))) %>% 
+  # Rename the modified columns to be explicit about what they are
+  dplyr::rename_with(.col = slope_P_Conc_uM:mean_Discharge_cms,
+                     .fn = ~ paste0("scaled_", .))
+
+# Integrate the scaled data back into the 'main' data
+si_conc_v2 <- si_conc_v1 %>% 
+  dplyr::left_join(x = ., y = scaled_df,
+                   by = dplyr::join_by(sizer_groups, LTER, Stream_Name, LTER_stream, 
+                                       drainSqKm, chemical, mean_si_conc, perc.change_si_conc))
+
+# Check structure
+dplyr::glimpse(si_conc_v2)
+
+## ----------------------------------------- ##
+        # % Change Si Response ----
+## ----------------------------------------- ##
+
+# Q: Is percent change (of DSi) affected by driver x LTER interactions?
+perc_lm <- lm(perc.change_si_conc ~ scaled_slope_npp_kgC.m2.year + 
+                scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
+                scaled_slope_temp_degC + scaled_slope_P_Conc_uM + 
+                scaled_slope_Discharge_cms + LTER +
+                scaled_slope_npp_kgC.m2.year:LTER + 
+                scaled_slope_precip_mm.per.day:LTER +
+                scaled_slope_snow_max.prop.area:LTER + 
+                scaled_slope_temp_degC:LTER + 
+                scaled_slope_P_Conc_uM:LTER + 
+                scaled_slope_Discharge_cms:LTER,
+              data = si_conc_v2)
+
+# Evalulate metrics for model fit / appropriateness
+ggResidpanel::resid_panel(model = perc_lm)
+
+# Extract top-level results
+perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
+  # Get terms into column
+  tibble::rownames_to_column(.data = ., var = "term") %>% 
+  # Drop sum/mean squares columns
+  dplyr::select(-`Sum Sq`, -`Mean Sq`) %>% 
+  # Rename other columns
+  dplyr::rename(deg_free = Df,
+                f_stat = `F value`,
+                p_value = `Pr(>F)`) %>% 
+  # Remove residuals
+  dplyr::filter(term != "Residuals") %>% 
+  # Identify significance
+  dplyr::mutate(sig = ifelse(test = p_value < 0.05, yes = "yes", no = "no"))
+
+# Check structure
+dplyr::glimpse(perc_results)
+
+# Interpretation note:
+## Look at interactions first!
+## If interaction is sig, effect of driver on DSi % change **depends on LTER**
+### Also, interpreting var without interaction doesn't make sense
+## If interaction is NS, look at regular variable
+## If interaction is NS but variable is sig, driver effects DSi **regardless of LTER**
+## If interaction and variable are NS, driver does not (significantly) affect DSi
+
+# Export results
+write.csv(x = perc_results, row.names = F, na = '',
+          file = file.path("stats_results", "perc_change_DSi_results.csv"))
+
+
+## ----------------------------------------- ##
+# Mean Si Response ----
+## ----------------------------------------- ##
+#does average mean value of spatial covarites impact the percent change in DSi?
+#no - model terrible fit (adj r2<0)
+#but the average values do HIGHLY explain avg Si behavior: 
+lm2.6 <-lm(mean_response ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
+             mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
+             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
+             mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
+#adj r2 = 0.86!
+summary(lm2.6)
+anova(lm2.6)
+resid_panel(lm2.6)
+
+
+
+# Basement ----
 
 ## ----------------------------------------- ##
           # Silica Concentration ----
