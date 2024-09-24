@@ -20,7 +20,7 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`02_stats-prep.R`** - Combines various data files and calculates covariate columns likely to be useful in the analysis script. Just like `01_sizer-workflow.R`, works for annual/seasonal/monthly input data
     - Assumes you have run `01_sizer-workflow.R`
 
-- **`03a_stats-dynamic-lmer.R`** - Performs desired statistical analysis and correlation checks
+- **`03a_stats.R`** - Performs desired statistical analysis
     - Assumes you have run `02_stats-prep.R`
 
 - **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
