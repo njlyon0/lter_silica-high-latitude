@@ -178,21 +178,101 @@ write.csv(x = perc_clds, row.names = F, na = '',
 ## ----------------------------------------- ##
 # Mean Si Response ----
 ## ----------------------------------------- ##
-#does average mean value of spatial covarites impact the percent change in DSi?
-#no - model terrible fit (adj r2<0)
-#but the average values do HIGHLY explain avg Si behavior: 
-lm2.6 <-lm(mean_response ~ mean_npp_kgC.m2.year + mean_precip_mm.per.day +
-             mean_snow_max.prop.area + mean_P_Conc_uM + mean_Discharge_cms + LTER +
-             mean_npp_kgC.m2.year:LTER + mean_precip_mm.per.day:LTER +
-             mean_snow_max.prop.area:LTER + mean_P_Conc_uM:LTER + mean_Discharge_cms:LTER, ModelPrep1)
-#adj r2 = 0.86!
-summary(lm2.6)
-anova(lm2.6)
-resid_panel(lm2.6)
 
+# Q: Is mean response (of DSi) affected by driver x LTER interactions?
+avg_lm <- lm(mean_si_conc ~ scaled_mean_npp_kgC.m2.year + 
+                scaled_mean_precip_mm.per.day + scaled_mean_snow_max.prop.area + 
+                scaled_mean_temp_degC + scaled_mean_P_Conc_uM + 
+                scaled_mean_Discharge_cms + LTER +
+                scaled_mean_npp_kgC.m2.year:LTER + 
+                scaled_mean_precip_mm.per.day:LTER +
+                scaled_mean_snow_max.prop.area:LTER + 
+                scaled_mean_temp_degC:LTER + 
+                scaled_mean_P_Conc_uM:LTER + 
+                scaled_mean_Discharge_cms:LTER,
+              data = si_conc_v2)
 
+# Evalulate metrics for model fit / appropriateness
+ggResidpanel::resid_panel(model = avg_lm)
+ggplot2::ggsave(filename = file.path("stats_results", "avg_response_residuals.png"),
+                height = 5, width = 5, units = "in")
 
-# Basement ----
+# Extract top-level results
+avg_results <- as.data.frame(stats::anova(object = avg_lm)) %>%
+  # Get terms into column
+  tibble::rownames_to_column(.data = ., var = "term") %>% 
+  # Drop sum/mean squares columns
+  dplyr::select(-`Sum Sq`, -`Mean Sq`) %>% 
+  # Rename other columns
+  dplyr::rename(deg_free = Df,
+                f_stat = `F value`,
+                p_value = `Pr(>F)`) %>% 
+  # Remove residuals
+  dplyr::filter(term != "Residuals") %>% 
+  # Identify significance
+  dplyr::mutate(sig = ifelse(test = p_value < 0.05, yes = "yes", no = "no"))
+
+# Check structure
+dplyr::glimpse(avg_results)
+
+# Interpretation note:
+## Look at interactions first!
+## If interaction is sig, effect of driver on DSi % change **depends on LTER**
+### Also, interpreting var without interaction doesn't make sense
+## If interaction is NS, look at regular variable
+## If interaction is NS but variable is sig, driver effects DSi **regardless of LTER**
+## If interaction and variable are NS, driver does not (significantly) affect DSi
+
+# Export results
+write.csv(x = avg_results, row.names = F, na = '',
+          file = file.path("stats_results", "avg_response_DSi_results.csv"))
+
+# Flexibly identify the variables that have significant 'by LTER' interactions
+avg_ixn <- avg_results %>% 
+  dplyr::filter(stringr::str_detect(string = term, pattern = ":LTER") == TRUE) %>% 
+  dplyr::filter(sig == "yes")
+
+# Make empty lists for outputs
+avg_pair_list <- list()
+avg_cld_list <- list()
+
+# Loop across these variables...
+for(avg_variable in gsub(pattern = ":LTER", replacement = "", x = avg_ixn$term)){
+  
+  # Message
+  message("Getting pairwise comparisons for: ", avg_variable)
+  
+  # Perform pairwise comparisons
+  avg_pair_raw <- emmeans::emtrends(object = avg_lm, pairwise ~ LTER, var = avg_variable)
+  
+  # Wrangle into pure table format
+  avg_pair_df <- as.data.frame(avg_pair_raw$contrasts) %>% 
+    dplyr::mutate(term = avg_variable, .before = dplyr::everything())
+  
+  # Also identify compact letter display (CLD)
+  avg_pair_cld <- multcompView::multcompLetters(supportR::name_vec(content = avg_pair_df$p.value, 
+                                                                    name = avg_pair_df$contrast))
+  
+  # And get that into a nice table too
+  avg_cld_df <- data.frame(term = avg_variable,
+                            LTER = names(avg_pair_cld$Letters),
+                            cld = avg_pair_cld$Letters)
+  
+  # Add to list
+  avg_pair_list[[avg_variable]] <- avg_pair_df
+  avg_cld_list[[avg_variable]] <- avg_cld_df
+  
+} # Close loop
+
+# Unlist
+avg_pairs <- purrr::list_rbind(x = avg_pair_list)
+avg_clds <- purrr::list_rbind(x = avg_cld_list)
+
+# Export these too
+write.csv(x = avg_pairs, row.names = F, na = '',
+          file = file.path("stats_results", "avg_response_DSi_results_pairwise.csv"))
+write.csv(x = avg_clds, row.names = F, na = '',
+          file = file.path("stats_results", "avg_response_DSi_results_clds.csv"))
 
 ## ----------------------------------------- ##
           # Silica Concentration ----
