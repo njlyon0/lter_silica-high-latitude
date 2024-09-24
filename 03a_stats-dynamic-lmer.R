@@ -11,12 +11,12 @@
 ## This script assumes you've run the "02_stats-prep.R" script
 
 ## ----------------------------------------- ##
-# Housekeeping ----
+                # Housekeeping ----
 ## ----------------------------------------- ##
 
 # Load libraries
 #install.packages("librarian")
-librarian::shelf(tidyverse, car, lme4, lmerTest, ggResidpanel, Hmisc, emmeans, corrplot, MASS, MuMIn)
+librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView)
 
 # Clear environment
 rm(list = ls())
@@ -39,7 +39,7 @@ df_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv")
 dplyr::glimpse(df_v1)
 
 ## ----------------------------------------- ##
-# Wrangling ----
+                # Wrangling ----
 ## ----------------------------------------- ##
 
 # Pre-statistics wrangling
@@ -176,7 +176,7 @@ write.csv(x = perc_clds, row.names = F, na = '',
           file = file.path("stats_results", "perc_change_DSi_results_clds.csv"))
 
 ## ----------------------------------------- ##
-# Mean Si Response ----
+              # Mean Si Response ----
 ## ----------------------------------------- ##
 
 # Q: Is mean response (of DSi) affected by driver x LTER interactions?
