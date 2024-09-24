@@ -126,6 +126,52 @@ dplyr::glimpse(perc_results)
 write.csv(x = perc_results, row.names = F, na = '',
           file = file.path("stats_results", "perc_change_DSi_results.csv"))
 
+# Flexibly identify the variables that have significant 'by LTER' interactions
+perc_ixn <- perc_results %>% 
+  dplyr::filter(stringr::str_detect(string = term, pattern = ":LTER") == TRUE) %>% 
+  dplyr::filter(sig == "yes")
+
+# Make empty lists for outputs
+perc_pair_list <- list()
+perc_cld_list <- list()
+
+# Loop across these variables...
+for(perc_variable in gsub(pattern = ":LTER", replacement = "", x = perc_ixn$term)){
+  
+  # Message
+  message("Getting pairwise comparisons for: ", perc_variable)
+  
+  # Perform pairwise comparisons
+  perc_pair_raw <- emmeans::emtrends(object = perc_lm, pairwise ~ LTER, var = perc_variable)
+  
+  # Wrangle into pure table format
+  perc_pair_df <- as.data.frame(perc_pair_raw$contrasts) %>% 
+    dplyr::mutate(term = perc_variable, .before = dplyr::everything())
+  
+  # Also identify compact letter display (CLD)
+  perc_pair_cld <- multcompView::multcompLetters(supportR::name_vec(content = perc_pair_df$p.value, 
+                                                                    name = perc_pair_df$contrast))
+  
+  # And get that into a nice table too
+  perc_cld_df <- data.frame(term = perc_variable,
+                            LTER = names(perc_pair_cld$Letters),
+                            cld = perc_pair_cld$Letters)
+  
+  # Add to list
+  perc_pair_list[[perc_variable]] <- perc_pair_df
+  perc_cld_list[[perc_variable]] <- perc_cld_df
+  
+} # Close loop
+
+# Unlist
+perc_pairs <- purrr::list_rbind(x = perc_pair_list)
+perc_clds <- purrr::list_rbind(x = perc_cld_list)
+
+# Export these too
+write.csv(x = perc_pairs, row.names = F, na = '',
+          file = file.path("stats_results", "perc_change_DSi_results_pairwise.csv"))
+write.csv(x = perc_clds, row.names = F, na = '',
+          file = file.path("stats_results", "perc_change_DSi_results_clds.csv"))
 
 ## ----------------------------------------- ##
 # Mean Si Response ----
