@@ -39,7 +39,12 @@ source(file.path("tools", "flow_graph-helpers.R"))
 ## ----------------------------------------- ##
 
 # Read in discharge data
-df_q <- read.csv(file = file.path("data", "stats-ready_annual_Discharge_cms_DSi.csv"))
+df_q <- read.csv(file = file.path("data", "stats-ready_annual_Discharge_cms_DSi.csv")) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
 
 # Simplify this object
 df_q_simp <- df_q %>% 
@@ -87,8 +92,8 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
   ## Add LTER-specific annotations
   geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
   annotate(geom = "text", x = 1993, color = "black", angle = 90, hjust = "center",
-           y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
-           label = c("Finland", "GRO", "Krycklan", "McMurdo", "Norway", "Sweden")) +
+           y = c(14, 27.5, 35.5, 43, 49.5, 62), 
+           label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden")) +
   # Customize labels and axis titles
   labs(x = "Year", y = "Stream", title = "Discharge (cms)") +
   # Modify theme elements for preferred aesthetics
@@ -132,7 +137,12 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
   df_si.p <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_Si_P.csv")))
   
   # Combine into a single object that loses nothing
-  df_chem_all <- dplyr::bind_rows(df_si, df_n, df_p, df_si.n, df_si.p)
+  df_chem_all <- dplyr::bind_rows(df_si, df_n, df_p, df_si.n, df_si.p) %>% 
+    # Remove McMurdo streams with incomplete chemical information
+    dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                      "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                      "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                      "MCM_Priscu Stream "))
   
   # Wrangle this like we wrangled discharge (see above)
   df_chem_simp <- df_chem_all %>% 
@@ -194,8 +204,8 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
       ## Add LTER-specific annotations
       geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
       annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
-               y = c(14, 27.5, 35.5, 46.5, 56.5, 69), 
-               label = c("Finland", "GRO", "Krycklan", "McMurdo", "Norway", "Sweden")) +
+               y = c(14, 27.5, 35.5, 43, 49.5, 62), 
+               label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden")) +
       # Customize labels and axis titles
       labs(x = "Year", y = "Stream", 
            title = paste0(chem, " ", resp_lab)) +
@@ -250,7 +260,13 @@ df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv
 
 # Bind them together
 df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p) %>% 
-  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical))
+  # Tweak how P (chemical) is written
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
 
 # Want to order boxplots by median silica (within LTER)
 df_si_rank <- df_conc_all %>% 
@@ -308,9 +324,9 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
   geom_text(label = "Finland", x = 11.5, y = 300, hjust = "center") + 
   geom_text(label = "GRO", x = 27.5, y = 300, hjust = "center") + 
   geom_text(label = "Krycklan", x = 35.5, y = 300, hjust = "center") + 
-  geom_text(label = "MCM", x = 46.5, y = 300, hjust = "center") + 
-  geom_text(label = "Norway", x = 56.5, y = 300, hjust = "center") + 
-  geom_text(label = "Sweden", x = 69, y = 300, hjust = "center") + 
+  geom_text(label = "MCM", x = 43, y = 300, hjust = "center") + 
+  geom_text(label = "Norway", x = 49.5, y = 300, hjust = "center") + 
+  geom_text(label = "Sweden", x = 62, y = 300, hjust = "center") + 
   # Customize the legend
   theme(legend.position = "none",
         panel.background = element_blank(),
