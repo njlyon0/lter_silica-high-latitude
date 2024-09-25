@@ -169,6 +169,38 @@ for(perc_variable in gsub(pattern = ":LTER", replacement = "", x = perc_ixn$term
 perc_pairs <- purrr::list_rbind(x = perc_pair_list)
 perc_clds <- purrr::list_rbind(x = perc_cld_list)
 
+# If LTER was significant on its own
+if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
+  
+  # Fit a simple ANOVA of LTER
+  perc_lter_aov <- aov(perc.change_si_conc ~ LTER, data = si_conc_v2)
+  
+  # Do Tukey HSD pairwise comparisons
+  perc_lter_tuk <- TukeyHSD(x = perc_lter_aov, conf.level = 0.95)
+  
+  # Extract as a table
+  perc_lter_pairs <- as.data.frame(perc_lter_tuk$LTER) %>% 
+    dplyr::mutate(term = "LTER", .before = dplyr::everything()) %>% 
+    tibble::rownames_to_column(var = "contrast") %>% 
+    dplyr::rename(estimate = diff,
+                  lwr.ci = lwr, upr.ci = upr,
+                  p.value = `p adj`)
+  
+  # Get CLD vector
+  perc_lter_cld_vec <- multcompView::multcompLetters(
+    supportR::name_vec(content = perc_lter_pairs$p.value, 
+                       name = perc_lter_pairs$contrast))
+  
+  # And make that into a nice table too
+  perc_lter_cld_df <- data.frame(term = "LTER",
+                                LTER = names(perc_lter_cld_vec$Letters),
+                                cld = perc_lter_cld_vec$Letters)
+  
+  # Attach each to their respective larger pairwise results object
+  perc_pairs <- dplyr::bind_rows(perc_pairs, perc_lter_pairs)
+  perc_clds <- dplyr::bind_rows(perc_clds, perc_lter_cld_df)
+}
+
 # Export these too
 write.csv(x = perc_pairs, row.names = F, na = '',
           file = file.path("stats_results", "perc_change_DSi_results_pairwise.csv"))
@@ -229,8 +261,8 @@ write.csv(x = avg_results, row.names = F, na = '',
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 avg_ixn <- avg_results %>% 
-  dplyr::filter(stringr::str_detect(string = term, pattern = ":LTER") == TRUE) %>% 
-  dplyr::filter(sig == "yes")
+  dplyr::filter(sig == "yes") %>% 
+  dplyr::filter(stringr::str_detect(string = term, pattern = ":LTER") == TRUE)
 
 # Make empty lists for outputs
 avg_pair_list <- list()
@@ -267,6 +299,37 @@ for(avg_variable in gsub(pattern = ":LTER", replacement = "", x = avg_ixn$term))
 # Unlist
 avg_pairs <- purrr::list_rbind(x = avg_pair_list)
 avg_clds <- purrr::list_rbind(x = avg_cld_list)
+
+# If LTER was significant on its own
+if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
+  
+  # Fit a simple ANOVA of LTER
+  avg_lter_aov <- aov(mean_si_conc ~ LTER, data = si_conc_v2)
+  
+  # Do Tukey HSD pairwise comparisons
+  avg_lter_tuk <- TukeyHSD(x = avg_lter_aov, conf.level = 0.95)
+  
+  # Extract as a table
+  avg_lter_pairs <- as.data.frame(avg_lter_tuk$LTER) %>% 
+    dplyr::mutate(term = "LTER", .before = dplyr::everything()) %>% 
+    tibble::rownames_to_column(var = "contrast") %>% 
+    dplyr::rename(estimate = diff,
+                  lwr.ci = lwr, upr.ci = upr,
+                  p.value = `p adj`)
+  
+  # Get CLD vector
+  avg_lter_cld_vec <- multcompView::multcompLetters(supportR::name_vec(content = avg_lter_pairs$p.value, 
+                                                                       name = avg_lter_pairs$contrast))
+  
+  # And make that into a nice table too
+  avg_lter_cld_df <- data.frame(term = "LTER",
+                                LTER = names(avg_lter_cld_vec$Letters),
+                                cld = avg_lter_cld_vec$Letters)
+  
+  # Attach each to their respective larger pairwise results object
+  avg_pairs <- dplyr::bind_rows(avg_pairs, avg_lter_pairs)
+  avg_clds <- dplyr::bind_rows(avg_clds, avg_lter_cld_df)
+}
 
 # Export these too
 write.csv(x = avg_pairs, row.names = F, na = '',
