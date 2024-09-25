@@ -352,7 +352,7 @@ ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# 'Pick Up Sticks' DSi % Change Figure ----
+  # 'Pick Up Sticks' DSi % Change Figure ----
 ## ----------------------------------------- ##
 
 # Re-load graph helpers & needed functions
@@ -420,20 +420,32 @@ perc_disc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
   labs(y = "DSi Concentration (% Change)",
        x = "Discharge (cms) Annual Change") +
   theme(legend.position = "none"); perc_disc
+## LTER boxplots
+perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
+  geom_boxplot(outlier.shape = 21) +
+  scale_fill_manual(values = lter_palt) +
+  scale_x_discrete(labels = c("Canada", "Finland", "GRO", "Krycklan", 
+                              "MCM", "Norway", "Sweden")) +
+  labs(y = "DSi Concentration (% Change)", x = "LTER") +
+  geom_text(label = "NS", x = 1, y = 14, hjust = "center") + 
+  theme(panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none"); perc_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_disc,
-                   nrow = 2, ncol = 3, labels = "AUTO")
+cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_box, perc_temp, perc_pconc, perc_disc,
+                   nrow = 2, labels = "AUTO")
 
 # Export as a figure
 ggsave(filename = file.path("figures", "fig_sticks_si_perc-change.png"),
-       height = 10, width = 12, units = "in")
+       height = 10, width = 15, units = "in")
 
 # Tidy environment
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# 'Pick Up Sticks' Mean DSi Figure ----
+  # 'Pick Up Sticks' Mean DSi Figure ----
 ## ----------------------------------------- ##
 
 # Re-load graph helpers & needed functions
@@ -501,14 +513,24 @@ avg_disc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Discharge (cms)") +
   theme(legend.position = "none"); avg_disc
+## LTER boxplots
+avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
+  geom_boxplot(outlier.shape = 21) +
+  scale_fill_manual(values = lter_palt) +
+  scale_x_discrete(labels = c("Canada", "Finland", "GRO", "Krycklan", 
+                              "MCM", "Norway", "Sweden")) +
+  labs(y = "Mean DSi Concentration (uM)", x = "LTER") +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none"); avg_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(avg_npp, avg_ppt, avg_snow, avg_temp, avg_pconc, avg_disc,
-                   nrow = 2, ncol = 3, labels = "AUTO")
+cowplot::plot_grid(avg_npp, avg_ppt, avg_snow, avg_box, avg_temp, avg_pconc, avg_disc,
+                   nrow = 2, labels = "AUTO")
 
 # Export as a figure
 ggsave(filename = file.path("figures", "fig_sticks_si_mean.png"),
-       height = 10, width = 12, units = "in")
-
+       height = 10, width = 15, units = "in")
 
 # End ----
