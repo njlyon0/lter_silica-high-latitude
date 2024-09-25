@@ -39,9 +39,13 @@ stick_graph <- function(data = NULL, exp_var = NULL, resp_var = NULL, sig = NULL
     multi_sticks <- core_stick +
       geom_smooth(aes(color = LTER), formula = "y ~ x", method = "lm", se = F) +
       geom_point(aes(fill = LTER, shape = LTER), size = 2) +
-      scale_color_manual(values = lter_palt) +
-      scale_fill_manual(values = lter_palt) +
-      scale_shape_manual(values = lter_shps)
+      scale_color_manual(values = lter_palt, guide = "none") +
+      scale_fill_manual(values = lter_palt, 
+                        labels = c("Canada", "Finland", "GRO", "Krycklan", 
+                                   "MCM", "Norway", "Sweden")) +
+      scale_shape_manual(values = lter_shps, 
+                         labels = c("Canada", "Finland", "GRO", "Krycklan", 
+                                    "MCM", "Norway", "Sweden"))
     
     # If only main effect is sig, fit just one line
   } else if (sig == "main") {

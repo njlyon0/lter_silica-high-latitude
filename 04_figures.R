@@ -386,7 +386,10 @@ perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
             exp_var = "slope_npp_kgC.m2.year", sig = "ixn") +
   labs(y = "DSi Concentration (% Change)",
        x = "NPP (kg C/m2/year) Annual Change") +
-  theme(legend.position = "none"); perc_npp
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.12, 0.825),
+        legend.direction = "vertical",
+        legend.background = element_blank()); perc_npp
 ## Precipitation
 perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
             exp_var = "slope_precip_mm.per.day", sig = "ixn") +
@@ -424,7 +427,7 @@ cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_di
 
 # Export as a figure
 ggsave(filename = file.path("figures", "fig_sticks_si_perc-change.png"),
-       height = 7, width = 10, units = "in")
+       height = 10, width = 12, units = "in")
 
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' Mean DSi Figure ----
