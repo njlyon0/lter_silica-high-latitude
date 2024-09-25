@@ -54,7 +54,7 @@ dir_fit_palt <- c("pos-great" = "#f5bd1f", "pos-good" = "#facb2e",
                   "neg-fine" = "#c86bfa", "neg-bad" = "#e4afff",
                   "NS" = nonsig_col, "NA" = na_col)
 ## LTER palette
-lter_palt <- c("Canada" = "#fff", "Finnish Environmental Institute" = "#374c80",
+lter_palt <- c("Canada" = "#390099", "Finnish Environmental Institute" = "#374c80",
                "GRO" = "#7a5195", "Krycklan" = "#bc5090", "MCM" = "#ef5675",
                "NIVA" = "#ff764a", "Swedish Goverment" = "#ffa600")
 
