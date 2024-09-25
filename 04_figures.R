@@ -358,7 +358,10 @@ rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
 ## ----------------------------------------- ##
 
 # Read in DSi data
-df_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv")) %>% 
+si_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+
+# Process this as needed
+si_v2 <- si_v1 %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
                 mean_response, percent_change,
@@ -384,17 +387,66 @@ df_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv")
   dplyr::filter(is.na(avg) != T)
 
 # Check structure
-dplyr::glimpse(df_si)
+dplyr::glimpse(si_v2)
 
+# Read in statistical results
+results_v1 <- read.csv(file = file.path("stats_results", "perc_change_DSi_results.csv")) %>% 
+  dplyr::mutate(var = gsub(pattern = "scaled_|:LTER", replacement = "", x = term))
 
+# Check structure
+dplyr::glimpse(results_v1)
 
+# Get prioritized results
+ixn <- dplyr::filter(results_v1, stringr::str_detect(string = term, pattern = ":LTER") == T &
+                        sig == "yes")
+no_ixn <- dplyr::filter(results_v1, stringr::str_detect(string = term, pattern = ":LTER") != T &
+                          !var %in% ixn$var)
 
+# Recombine & wrangle as needed
+results_v2 <- dplyr::bind_rows(ixn, no_ixn) %>% 
+  dplyr::filter(term != "LTER") %>% 
+  dplyr::mutate(interaction = ifelse(deg_free != 1, yes = T, no = F)) %>% 
+  dplyr::select(var, interaction, sig)
 
+# Check that out
+results_v2
+
+# Finalize data for figure
+si_v3 <- si_v2 %>% 
+  # Attach stats results
+  dplyr::left_join(y = results_v2, by = dplyr::join_by(var)) %>% 
+  # Drop rows irrelevant to this plot
+  dplyr::filter(var %in% c("perc.change_si_conc", "mean_si_conc") |
+                  is.na(interaction) != T & is.na(sig) != T) %>% 
+  # Get more informative column names
+  tidyr::pivot_longer(cols = avg:std.dev) %>% 
+  dplyr::mutate(names_actual = paste0(name, "_", var)) %>% 
+  dplyr::select(-var, -name) %>% 
+  tidyr::pivot_wider(names_from = names_actual, values_from = value)
+
+# Check structure
+dplyr::glimpse(si_v3)
+## tibble::view(si_v3)
+
+# Generate a list for storing plots
+stick_list <- list()
+
+# Iterate across variables
+# for(term in unique(si_v3$var)){
+term <- "slope_npp_kgC.m2.year"
+
+# Progress message
+message("Generating pick up sticks graph for term: ", term)
+
+# Wrangle this subset of the data
+stick_df <- dplyr::filter(si_v3, var %in% c("perc.change_si_conc", term))
+
+stick_df
 
 # Generate one of the figures
-ggplot(df_si, aes(y = avg_perc.change_si_conc, x = avg_slope_npp_kgC.m2.year, fill = LTER)) +
-  geom_point(pch = 22) +
-  supportR::theme_lyon()
+ggplot(stick_df, aes(x = ))
+
+
 
 
 
