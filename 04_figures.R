@@ -17,29 +17,19 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, cowplot)
 
-# Clear environment
-rm(list = ls())
-
 # Make a folder for exporting graphs
 dir.create(path = file.path("figures"), showWarnings = F)
 
-# Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
-
-# Load graph helpers
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Tidy environment
-rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
+# Clear environment
+rm(list = ls())
 
 ## ----------------------------------------- ##
         # Discharge Bookmark Figure ----
 ## ----------------------------------------- ##
+
+# Load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
 
 # Read in discharge data
 df_q <- read.csv(file = file.path("data", "stats-ready_annual_Discharge_cms_DSi.csv")) %>% 
@@ -116,11 +106,15 @@ ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
        height = 9, width = 5, units = "in")
 
 # Tidy environment
-rm(list = setdiff(x = ls(), y = c("df_q_simp", "dir_palt", "lter_palt", "lter_ct")))
+rm(list = setdiff(x = ls(), y = c("df_q_simp")))
 
 ## ----------------------------------------- ##
         # Chemical Bookmark Figures ----
 ## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
 
 # Identify conserved file stem
 file_stem <- "stats-ready_annual_"
@@ -256,11 +250,15 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
 } # Close response variable loop
 
 # Tidy environment
-rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
+rm(list = ls())
 
 ## ----------------------------------------- ##
           # Strip Boxplot Figure ----
 ## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
 
 # Read in specifically the annual concentration data for the three chemicals
 df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
@@ -351,11 +349,15 @@ ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
        height = 7, width = 10, units = "in")
 
 # Tidy environment
-rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
+rm(list = ls())
 
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' DSi % Change Figure ----
 ## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_stick-graph.R"))
 
 # Read in DSi data
 si_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
@@ -375,85 +377,56 @@ si_v2 <- si_v1 %>%
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
-  dplyr::distinct() %>% 
-  # Summarize all explanatory variables within LTER
-  tidyr::pivot_longer(cols = -sizer_groups:-chemical, names_to = "var") %>% 
-  dplyr::group_by(LTER, chemical, var) %>% 
-  dplyr::summarize(avg = mean(x = value, na.rm = T),
-                   std.dev = sd(x = value, na.rm = T),
-                   .groups = "keep") %>% 
-  dplyr::ungroup() %>% 
-  # Remove NAs
-  dplyr::filter(is.na(avg) != T)
+  dplyr::distinct()
 
 # Check structure
 dplyr::glimpse(si_v2)
+## tibble::view(si_v2)
 
-# Read in statistical results
-results_v1 <- read.csv(file = file.path("stats_results", "perc_change_DSi_results.csv")) %>% 
-  dplyr::mutate(var = gsub(pattern = "scaled_|:LTER", replacement = "", x = term))
+## Net Primary Productivity (NPP)
+perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+            exp_var = "slope_npp_kgC.m2.year", sig = "ixn") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "NPP (kg C/m2/year) Annual Change") +
+  theme(legend.position = "none"); perc_npp
+## Precipitation
+perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+            exp_var = "slope_precip_mm.per.day", sig = "ixn") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "Precipitation (mm/day) Annual Change") +
+  theme(legend.position = "none"); perc_ppt
+## Snow (Proportion Area)
+perc_snow <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                        exp_var = "slope_snow_max.prop.area", sig = "ixn") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "Snow (Max Proportion Area) Annual Change") +
+  theme(legend.position = "none"); perc_snow
+## Temperature
+perc_temp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                        exp_var = "slope_temp_degC", sig = "ixn") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "Temperature (C) Annual Change") +
+  theme(legend.position = "none"); perc_temp
+## Phosphorus concentration
+perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                        exp_var = "slope_P_Conc_uM", sig = "main") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "P Concentration (uM) Annual Change") +
+  theme(legend.position = "none"); perc_pconc
+## Discharge
+perc_disc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                          exp_var = "slope_Discharge_cms", sig = "NS") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "Discharge (cms) Annual Change") +
+  theme(legend.position = "none"); perc_disc
 
-# Check structure
-dplyr::glimpse(results_v1)
+# Assemble into grid of plots
+cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_disc,
+                   nrow = 2, ncol = 3, labels = "AUTO")
 
-# Get prioritized results
-ixn <- dplyr::filter(results_v1, stringr::str_detect(string = term, pattern = ":LTER") == T &
-                        sig == "yes")
-no_ixn <- dplyr::filter(results_v1, stringr::str_detect(string = term, pattern = ":LTER") != T &
-                          !var %in% ixn$var)
-
-# Recombine & wrangle as needed
-results_v2 <- dplyr::bind_rows(ixn, no_ixn) %>% 
-  dplyr::filter(term != "LTER") %>% 
-  dplyr::mutate(interaction = ifelse(deg_free != 1, yes = T, no = F)) %>% 
-  dplyr::select(var, interaction, sig)
-
-# Check that out
-results_v2
-
-# Finalize data for figure
-si_v3 <- si_v2 %>% 
-  # Attach stats results
-  dplyr::left_join(y = results_v2, by = dplyr::join_by(var)) %>% 
-  # Drop rows irrelevant to this plot
-  dplyr::filter(var %in% c("perc.change_si_conc", "mean_si_conc") |
-                  is.na(interaction) != T & is.na(sig) != T) %>% 
-  # Get more informative column names
-  tidyr::pivot_longer(cols = avg:std.dev) %>% 
-  dplyr::mutate(names_actual = paste0(name, "_", var)) %>% 
-  dplyr::select(-var, -name) %>% 
-  tidyr::pivot_wider(names_from = names_actual, values_from = value)
-
-# Check structure
-dplyr::glimpse(si_v3)
-## tibble::view(si_v3)
-
-# Generate a list for storing plots
-stick_list <- list()
-
-# Iterate across variables
-# for(term in unique(si_v3$var)){
-term <- "slope_npp_kgC.m2.year"
-
-# Progress message
-message("Generating pick up sticks graph for term: ", term)
-
-# Wrangle this subset of the data
-stick_df <- dplyr::filter(si_v3, var %in% c("perc.change_si_conc", term))
-
-stick_df
-
-# Generate one of the figures
-ggplot(stick_df, aes(x = ))
-
-
-
-
-
-
-
-
-
+# Export as a figure
+ggsave(filename = file.path("figures", "fig_sticks_si_perc-change.png"),
+       height = 7, width = 10, units = "in")
 
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' Mean DSi Figure ----
