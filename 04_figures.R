@@ -429,11 +429,86 @@ cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_di
 ggsave(filename = file.path("figures", "fig_sticks_si_perc-change.png"),
        height = 10, width = 12, units = "in")
 
+# Tidy environment
+rm(list = ls())
+
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' Mean DSi Figure ----
 ## ----------------------------------------- ##
 
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_stick-graph.R"))
 
+# Read in DSi data
+si_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+
+# Process this as needed
+si_v2 <- si_v1 %>% 
+  # Pare down to only what is needed
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
+                mean_response, percent_change,
+                dplyr::starts_with(c("slope_", "mean_"))) %>% 
+  dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
+                -dplyr::contains(c("_FNConc_", "_NO3_", "_DIN_", "_NH4_",
+                                   "_NOx_", "_Si.DIN_", "_Si.P_"))) %>% 
+  # Change certain column names to be more informative
+  dplyr::rename(mean_si_conc = mean_response,
+                perc.change_si_conc = percent_change) %>% 
+  # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(si_v2)
+## tibble::view(si_v2)
+
+## Net Primary Productivity (NPP)
+avg_npp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                        exp_var = "mean_npp_kgC.m2.year", sig = "main") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean NPP (kg C/m2/year)") +
+  theme(legend.position = "none"); avg_npp
+## Precipitation
+avg_ppt <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                        exp_var = "mean_precip_mm.per.day", sig = "ixn") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean Precipitation (mm/day)") +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.8, 0.8),
+        legend.direction = "vertical",
+        legend.background = element_blank()); avg_ppt
+## Snow (Proportion Area)
+avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                         exp_var = "mean_snow_max.prop.area", sig = "ixn") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean Snow (Max Proportion Area)") +
+  theme(legend.position = "none"); avg_snow
+## Temperature
+avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                         exp_var = "mean_temp_degC", sig = "main") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean Temperature (C)") +
+  theme(legend.position = "none"); avg_temp
+## Phosphorus concentration
+avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                          exp_var = "mean_P_Conc_uM", sig = "main") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean P Concentration (uM)") +
+  theme(legend.position = "none"); avg_pconc
+## Discharge
+avg_disc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                         exp_var = "mean_Discharge_cms", sig = "NS") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean Discharge (cms)") +
+  theme(legend.position = "none"); avg_disc
+
+# Assemble into grid of plots
+cowplot::plot_grid(avg_npp, avg_ppt, avg_snow, avg_temp, avg_pconc, avg_disc,
+                   nrow = 2, ncol = 3, labels = "AUTO")
+
+# Export as a figure
+ggsave(filename = file.path("figures", "fig_sticks_si_mean.png"),
+       height = 10, width = 12, units = "in")
 
 
 # End ----
