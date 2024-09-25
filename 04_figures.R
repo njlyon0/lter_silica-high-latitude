@@ -341,4 +341,61 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
 ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
        height = 7, width = 10, units = "in")
 
+## ----------------------------------------- ##
+# 'Pick Up Sticks' DSi % Change Figure ----
+## ----------------------------------------- ##
+
+# Read in DSi data
+df_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv")) %>% 
+  # Pare down to only what is needed
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
+                mean_response, percent_change,
+                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+  dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
+                -dplyr::contains("_FNConc_"),
+                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
+                -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
+                -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
+  # Change certain column names to be more informative
+  dplyr::rename(mean_si_conc = mean_response,
+                perc.change_si_conc = percent_change) %>% 
+  # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
+  dplyr::distinct() %>% 
+  # Summarize all explanatory variables within LTER
+  tidyr::pivot_longer(cols = -sizer_groups:-chemical, names_to = "var") %>% 
+  dplyr::group_by(LTER, chemical, var) %>% 
+  dplyr::summarize(avg = mean(x = value, na.rm = T),
+                   std.dev = sd(x = value, na.rm = T),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  # Remove NAs
+  dplyr::filter(is.na(avg) != T)
+
+# Check structure
+dplyr::glimpse(df_si)
+
+
+
+
+
+
+# Generate one of the figures
+ggplot(df_si, aes(y = avg_perc.change_si_conc, x = avg_slope_npp_kgC.m2.year, fill = LTER)) +
+  geom_point(pch = 22) +
+  supportR::theme_lyon()
+
+
+
+
+
+
+
+
+## ----------------------------------------- ##
+# 'Pick Up Sticks' Mean DSi Figure ----
+## ----------------------------------------- ##
+
+
+
+
 # End ----
