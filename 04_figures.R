@@ -34,6 +34,9 @@ rm(list = "fxn")
 # Load graph helpers
 source(file.path("tools", "flow_graph-helpers.R"))
 
+# Tidy environment
+rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
+
 ## ----------------------------------------- ##
         # Discharge Bookmark Figure ----
 ## ----------------------------------------- ##
@@ -111,6 +114,9 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
 # Export graph
 ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
        height = 9, width = 5, units = "in")
+
+# Tidy environment
+rm(list = setdiff(x = ls(), y = c("df_q_simp", "dir_palt", "lter_palt", "lter_ct")))
 
 ## ----------------------------------------- ##
         # Chemical Bookmark Figures ----
@@ -249,6 +255,9 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
   
 } # Close response variable loop
 
+# Tidy environment
+rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
+
 ## ----------------------------------------- ##
           # Strip Boxplot Figure ----
 ## ----------------------------------------- ##
@@ -340,6 +349,9 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
 # Export graph
 ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
        height = 7, width = 10, units = "in")
+
+# Tidy environment
+rm(list = setdiff(x = ls(), y = c("dir_palt", "lter_palt", "lter_ct")))
 
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' DSi % Change Figure ----
