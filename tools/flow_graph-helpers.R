@@ -58,6 +58,11 @@ lter_palt <- c("Canada" = "#fff", "Finnish Environmental Institute" = "#374c80",
                "GRO" = "#7a5195", "Krycklan" = "#bc5090", "MCM" = "#ef5675",
                "NIVA" = "#ff764a", "Swedish Goverment" = "#ffa600")
 
+## LTER shapes
+lter_shps <- c("Canada" = 21, "Finnish Environmental Institute" = 22,
+               "GRO" = 23, "Krycklan" = 24, "MCM" = 21,
+               "NIVA" = 25, "Swedish Goverment" = 22)
+
 ## ----------------------------------------- ##
 # `ggplot2` Theme
 ## ----------------------------------------- ##
