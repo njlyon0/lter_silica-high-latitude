@@ -367,12 +367,10 @@ si_v2 <- si_v1 %>%
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
                 mean_response, percent_change,
-                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+                dplyr::starts_with(c("slope_", "mean_"))) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
-                -dplyr::contains("_FNConc_"),
-                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
-                -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
-                -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
+                -dplyr::contains(c("_FNConc_", "_NO3_", "_DIN_", "_NH4_",
+                                   "_NOx_", "_Si.DIN_", "_Si.P_"))) %>% 
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
