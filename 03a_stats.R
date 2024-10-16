@@ -16,7 +16,7 @@
 
 # Load libraries
 #install.packages("librarian")
-librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView)
+librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot)
 
 # Clear environment
 rm(list = ls())
@@ -75,6 +75,41 @@ si_conc_v2 <- si_conc_v1 %>%
 
 # Check structure
 dplyr::glimpse(si_conc_v2)
+
+## ----------------------------------------- ##
+# Correlation Checks ----
+## ----------------------------------------- ##
+
+# Get just 'slope of _' columns in a data object
+slope_df <- si_conc_v2 %>% 
+  dplyr::select(dplyr::starts_with("slope_")) %>% 
+  dplyr::distinct()
+
+# Generate and export the correlation plot
+png(filename = file.path("stats_results", "perc_change_corrplot.png"),
+    height = 7, width = 7, units = "in", res = 560)
+## Generate plot
+slope_corplot <- slope_df %>% 
+  stats::cor(x = ., use = "complete.obs") %>% 
+  corrplot::corrplot(corr = ., method = "number")
+## Exit this saving step
+dev.off()
+
+# Do the same set of steps for the mean values
+## Get mean columns alone
+mean_df <- si_conc_v2 %>% 
+  dplyr::select(dplyr::starts_with("mean_")) %>% 
+  dplyr::distinct()
+
+## Generate and export the correlation plot
+png(filename = file.path("stats_results", "avg_response_corrplot.png"),
+    height = 7, width = 7, units = "in", res = 560)
+
+mean_corplot <- mean_df %>% 
+  stats::cor(x = ., use = "complete.obs") %>% 
+  corrplot::corrplot(corr = ., method = "number")
+
+dev.off()
 
 ## ----------------------------------------- ##
         # % Change Si Response ----
