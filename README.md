@@ -32,6 +32,9 @@ The 'core' scripts in this repository are described below. Any script not descri
 - **`04_figures.R`** - Makes publication-quality figures from extracted SiZer information. Written for _only annual_ data
     - Assumes you have run `02_stats-prep.R`
 
+- **`05_tables.R`** - Generates publication-quality summary tables
+    - Assumes you have run `03a_stats.R`
+
 ## Related Repositories
 
 This working group has several repositories. All are linked and described (briefly) below.
