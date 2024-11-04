@@ -352,6 +352,100 @@ ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
 rm(list = ls())
 
 ## ----------------------------------------- ##
+    # Strip Boxplot Figure - Zoom In ----
+## ----------------------------------------- ##
+
+# NOTE
+## Most of this code is the same as the other 'strip boxplot' figure
+## Comments have been pared down because of this
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
+
+# Read in specifically the annual concentration data for the three chemicals
+df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DIN.csv"))
+df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv"))
+
+# Combine chemical datasets
+df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p) %>% 
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>% 
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
+
+# Do preliminary wrangling to define boxplot order
+df_si_rank <- df_conc_all %>% 
+  dplyr::filter(chemical == "DSi") %>% 
+  dplyr::group_by(LTER, Stream_Name, LTER_stream) %>% 
+  dplyr::summarize(median_si = stats::median(x = Conc_uM, na.rm = T),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(dplyr::desc(median_si)) %>% 
+  dplyr::group_by(LTER) %>% 
+  dplyr::mutate(si_rank = seq_along(along.with = median_si)) %>% 
+  dplyr::mutate(site_simp = gsub(pattern = " at", replacement = " ", x = Stream_Name),
+                LTER_simp = ifelse(nchar(LTER) <= 4, yes = LTER,
+                                   no = stringr::str_sub(LTER, start = 1, end = 4)),
+                site_simp = ifelse(nchar(site_simp) <= 14, yes = site_simp,
+                                   no = stringr::str_sub(site_simp, start = 1, end = 14)),
+                si_rank_char = ifelse(test = (nchar(si_rank) == 1), 
+                                      yes = paste0("0", si_rank), no = as.character(si_rank)),
+                LTER_stream_ranked = paste0(LTER_simp, "_", si_rank_char, "_", site_simp)) %>% 
+  dplyr::select(-dplyr::ends_with("_simp"), -LTER_stream, -median_si, si_rank)
+
+# Minor pre-graphing wrangling
+df_conc <- df_conc_all %>% 
+  dplyr::filter(chemical != "DIN" | (chemical == "DIN" & Conc_uM <= 250)) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "DIP"))) %>% 
+  dplyr::left_join(y = df_si_rank, by = c("LTER", "Stream_Name"))
+
+# Do some subsetting to differentiate this graph from the other boxplot!
+df_conc_sub <- df_conc %>% 
+  # Filter to desired per-chemical thresholds
+  dplyr::filter(
+    (chemical == "DSi" & LTER %in% c("MCM", "NIVA", "Swedish Goverment") & Conc_uM < 100) |
+      (chemical == "DIN" & LTER %in% c("GRO", "Krycklan", "MCM", 
+                                       "NIVA", "Swedish Goverment") & Conc_uM < 50) |
+      (chemical == "DIP" & LTER %in% c("Swedish Goverment") & Conc_uM < 0.75) )
+
+# Check the structure
+dplyr::glimpse(df_conc_sub)
+
+# Count streams / LTER
+(streams_per_lter <- lter_ct(data = df_conc_sub)[-5,])
+
+# Create the boxplot strips *with the "zoomed in" data object*
+ggplot(df_conc_sub, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
+  geom_boxplot(outlier.shape = 21, lwd = 0.2) +
+  facet_grid(chemical ~ ., scales = "free", axes = "all") +
+  scale_fill_manual(values = lter_palt) +
+  labs(x = "Stream", y = "Concentration (uM)") +
+  geom_vline(xintercept = streams_per_lter$line_positions[-7], linetype = 2, color = "gray66") +
+  geom_text(label = "GRO", x = 3.5, y = 95, hjust = "center") + 
+  geom_text(label = "Krycklan", x = 11, y = 95, hjust = "center") + 
+  geom_text(label = "MCM", x = 19, y = 95, hjust = "center") + 
+  geom_text(label = "Norway", x = 25.5, y = 85, hjust = "center") + 
+  geom_text(label = "Sweden", x = 39, y = 95, hjust = "center") + 
+  theme(legend.position = "none",
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 15))
+
+# Export graph
+ggsave(filename = file.path("figures", "fig_boxplot-chemicals-zoom_conc_um.png"),
+       height = 7, width = 10, units = "in")
+
+# Tidy environment
+rm(list = ls())
+
+## ----------------------------------------- ##
   # 'Pick Up Sticks' DSi % Change Figure ----
 ## ----------------------------------------- ##
 
