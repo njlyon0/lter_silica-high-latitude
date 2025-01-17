@@ -49,7 +49,7 @@ for(element in c("DSi", "DIN", "P", "Si_DIN", "Si_P")){
 ## Comment out those lines, save the file, run this script, then delete the '#' and re-save the file
 
 # Identify relevant files
-for(sizer_file in dir(path = file.path("data"), pattern = "sizer-outs_annual_")){
+for(sizer_file in dir(path = file.path("data"), pattern = "sizer-outs_monthly_")){
   
   # Loop across 'stats prep' script
   source(file.path("02_stats-prep.R"))
