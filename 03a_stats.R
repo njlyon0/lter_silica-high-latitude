@@ -168,9 +168,8 @@ perc_ixn <- perc_results %>%
   dplyr::filter(stringr::str_detect(string = term, pattern = ":LTER") == TRUE) %>% 
   dplyr::filter(sig == "yes")
 
-# Make empty lists for outputs
+# Make empty list(s) for output(s)
 perc_pair_list <- list()
-perc_cld_list <- list()
 
 # Loop across these variables...
 for(perc_variable in gsub(pattern = ":LTER", replacement = "", x = perc_ixn$term)){
@@ -184,25 +183,14 @@ for(perc_variable in gsub(pattern = ":LTER", replacement = "", x = perc_ixn$term
   # Wrangle into pure table format
   perc_pair_df <- as.data.frame(perc_pair_raw$contrasts) %>% 
     dplyr::mutate(term = perc_variable, .before = dplyr::everything())
-  
-  # Also identify compact letter display (CLD)
-  perc_pair_cld <- multcompView::multcompLetters(supportR::name_vec(content = perc_pair_df$p.value, 
-                                                                    name = perc_pair_df$contrast))
-  
-  # And get that into a nice table too
-  perc_cld_df <- data.frame(term = perc_variable,
-                            LTER = names(perc_pair_cld$Letters),
-                            cld = perc_pair_cld$Letters)
-  
+
   # Add to list
   perc_pair_list[[perc_variable]] <- perc_pair_df
-  perc_cld_list[[perc_variable]] <- perc_cld_df
-  
+
 } # Close loop
 
 # Unlist
 perc_pairs <- purrr::list_rbind(x = perc_pair_list)
-perc_clds <- purrr::list_rbind(x = perc_cld_list)
 
 # If LTER was significant on its own
 if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
@@ -221,26 +209,13 @@ if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
                   lwr.ci = lwr, upr.ci = upr,
                   p.value = `p adj`)
   
-  # Get CLD vector
-  perc_lter_cld_vec <- multcompView::multcompLetters(
-    supportR::name_vec(content = perc_lter_pairs$p.value, 
-                       name = perc_lter_pairs$contrast))
-  
-  # And make that into a nice table too
-  perc_lter_cld_df <- data.frame(term = "LTER",
-                                LTER = names(perc_lter_cld_vec$Letters),
-                                cld = perc_lter_cld_vec$Letters)
-  
   # Attach each to their respective larger pairwise results object
   perc_pairs <- dplyr::bind_rows(perc_pairs, perc_lter_pairs)
-  perc_clds <- dplyr::bind_rows(perc_clds, perc_lter_cld_df)
 }
 
 # Export these too
 write.csv(x = perc_pairs, row.names = F, na = '',
           file = file.path("stats_results", "perc_change_DSi_results_pairwise.csv"))
-write.csv(x = perc_clds, row.names = F, na = '',
-          file = file.path("stats_results", "perc_change_DSi_results_clds.csv"))
 
 ## ----------------------------------------- ##
               # Mean Si Response ----
@@ -301,7 +276,6 @@ avg_ixn <- avg_results %>%
 
 # Make empty lists for outputs
 avg_pair_list <- list()
-avg_cld_list <- list()
 
 # Loop across these variables...
 for(avg_variable in gsub(pattern = ":LTER", replacement = "", x = avg_ixn$term)){
@@ -316,24 +290,13 @@ for(avg_variable in gsub(pattern = ":LTER", replacement = "", x = avg_ixn$term))
   avg_pair_df <- as.data.frame(avg_pair_raw$contrasts) %>% 
     dplyr::mutate(term = avg_variable, .before = dplyr::everything())
   
-  # Also identify compact letter display (CLD)
-  avg_pair_cld <- multcompView::multcompLetters(supportR::name_vec(content = avg_pair_df$p.value, 
-                                                                    name = avg_pair_df$contrast))
-  
-  # And get that into a nice table too
-  avg_cld_df <- data.frame(term = avg_variable,
-                            LTER = names(avg_pair_cld$Letters),
-                            cld = avg_pair_cld$Letters)
-  
   # Add to list
   avg_pair_list[[avg_variable]] <- avg_pair_df
-  avg_cld_list[[avg_variable]] <- avg_cld_df
-  
+
 } # Close loop
 
 # Unlist
 avg_pairs <- purrr::list_rbind(x = avg_pair_list)
-avg_clds <- purrr::list_rbind(x = avg_cld_list)
 
 # If LTER was significant on its own
 if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
@@ -352,24 +315,12 @@ if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
                   lwr.ci = lwr, upr.ci = upr,
                   p.value = `p adj`)
   
-  # Get CLD vector
-  avg_lter_cld_vec <- multcompView::multcompLetters(supportR::name_vec(content = avg_lter_pairs$p.value, 
-                                                                       name = avg_lter_pairs$contrast))
-  
-  # And make that into a nice table too
-  avg_lter_cld_df <- data.frame(term = "LTER",
-                                LTER = names(avg_lter_cld_vec$Letters),
-                                cld = avg_lter_cld_vec$Letters)
-  
   # Attach each to their respective larger pairwise results object
   avg_pairs <- dplyr::bind_rows(avg_pairs, avg_lter_pairs)
-  avg_clds <- dplyr::bind_rows(avg_clds, avg_lter_cld_df)
 }
 
 # Export these too
 write.csv(x = avg_pairs, row.names = F, na = '',
           file = file.path("stats_results", "avg_response_DSi_results_pairwise.csv"))
-write.csv(x = avg_clds, row.names = F, na = '',
-          file = file.path("stats_results", "avg_response_DSi_results_clds.csv"))
 
 # End ----
