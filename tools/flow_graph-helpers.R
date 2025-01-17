@@ -54,14 +54,18 @@ dir_fit_palt <- c("pos-great" = "#f5bd1f", "pos-good" = "#facb2e",
                   "neg-fine" = "#c86bfa", "neg-bad" = "#e4afff",
                   "NS" = nonsig_col, "NA" = na_col)
 ## LTER palette
-lter_palt <- c("Canada" = "#390099", "Finnish Environmental Institute" = "#374c80",
+lter_palt <- c("Canada" = "#390099", 
+               "Finnish Environmental Institute" = "#374c80", "Finland" = "#374c80",
                "GRO" = "#7a5195", "Krycklan" = "#bc5090", "MCM" = "#ef5675",
-               "NIVA" = "#ff764a", "Swedish Goverment" = "#ffa600")
+               "NIVA" = "#ff764a", "Norway" = "#ff764a", 
+               "Swedish Goverment" = "#ffa600", "Sweden" = "#ffa600")
 
 ## LTER shapes
-lter_shps <- c("Canada" = 21, "Finnish Environmental Institute" = 22,
+lter_shps <- c("Canada" = 21, 
+               "Finnish Environmental Institute" = 22, "Finland" = 22,
                "GRO" = 23, "Krycklan" = 24, "MCM" = 21,
-               "NIVA" = 25, "Swedish Goverment" = 22)
+               "NIVA" = 25, "Norway" = 25, 
+               "Swedish Goverment" = 22, "Sweden" = 22)
 
 ## ----------------------------------------- ##
 # `ggplot2` Theme
@@ -70,7 +74,5 @@ lter_shps <- c("Canada" = 21, "Finnish Environmental Institute" = 22,
 # ggplot2 theme tweaks
 theme_high_lat <- theme_bw() +
   theme(legend.title = element_blank())
-
-
 
 # End ----
