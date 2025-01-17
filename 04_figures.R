@@ -627,4 +627,51 @@ cowplot::plot_grid(avg_npp, avg_ppt, avg_snow, avg_box, avg_temp, avg_pconc, avg
 ggsave(filename = file.path("figures", "fig_sticks_si_mean.png"),
        height = 10, width = 15, units = "in")
 
+# Tidy environment
+rm(list = ls())
+
+## ----------------------------------------- ##
+  # Monthly DSi Concentration Boxplots ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in necessary data file(s)
+month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly_Conc_uM_DIN.csv"))
+
+# Do some minor wrangling
+month_v2 <- month_v1 %>% 
+  # Filter to only significant periods
+  dplyr::filter(test_p_value < 0.05) %>% 
+  # Simplify (some) LTER names
+  dplyr::mutate(LTER = dplyr::case_when(
+    LTER == "Finnish Environmental Institute" ~ "Finland",
+    LTER == "Swedish Goverment" ~ "Sweden",
+    LTER == "NIVA" ~ "Norway",
+    T ~ LTER))
+
+# Check structure
+dplyr::glimpse(month_v2)
+
+# Make figure
+ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change)) +
+  geom_boxplot(aes(fill = LTER), outlier.shape = 21) +
+  geom_jitter(aes(color = LTER), width = 0.2, shape = 19, size = 0.75, alpha = 0.6) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  facet_grid(LTER ~ ., scales = "free", axes = "all") +
+  scale_fill_manual(values = lter_palt) +
+  scale_color_manual(values = lter_palt) +
+  labs(y = "Significant DSi Concentration Change (%)", x = "LTER") +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 12))
+
+# Export as a figure
+ggsave(filename = file.path("figures", "fig_monthly-boxplot_si_conc_um.png"),
+       height = 12, width = 8, units = "in")
+
 # End ----
