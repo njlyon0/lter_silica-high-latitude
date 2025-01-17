@@ -26,7 +26,7 @@ dir.create(path = file.path("tables"), showWarnings = F)
 rm(list = ls())
 
 ## ----------------------------------------- ##
-# Stat Results Tables ----
+          # Stat Results Tables ----
 ## ----------------------------------------- ##
 
 # Read in relevant table(s)
@@ -88,5 +88,39 @@ dplyr::glimpse(stats_out)
 # Export
 write.csv(stats_out, na = '', row.names = F,
           file = file.path("tables", "summary-table_statistical-results.csv"))
+
+## ----------------------------------------- ##
+        # Pairwise Results Tables ----
+## ----------------------------------------- ##
+
+# Read in relevant table(s)
+for(pair_name in dir(path = file.path("stats_results"), pattern = "_results_pairwise.csv")){
+  
+  # Progress message
+  message("Cleaning up '", pair_name, "'")
+
+  # Read in the file
+  pair_raw <- read.csv(file = file.path("stats_results", pair_name))
+  
+  # Wrangle it as needed
+  pair_tidy <- pair_raw %>% 
+    dplyr::mutate(
+      contrast = gsub(pattern = "Goverment", replacement = "Government", 
+                      x = contrast),
+      t_value = round(x = t.ratio, digits = 2),
+      p_value = ifelse(test = p.value < 0.001,
+                       yes = "P < 0.001",
+                       no = round(x = p.value, digits = 3))
+      ) %>% 
+    dplyr::select(term, contrast, t_value, p_value)
+  
+  # Make a tidy name for this table
+  new_name <- paste0("summary-table_", pair_name)
+
+  # Export it under this name
+  write.csv(x = pair_tidy, row.names = F, na = '',
+            file = file.path("tables", new_name))
+  
+} # Close loop
 
 # End ----
