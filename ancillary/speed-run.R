@@ -8,8 +8,8 @@
 ## This script allows you (with minor modifications to 01 and 02) to quickly do just that
 
 # WARNING:
-## While this script does require you to edit 01 and/or 02, you SHOULD NOT COMMIT THOSE CHANGES
-## This script is a convenience but the edits is requires **will break 01 and 02 when run as they were intended to run**
+## While this script does require you to edit 01 and/or 02, YOU SHOULD NOT COMMIT THOSE CHANGES
+## This script is a convenience but the edits it requires **will break 01 and 02 when run as they were intended to run**
 
 # Pre-Requisites:
 ## This script assumes you've done one of the following options:
