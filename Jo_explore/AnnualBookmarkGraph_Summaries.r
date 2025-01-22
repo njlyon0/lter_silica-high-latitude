@@ -28,6 +28,7 @@ rm(list = ls())
 
 # Grab the desired data file
 full_df <- read.csv(file = file.path("stats_ready_annualfromNick", "stats-ready_annual_Conc_uM_DSi.csv")) 
+#files are in this folder - just change the file names to get desired output
 
 full_df<-full_df %>%
   # Make both 'direction + X' columns into factors so we can pick an informative order
@@ -57,8 +58,15 @@ core_df <- full_df %>%
 # Check structure
 dplyr::glimpse(core_df)
 
+# Remove McMurdo streams with incomplete chemical information
+core_df2<-core_df %>%
+  dplyr::filter(!Stream_Name %in% c("Commonwealth Stream at C1", "Crescent Stream at F8", 
+                             "Delta Stream at F10", "Harnish Creek at F7",
+                             "Onyx River at Lake Vanda Weir", "Onyx River at Lower Wright Weir",
+                             "Priscu Stream at B1")) 
+
 # Filter the simplified data object to only significant rivers with a good fit
-sig_only <- core_df %>%
+sig_only <- core_df2 %>%
   # Keep only significant slopes - including marginal
   #dplyr::filter(significance %in% c("sig", "marg")) %>%
   # Keep only significant slopes - excluding marginal
@@ -77,24 +85,29 @@ sig_only <- core_df %>%
 
 #if want marginal significant too then do this on the core_df
 
-SiZerOuts_Summary_Direction <- sig_only %>%
+##just viewing and cut/copying data - not exporting via CSV
+
+#SiZerOuts_Summary_Direction
+sig_only %>%
   dplyr::group_by(LTER, dir_sig) %>% #add in stream if want to do it by stream
   dplyr::summarize(ct=n(), 
                    avg_perChange = mean(percent_change),
                    sd_perChange = sd(percent_change)) 
 
-SiZerOuts_Summary_AvgPercentChange <- sig_only %>%
+#SiZerOuts_Summary_AvgPercentChange
+sig_only %>%
   dplyr::group_by(LTER) %>% #add in stream if want to do it by stream
   dplyr::summarize(ct=n(), 
                    avg_perChange = mean(percent_change),
                    sd_perChange = sd(percent_change)) 
 
+#total number of years
 sig_only %>%
   dplyr::group_by(LTER, dir_sig) %>%
   dplyr::summarize(ct=n()) #n results in same thing as length. #be careful if number rows proxy looking for
 #can do length(Year) to double check. n function wants nothing in the parenthese
 
-write.csv(SiZerOuts_Summary_Direction, file="SiZerOuts_Summary_Direction_Yield_Si_N.csv", row.names=FALSE)
-write.csv(SiZerOuts_Summary_AvgPercentChange, file="SiZerOuts_Summary_AvgPercentChange_Yield_Si_N.csv", row.names=FALSE)
+#write.csv(SiZerOuts_Summary_Direction, file="SiZerOuts_Summary_Direction_Yield_Si_N.csv", row.names=FALSE)
+#write.csv(SiZerOuts_Summary_AvgPercentChange, file="SiZerOuts_Summary_AvgPercentChange_Yield_Si_N.csv", row.names=FALSE)
 
 
