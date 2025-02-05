@@ -13,7 +13,7 @@
 librarian::shelf(tidyverse, googledrive, cowplot)
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("graphs"), showWarnings = F)
+#dir.create(path = file.path("graphs"), showWarnings = F)
 
 # Clear environment
 rm(list = ls())
@@ -23,7 +23,7 @@ rm(list = ls())
 ## ----------------------------------------- ##
 
 # Identify the filename
-file_name <- "stats-ready_nodriversmonthly_Conc_uM_DSi_bw5.csv"
+file_name <- "stats-ready_monthly_Conc_uM_DSi.csv"
 
 # Grab the desired data file
 full_v0 <- read.csv(file = file.path("tidy_data", file_name))
@@ -50,7 +50,7 @@ core_df <- full_df %>%
   # Arrange by LTER, site, and month
   dplyr::arrange(LTER, Stream_Name, Month) %>%
   # Pare down to only needed columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, stream, Month, 
+  dplyr::select(sizer_groups, LTER, Stream_Name, Month, 
                 chemical:section_duration, 
                 F_statistic:line_fit, 
                 slope_estimate:slope_std_error,
@@ -75,8 +75,15 @@ sig_only <- core_df %>%
   # Drop non-unique rows
   dplyr::distinct()
 
+# Remove McMurdo streams with incomplete chemical information
+sig_only2<-sig_only %>%
+  dplyr::filter(!Stream_Name %in% c("Commonwealth Stream at C1", "Crescent Stream at F8", 
+                                    "Delta Stream at F10", "Harnish Creek at F7",
+                                    "Onyx River at Lake Vanda Weir", "Onyx River at Lower Wright Weir",
+                                    "Priscu Stream at B1")) 
+
 # Check it out
-dplyr::glimpse(sig_only)
+dplyr::glimpse(sig_only2)
 
 
 ## ----------------------------------------- ##
@@ -105,10 +112,13 @@ aov_process <- function(aov){
 
 # Make an empty list to store all of our extracted information
 # Pare down to needed columns and unique rows
-sig_simp <- sig_only %>%
-  dplyr::select(LTER, stream, Month, section_duration, percent_change) %>%
+sig_simp <- sig_only2 %>%
+  dplyr::select(LTER, Stream_Name, Month, section_duration, percent_change) %>%
   dplyr::distinct()
 names(sig_simp)
+unique(sig_simp$LTER)
+MCM<-subset(sig_simp, sig_simp$LTER=="MCM")
+unique(MCM$Stream_Name)
 
 giant_list <- list()
 #Z score is effect size (check function help file for units - maybe unitless)
@@ -119,7 +129,7 @@ for(ltername in unique(sig_simp$LTER)){
   one_lter<- sig_simp %>%
     filter(LTER==ltername)
   
-  si_conc_mod1 <- RRPP::lm.rrpp(percent_change ~ stream * as.factor(Month),
+  si_conc_mod1 <- RRPP::lm.rrpp(percent_change ~ Stream_Name * as.factor(Month),
                                 cov=TRUE, data = one_lter, iter = 999)
   si_conc_aov1 <- anova(si_conc_mod1, effect.type = "F")
   si_conc_table1 <- aov_process(si_conc_aov1) %>%
