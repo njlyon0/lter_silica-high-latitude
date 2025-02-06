@@ -112,9 +112,69 @@ mean_corplot <- mean_df %>%
 dev.off()
 
 ## ----------------------------------------- ##
-        # % Change Si Response ----
+        # % Change Si Response within LTER both across streams and across months ----
 ## ----------------------------------------- ##
+#read in monthly data 
 
+# Read in desired (prepared) output
+df_v2 <- read.csv(file = file.path("data", "stats-ready_monthly_Conc_uM_DSi.csv"))
+names(df_v2)
+# Pre-statistics wrangling
+si_conc_v2 <- df_v2 %>% 
+  # Pare down to only what is needed
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical, Month,
+                mean_response, percent_change,
+                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+  dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
+                -dplyr::contains("_FNConc_"),
+                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
+                -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
+                -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
+  # Change certain column names to be more informative
+  dplyr::rename(mean_si_conc = mean_response,
+                perc.change_si_conc = percent_change) %>% 
+  # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
+  dplyr::distinct()
+
+
+#Below looking within LTER to see if streams behave the same
+for(ltername in unique(si_conc_v2$LTER)){
+  message("processing LTER:", ltername)
+  one_lter<- si_conc_v2 %>%
+    filter(LTER==ltername)
+  
+  aov_perc.change <- lm(perc.change_si_conc ~ Stream_Name + as.factor(Month),
+                data = one_lter)
+  
+  
+  # Extract top-level results
+  perc_results1 <- as.data.frame(stats::anova(object = aov_perc.change)) %>%
+    # Get terms into column
+    tibble::rownames_to_column(.data = ., var = "term") %>% 
+    # Drop sum/mean squares columns
+    dplyr::select(-`Sum Sq`, -`Mean Sq`) %>% 
+    # Rename other columns
+    dplyr::rename(deg_free = Df,
+                  f_stat = `F value`,
+                  p_value = `Pr(>F)`) %>% 
+    # Remove residuals
+    dplyr::filter(term != "Residuals") %>% 
+    # Identify significance
+    dplyr::mutate(sig = ifelse(test = p_value < 0.05, yes = "yes", no = "no")) %>%
+    mutate(LTER = ltername, .before=everything())
+  
+  # Export results
+  write.csv(x = perc_results1, row.names = F, na = '',
+            file = file.path("stats_results", paste0("perc_change_DSi_results", ltername,".csv")))
+  
+  }
+
+
+## ----------------------------------------- ##
+# % Change Si Response across LTERs ----
+## ----------------------------------------- ##  
+
+#Below is looking across LTERs
 # Q: Is percent change (of DSi) affected by driver x LTER interactions?
 perc_lm <- lm(perc.change_si_conc ~ scaled_slope_npp_kgC.m2.year + 
                 scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
