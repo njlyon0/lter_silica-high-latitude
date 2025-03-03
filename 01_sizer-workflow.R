@@ -424,6 +424,6 @@ dplyr::glimpse(combo_v4)
 # Export that combination object locally
 ## Can use special folder name as *file name* to ensure informative naming conventions
 write.csv(x = combo_v4, na = "", row.names = F,
-          file = file.path("data", paste0("sizer-outs_", output_dir, ".csv")))
+          file = file.path("data", data_outs, paste0("sizer-outs_", graph_outs, ".csv")))
 
 # End ----
