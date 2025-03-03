@@ -24,22 +24,19 @@
 librarian::shelf(tidyverse, SiZer, supportR, lter/HERON)
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 # Make needed folder(s)
 dir.create(path = file.path("data"), showWarnings = F)
+dir.create(path = file.path("graphs"), showWarnings = F)
 
 # Download the data you need (or put it in the "data" folder manually)
 ## Note that you *must* have access to the relevant Shared Google Drive for this to work
 # source("00_data-download.R")
 
 # Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
+purrr::walk(.x = dir(path = file.path("tools"), pattern = "fxn_"),
+           .f = ~ source(file.path("tools", .x)))
 
 ## ----------------------------------------- ##
           # General SiZer Prep ----
@@ -123,9 +120,23 @@ if(!"season" %in% names(wrtds_v3)){
 # Check structure
 dplyr::glimpse(wrtds_v4)
 
+# Remove months from McMurdo for which there shouldn't be data
+wrtds_v5 <- wrtds_v4 %>% 
+  dplyr::filter(LTER != "MCM" |
+                  (LTER == "MCM" & Month %in% c("x", 12, 1, 2)))
+
+# Check that worked
+wrtds_v5 %>% 
+  dplyr::filter(LTER == "MCM") %>% 
+  dplyr::pull(Month) %>%
+  unique()
+
 ## ----------------------------------------- ##
           # Variable Selection ----
 ## ----------------------------------------- ##
+
+# Make a "final" version of the WRTDS data
+wrtds_v99 <- wrtds_v5
 
 # Choose response/explanatory variables of interest & focal chemical
 response <- "Yield"
@@ -133,20 +144,24 @@ explanatory <- "Year"
 element <- "DSi"
 
 # Check that combination of variables works
-var_check(data = wrtds_v4, chem = element, 
+var_check(data = wrtds_v5, chem = element, 
           resp_var = response, exp_var = explanatory)
 
 # Prepare just the desired pieces of information
-wrtds_focal <- wrtds_v4 %>% 
+wrtds_focal <- wrtds_v99 %>% 
   dplyr::select(LTER:chemical, dplyr::starts_with(response)) %>% 
   dplyr::filter(chemical == element)
 
 # Check structure
 dplyr::glimpse(wrtds_focal)
 
-# Create a folder for outputs
-(output_dir = paste(temporal_res, response, element, sep = "_"))
-dir.create(path = file.path(output_dir), showWarnings = F)
+# Create needed data sub-folder(s)
+## Data output
+(data_outs <- paste0("sizer-outs_", temporal_res))
+dir.create(path = file.path("data", data_outs), showWarnings = F)
+## Diagnostic graph outputs
+(graph_outs = paste(temporal_res, response, element, sep = "_"))
+dir.create(path = file.path("graphs", graph_outs), showWarnings = F)
 
 ## ----------------------------------------- ##
           # Core SiZer Workflow ----

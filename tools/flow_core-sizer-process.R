@@ -32,7 +32,7 @@ sizer_obj <- SiZer::SiZer(x = wrtds_core[[explanatory]], y = wrtds_core[[respons
                           h = c(2, 10), degree = 1, derv = 1, grid.length = 100)
 
 # Plot (and export) the SiZer object with horizontal lines of interest
-png(filename = file.path(output_dir, paste0(core_id, "_SiZer-plot.png")),
+png(filename = file.path("graphs", graph_outs, paste0(core_id, "_SiZer-plot.png")),
     width = 5, height = 5, res = 720, units = 'in')
 HERON::sizer_plot(sizer_object = sizer_obj, bandwidth_vec = 5)
 dev.off()
@@ -99,7 +99,7 @@ if(nrow(sizer_info) == 0){
 }
 
 # Export whichever graph got made
-ggplot2::ggsave(filename = file.path(output_dir, paste0(core_id, "_ggplot.png")),
+ggplot2::ggsave(filename = file.path("graphs", graph_outs, paste0(core_id, "_ggplot.png")),
                 height = 8, width = 8)
 
 # Wrangle SiZer output for export
