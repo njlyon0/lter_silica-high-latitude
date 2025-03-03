@@ -22,20 +22,26 @@
 
 # For this to work, you need to comment out the following lines in the 01 script
 ## line 27 (environment clearing)
-## line 133 (element definition)
+## line 142 (response definition)
+## line 144 (element definition)
 
 # DO NOT COMMIT THOSE CHANGES
 ## Comment out those lines, save the file, run this script, then delete the '#' and re-save the file
 
-# Loop across all available elements
-for(element in c("DSi", "DIN", "P", "Si_DIN", "Si_P")){
+# Loop across all available response variables
+for(response in c("Yield", "FNYield", "Conc_uM", "FNConc_uM")){
+  ## response <- Yield
   
-  # Loop across script
-  source(file.path("01_sizer-workflow.R"))
-  
-  # Clear environment / collect garbage
-  rm(list = ls()); gc()
-}
+  # Loop across all available elements
+  for(element in c("DSi", "DIN", "P", "Si_DIN", "Si_P")){
+    
+    # Loop across script
+    source(file.path("01_sizer-workflow.R"))
+    
+    # Clear environment / collect garbage
+    rm(list = ls()); gc()
+  } # Close chem loop
+} # Close resp loop
 
 ## ----------------------------------------- ##
 # Speed Run: Stats-Prep (02) ----
