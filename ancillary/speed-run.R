@@ -30,7 +30,7 @@
 
 # Loop across all available response variables
 for(response in c("Yield", "FNYield", "Conc_uM", "FNConc_uM")){
-  ## response <- Yield
+  ## response <- "Yield"
   
   # Loop across all available elements
   for(element in c("DSi", "DIN", "P", "Si_DIN", "Si_P")){
@@ -38,9 +38,11 @@ for(response in c("Yield", "FNYield", "Conc_uM", "FNConc_uM")){
     # Loop across script
     source(file.path("01_sizer-workflow.R"))
     
-    # Clear environment / collect garbage
-    rm(list = ls()); gc()
   } # Close chem loop
+  
+  # Clear environment / collect garbage
+  rm(list = ls()); gc()
+  
 } # Close resp loop
 
 ## ----------------------------------------- ##
