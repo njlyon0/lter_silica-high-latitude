@@ -23,7 +23,7 @@ rm(list = ls())
 
 # Make needed folder(s)
 dir.create(path = file.path("data"), showWarnings = F)
-dir.create(path = file.path("map_data"), showWarnings = F)
+dir.create(path = file.path("data", "map-data"), showWarnings = F)
 
 ## ----------------------------------------- ##
         # WRTDS Outputs Download ----
@@ -43,7 +43,7 @@ purrr::walk2(.x = wrtds_files$id, .y = wrtds_files$name,
                                                 path = file.path("data", .y)))
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
       # Spatial Drivers Download ----
@@ -63,10 +63,10 @@ driver_name <- "all-data_si-extract_2.csv"
 # Download that file
 purrr::walk2(.x = driver_outs$id, .y = driver_outs$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("data", driver_name)))
+                                                path = file.path("data", "map-data", driver_name)))
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
         # Reference Table Download ----
@@ -80,13 +80,12 @@ ref_out <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google
 ref_out
 
 # Download it
-purrr::walk2(.x = ref_out$id, 
-             .y = paste0(ref_out$name, ".csv"),
-             .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+purrr::walk2(.x = ref_out$id, .y = ref_out$name,
+             .f = ~ googledrive::drive_download(file = .x, overwrite = T, type = "csv",
                                                 path = file.path("data", .y)))
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
       # Permafrost Raster Download ----
@@ -102,9 +101,9 @@ pf_out
 # Download it
 purrr::walk2(.x = pf_out$id, .y = pf_out$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
-                                                path = file.path("map_data", .y)))
+                                                path = file.path("data", "map-data", .y)))
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 # End ----
