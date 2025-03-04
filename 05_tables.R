@@ -20,18 +20,18 @@
 librarian::shelf(tidyverse)
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("tables"), showWarnings = F)
+dir.create(path = file.path("data", "tables"), showWarnings = F, recursive = T)
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
           # Stat Results Tables ----
 ## ----------------------------------------- ##
 
 # Read in relevant table(s)
-mean_stats_v1 <- read.csv(file = file.path("stats_results", "avg_response_DSi_results.csv"))
-perc_stats_v1 <- read.csv(file = file.path("stats_results", "perc_change_DSi_results.csv"))
+mean_stats_v1 <- read.csv(file = file.path("data", "stats-results", "avg_response_DSi_results.csv"))
+perc_stats_v1 <- read.csv(file = file.path("data", "stats-results", "perc_change_DSi_results.csv"))
 
 # Check structure
 dplyr::glimpse(mean_stats_v1)
@@ -87,20 +87,20 @@ dplyr::glimpse(stats_out)
 
 # Export
 write.csv(stats_out, na = '', row.names = F,
-          file = file.path("tables", "summary-table_statistical-results.csv"))
+          file = file.path("data", "tables", "summary-table_statistical-results.csv"))
 
 ## ----------------------------------------- ##
         # Pairwise Results Tables ----
 ## ----------------------------------------- ##
 
 # Read in relevant table(s)
-for(pair_name in dir(path = file.path("stats_results"), pattern = "_results_pairwise.csv")){
+for(pair_name in dir(path = file.path("data", "stats-results"), pattern = "_results_pairwise.csv")){
   
   # Progress message
   message("Cleaning up '", pair_name, "'")
 
   # Read in the file
-  pair_raw <- read.csv(file = file.path("stats_results", pair_name))
+  pair_raw <- read.csv(file = file.path("data", "stats-results", pair_name))
   
   # Wrangle it as needed
   pair_tidy <- pair_raw %>% 
@@ -119,7 +119,7 @@ for(pair_name in dir(path = file.path("stats_results"), pattern = "_results_pair
 
   # Export it under this name
   write.csv(x = pair_tidy, row.names = F, na = '',
-            file = file.path("tables", new_name))
+            file = file.path("data", "tables", new_name))
   
 } # Close loop
 
