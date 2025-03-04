@@ -56,11 +56,14 @@ for(response in c("Yield", "FNYield", "Conc_uM", "FNConc_uM")){
 # DO NOT COMMIT THOSE CHANGES
 ## Comment out those lines, save the file, run this script, then delete the '#' and re-save the file
 
+# Identify temporal res
+temporal_res <- "annual"
+
 # Identify relevant files
-for(focal_file in dir(path = file.path("data", "sizer-outs_monthly"))){
+for(focal_file in dir(path = file.path("data", paste0("sizer-outs_", temporal_res)))){
   
   # Identify file with path
-  sizer_file <- file.path("sizer-outs_monthly", focal_file)
+  sizer_file <- file.path(paste0("sizer-outs_", temporal_res), focal_file)
   
   # Loop across 'stats prep' script
   source(file.path("02_stats-prep.R"))
