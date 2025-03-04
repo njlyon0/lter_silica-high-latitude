@@ -50,14 +50,17 @@ for(response in c("Yield", "FNYield", "Conc_uM", "FNConc_uM")){
 ## ----------------------------------------- ##
 
 # For this to work, you need to comment out the following lines in the 02 script
-## line 22 (environment clearing)
-## line 33-35 (defining of input file object)
+## line 26 (environment clearing)
+## line 33-34 (defining of input file object)
 
 # DO NOT COMMIT THOSE CHANGES
 ## Comment out those lines, save the file, run this script, then delete the '#' and re-save the file
 
 # Identify relevant files
-for(sizer_file in dir(path = file.path("data"), pattern = "sizer-outs_monthly_")){
+for(focal_file in dir(path = file.path("data", "sizer-outs_monthly"))){
+  
+  # Identify file with path
+  sizer_file <- file.path("sizer-outs_monthly", focal_file)
   
   # Loop across 'stats prep' script
   source(file.path("02_stats-prep.R"))
