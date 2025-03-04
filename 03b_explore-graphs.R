@@ -19,18 +19,14 @@
 librarian::shelf(tidyverse, cowplot)
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("graphs"), showWarnings = F)
+dir.create(path = file.path("graphs", "explore"), showWarnings = F, recursive = T)
 
 # Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
+purrr::walk(.x = dir(path = file.path("tools"), pattern = "fxn_"),
+            .f = ~ source(file.path("tools", .x)))
 
 # Load graph helpers
 source(file.path("tools", "flow_graph-helpers.R"))
@@ -43,7 +39,7 @@ prepped_file <- "stats-ready_monthly_Conc_uM_DSi.csv"
 (graph_prefix <- gsub(pattern = "stats-ready_|\\.csv", replacement = "", x = prepped_file))
 
 # Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", prepped_file)) %>% 
+df_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", prepped_file)) %>% 
   # Replace NAs with "NA" in some columns
   dplyr::mutate(dplyr::across(.cols = c(dir_sig, dir_fit),
                               .fns = ~ ifelse(test = is.na(.x) == T,
@@ -99,7 +95,7 @@ bookmark_graph(data = core_df, color_var = "dir_sig", colors = dir_p_palt) +
   theme_high_lat
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_full-data_sig-bookmark.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_full-data_sig-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 # Make another for line direction & R2 (instead of P value)
@@ -107,7 +103,7 @@ bookmark_graph(data = core_df, color_var = "dir_fit", colors = dir_fit_palt) +
   theme_high_lat
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_full-data_fit-bookmark.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_full-data_fit-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
@@ -119,7 +115,7 @@ bookmark_graph(data = sig_only, color_var = "dir_sig", colors = dir_p_palt) +
   theme_high_lat
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_sig-bookmark.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_sig-data_sig-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 # Make another for line direction & R2 (instead of P value)
@@ -127,7 +123,7 @@ bookmark_graph(data = sig_only, color_var = "dir_fit", colors = dir_fit_palt) +
   theme_high_lat
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_sig-data_fit-bookmark.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_sig-data_fit-bookmark.png")),
        height = 8, width = 7, units = "in")
 
 ## ----------------------------------------- ##
@@ -152,7 +148,7 @@ ggplot(sig_simp, aes(x = slope_estimate, y = Stream_Name, fill = section_duratio
   theme(legend.position = "inside", legend.position.inside = c(0.9, 0.85))
 
 # Export this graph!
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_slope-duration-barplot.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_slope-duration-barplot.png")),
        width = 12, height = 8, units = "in")
 
 ## ----------------------------------------- ##
@@ -174,7 +170,7 @@ ggplot(sig_simp, aes(x = percent_change, y = Stream_Name, fill = section_duratio
   theme(legend.position = "inside", legend.position.inside = c(0.1, 0.15))
 
 # Export this graph
-ggsave(filename = file.path("graphs", paste0(graph_prefix, "_perc-change-duration-barplot.png")),
+ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_perc-change-duration-barplot.png")),
        width = 12, height = 8, units = "in")
 
 # End ----
