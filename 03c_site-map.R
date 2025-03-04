@@ -29,7 +29,7 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", prepped_file))
+df_v1 <- read.csv(file = file.path("data", "stats-ready_annual", prepped_file))
 
 # Check structure
 dplyr::glimpse(df_v1)
@@ -61,10 +61,10 @@ dplyr::glimpse(site_df)
 ## Note that I re-projected into WGS84 to match CRS of rivers
 
 # Need to process permafrost raster if it's not already present
-if("permafrost-simple.tif" %in% dir(path = file.path("map_data")) != T){
+if("permafrost-simple.tif" %in% dir(path = file.path("data", "map-data")) != T){
   
   # Read in permafrost data
-  pf <- terra::rast(x = file.path("map_data", "permafrost-probability.tif"))
+  pf <- terra::rast(x = file.path("data", "map-data", "permafrost-probability.tif"))
   
   # Exploratory plot to make sure it looks OK
   plot(pf, axes = T, main = "Permafrost probability")
@@ -88,7 +88,7 @@ if("permafrost-simple.tif" %in% dir(path = file.path("map_data")) != T){
   
   # Export our modified raster
   terra::writeRaster(x = pf_v3, overwrite = T,
-                     filename = file.path("map_data", "permafrost-simple.tif"))
+                     filename = file.path("data", "map-data", "permafrost-simple.tif"))
   
   # Clean up environment & collect garbage
   rm(list = setdiff(x = ls(), y = c("site_df"))); gc() }
@@ -98,7 +98,7 @@ if("permafrost-simple.tif" %in% dir(path = file.path("map_data")) != T){
 ## ------------------------------------------ ##
 
 # Read in permafrost data
-pf_stars <- stars::read_stars(.x = file.path("map_data", "permafrost-simple.tif"))
+pf_stars <- stars::read_stars(.x = file.path("data", "map-data", "permafrost-simple.tif"))
 
 # Get country & US state borders
 borders <- sf::st_as_sf(maps::map(database = "world", plot = F, fill = T)) %>%
