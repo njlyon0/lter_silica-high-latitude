@@ -19,8 +19,8 @@
 librarian::shelf(tidyverse, readxl, supportR)
 
 # Create needed sub-folder(s)
-dir.create(file.path("data", "stats-ready_monthly"))
-dir.create(file.path("data", "stats-ready_annual"))
+dir.create(file.path("data", "stats-ready_monthly"), showWarnings = F)
+dir.create(file.path("data", "stats-ready_annual"), showWarnings = F)
 
 # Clear environment
 rm(list = ls()); gc()
