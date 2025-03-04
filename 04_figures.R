@@ -15,7 +15,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, cowplot)
+librarian::shelf(tidyverse, cowplot, supportR)
 
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs", "figures"), showWarnings = F, recursive = T)
@@ -714,6 +714,94 @@ ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, fill = 
 
 # Export as a figure
 ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_fnconc_um.png"),
+       height = 12, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# FN vs. Actual Concentration ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in necessary data file(s)
+df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
+                                   pattern = "_Conc_uM_"),
+                          .f = ~ read.csv(file = file.path("data", "stats-ready_annual", .x))) %>% 
+  # Stack them vertically
+  purrr::list_rbind(x = .) %>% 
+  # Add column for normalization
+  dplyr::mutate(normalize = "Not")
+
+# Do same for flow-normalized equivalents
+df_fnconc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
+                                 pattern = "_Conc_uM_"),
+                        .f = ~ read.csv(file = file.path("data", "stats-ready_annual", .x))) %>% 
+  purrr::list_rbind(x = .) %>% 
+  dplyr::mutate(normalize = "FN")
+
+# Combine these two
+df_combo <- dplyr::bind_rows(df_conc, df_fnconc) %>% 
+  # Drop Canada (lacks many chemicals)
+  dplyr::filter(!LTER %in% c("Canada")) %>% 
+  # Keep only significant slopes - excluding marginal
+  # dplyr::filter(significance %in% c("sig")) %>% # excluding for now
+  # Keep only certain durations of trends
+  dplyr::filter(section_duration >= 5) %>% 
+  # Pare down to only desired columns
+  dplyr::select(normalize, sizer_groups, LTER, Stream_Name, chemical, mean_response, percent_change) %>% 
+  # Standardize names of LTERs / chemicals
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
+  # Order chemicals
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", "Si:DIP", "DIP"))) %>% 
+  # Make normalization method + chemical column
+  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
+
+# Check structure
+dplyr::glimpse(df_combo)
+
+# Summarize as well for mean +/- SE bars
+df_summary <- supportR::summary_table(data = df_combo, response = "percent_change",
+                                      groups = c("normalize", "LTER", "chemical")) %>% 
+  # Make LTER + chemical column
+  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
+
+# Check that out
+dplyr::glimpse(df_summary)
+
+# Generate desired graph
+ggplot(df_combo, aes(x = normalize, y = percent_change)) +
+  geom_hline(yintercept = 0, linetype = 3, linewidth = 0.5) +
+  geom_jitter(aes(color = norm_chem), width = 0.15, alpha = 0.25) +
+  geom_violin(aes(fill = norm_chem), alpha = 0.2) +
+  # Facet by LTER & chemical
+  facet_grid(LTER ~ chemical, scales = "free_y") +
+  # Add averaged points with SE bars
+  geom_point(data = df_summary, aes(x = normalize, y = mean, 
+                                    fill = norm_chem, shape = normalize), 
+             size = 3) +
+  geom_errorbar(data = df_summary, aes(x = normalize, y = mean, 
+                                       ymax = mean + std_error, 
+                                       ymin = mean - std_error), width = 0) +
+  # Aesthetic customization
+  labs(x = "Flow-Normalization Status", 
+       y = "Significant Changes in Concentration (Mean % Change ± SE)") +
+  scale_color_manual(values = normchem_palt) +
+  scale_fill_manual(values = normchem_palt) +
+  scale_shape_manual(values = c("FN" = 24, "Not" = 21)) +
+  theme_high_lat +
+  theme(legend.position = "none",
+        strip.text.y = element_text(size = 11))
+
+# Export locally
+ggsave(filename = file.path("graphs", "figures", "fig_conc-vs-fnconc.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
