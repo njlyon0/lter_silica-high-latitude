@@ -18,10 +18,10 @@
 librarian::shelf(tidyverse, cowplot)
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("figures"), showWarnings = F)
+dir.create(path = file.path("graphs", "figures"), showWarnings = F, recursive = T)
 
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
         # Discharge Bookmark Figure ----
@@ -32,7 +32,7 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_lter-ct.R"))
 
 # Read in discharge data
-df_q <- read.csv(file = file.path("data", "stats-ready_annual_Discharge_cms_DSi.csv")) %>% 
+df_q <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Discharge_cms_DSi.csv")) %>% 
   # Remove McMurdo streams with incomplete chemical information
   dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
                                     "MCM_Delta Stream  ", "MCM_Harnish Creek ",
@@ -103,7 +103,7 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
         legend.position.inside = c(0.425, 0.88))
 
 # Export graph
-ggsave(filename = file.path("figures", "fig_bookmark-discharge.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_bookmark-discharge.png"),
        height = 9, width = 5, units = "in")
 
 # Tidy environment
@@ -118,7 +118,7 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_lter-ct.R"))
 
 # Identify conserved file stem
-file_stem <- "stats-ready_annual_"
+file_stem <- "stats-ready_annual"
 
 # Loop across response variables
 for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
@@ -130,15 +130,12 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
   resp_lab_v3 <- gsub(pattern = "uM", replacement = "uM)", x = resp_lab_v2)
   resp_lab <- gsub(pattern = "FN", replacement = "Flow Normalized ", x = resp_lab_v3)
   
-  # Assemble into a full file for each chemical
-  df_si <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_DSi.csv")))
-  df_n <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_DIN.csv")))
-  df_p <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_P.csv")))
-  df_si.n<- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_Si_DIN.csv")))
-  df_si.p <- read.csv(file = file.path("data", paste0(file_stem, file_resp, "_Si_P.csv")))
-  
-  # Combine into a single object that loses nothing
-  df_chem_all <- dplyr::bind_rows(df_si, df_n, df_p, df_si.n, df_si.p) %>% 
+  # Read in all chemical for this response
+  df_chem_all <- purrr::map(.x = dir(path = file.path("data", file_stem),
+                                   pattern = paste0("_", file_resp, "_")),
+                          .f = ~ read.csv(file = file.path("data", file_stem, .x))) %>% 
+    # Stack them vertically
+    purrr::list_rbind(x = .) %>% 
     # Remove McMurdo streams with incomplete chemical information
     dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
                                       "MCM_Delta Stream  ", "MCM_Harnish Creek ",
@@ -239,20 +236,20 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
                      nrow = 1, labels = "")
   
   # And export it
-  ggsave(filename = file.path("figures", paste0("fig_bookmark-chemicals_", 
+  ggsave(filename = file.path("graphs", "figures", paste0("fig_bookmark-chemicals_", 
                                                 tolower(file_resp), ".png")),
          height = 9, width = 15, units = "in")
   
   # Assemble & export the second figure (ratios only)
   cowplot::plot_grid(chem_bookmarks[["Si:DIN"]], chem_bookmarks[["Si:DIP"]], nrow = 1)
-  ggsave(filename = file.path("figures", paste0("fig_bookmark-chemical-ratios_", 
+  ggsave(filename = file.path("graphs", "figures", paste0("fig_bookmark-chemical-ratios_", 
                                                 tolower(file_resp), ".png")),
          height = 9, width = 10, units = "in")
   
 } # Close response variable loop
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
           # Strip Boxplot Figure ----
@@ -263,9 +260,9 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_lter-ct.R"))
 
 # Read in specifically the annual concentration data for the three chemicals
-df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
-df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DIN.csv"))
-df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv"))
+df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
+df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DIN.csv"))
+df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_P.csv"))
 
 # Bind them together
 df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p) %>% 
@@ -347,11 +344,11 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
         strip.text = element_text(size = 15))
 
 # Export graph
-ggsave(filename = file.path("figures", "fig_boxplot-chemicals_conc_um.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals_conc_um.png"),
        height = 7, width = 10, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
     # Strip Boxplot Figure - Zoom In ----
@@ -366,9 +363,9 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_lter-ct.R"))
 
 # Read in specifically the annual concentration data for the three chemicals
-df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
-df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DIN.csv"))
-df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_P.csv"))
+df_conc_si <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
+df_conc_n <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DIN.csv"))
+df_conc_p <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_P.csv"))
 
 # Combine chemical datasets
 df_conc_all <- dplyr::bind_rows(df_conc_si, df_conc_n, df_conc_p) %>% 
@@ -441,11 +438,11 @@ ggplot(df_conc_sub, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
         strip.text = element_text(size = 15))
 
 # Export graph
-ggsave(filename = file.path("figures", "fig_boxplot-chemicals-zoom_conc_um.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals-zoom_conc_um.png"),
        height = 7, width = 10, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
   # 'Pick Up Sticks' DSi % Change Figure ----
@@ -456,7 +453,7 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_stick-graph.R"))
 
 # Read in DSi data
-si_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+si_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
 
 # Process this as needed
 si_v2 <- si_v1 %>% 
@@ -534,11 +531,11 @@ cowplot::plot_grid(perc_npp, perc_ppt, perc_snow, perc_box, perc_temp, perc_pcon
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("figures", "fig_sticks_si_perc-change.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
   # 'Pick Up Sticks' Mean DSi Figure ----
@@ -549,7 +546,7 @@ source(file.path("tools", "flow_graph-helpers.R"))
 source(file.path("tools", "fxn_stick-graph.R"))
 
 # Read in DSi data
-si_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+si_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
 
 # Process this as needed
 si_v2 <- si_v1 %>% 
@@ -626,11 +623,11 @@ cowplot::plot_grid(avg_npp, avg_ppt, avg_snow, avg_box, avg_temp, avg_pconc, avg
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("figures", "fig_sticks_si_mean.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
   # Monthly DSi Concentration Boxplots ----
@@ -640,7 +637,7 @@ rm(list = ls())
 source(file.path("tools", "flow_graph-helpers.R"))
 
 # Read in necessary data file(s)
-month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly_Conc_uM_DSi.csv"))
+month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv"))
 
 # Do some minor wrangling
 month_v2 <- month_v1 %>% 
@@ -671,11 +668,11 @@ ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, fill = 
         strip.text = element_text(size = 12))
 
 # Export as a figure
-ggsave(filename = file.path("figures", "fig_monthly-boxplot_si_conc_um.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_conc_um.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
 # Monthly DSi Flow-Normalized Conc. Boxplots ----
@@ -685,7 +682,7 @@ rm(list = ls())
 source(file.path("tools", "flow_graph-helpers.R"))
 
 # Read in necessary data file(s)
-month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly_FNConc_uM_DSi.csv"))
+month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_FNConc_uM_DSi.csv"))
 
 # Do some minor wrangling
 month_v2 <- month_v1 %>% 
@@ -716,10 +713,10 @@ ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, fill = 
         strip.text = element_text(size = 12))
 
 # Export as a figure
-ggsave(filename = file.path("figures", "fig_monthly-boxplot_si_fnconc_um.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_fnconc_um.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 # End ----
