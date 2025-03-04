@@ -67,6 +67,14 @@ lter_shps <- c("Canada" = 21,
                "NIVA" = 25, "Norway" = 25, 
                "Swedish Goverment" = 22, "Sweden" = 22)
 
+# Palette for 'norm chem'
+## I.e., flow-normalized versus not & chemical
+normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",
+                   "Not_Si:DIN" = "#b79ced", "FN_Si:DIN" = "#9d4edd", 
+                   "Not_DSi" = "#a2d6f9", "FN_DSi" = "#0077b6", 
+                   "Not_Si:DIP" = "#9ef01a", "FN_Si:DIP" = "#38b000",  
+                   "Not_DIP" = "#ffea00", "FN_DIP" = "#ffaa00")
+
 ## ----------------------------------------- ##
 # `ggplot2` Theme
 ## ----------------------------------------- ##
