@@ -69,7 +69,7 @@ for(focal_file in dir(path = file.path("data", paste0("sizer-outs_", temporal_re
   source(file.path("02_stats-prep.R"))
   
   # Clear environment / collect garbage
-  rm(list = ls()); gc()
+  rm(list = setdiff(x = ls(), y = "temporal_res")); gc()
 }
 
 # End ----
