@@ -18,21 +18,20 @@
 # install.packages("librarian")
 librarian::shelf(tidyverse, readxl, supportR)
 
+# Create needed sub-folder(s)
+dir.create(file.path("data", "stats-ready_monthly"))
+dir.create(file.path("data", "stats-ready_annual"))
+
 # Clear environment
-rm(list = ls())
+rm(list = ls()); gc()
 
 # Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
+purrr::walk(.x = dir(path = file.path("tools"), pattern = "fxn_"),
+            .f = ~ source(file.path("tools", .x)))
 
 # Identify desired SiZer output
-sizer_file <- "sizer-outs_annual_Discharge_cms_DSi.csv"
-# sizer_file <- "sizer-outs_seasonal_Conc_uM_DSi.csv"
-# sizer_file <- "sizer-outs_monthly_Conc_uM_DSi.csv"
+# sizer_file <- file.path("sizer-outs_annual", "sizer-outs_annual_Discharge_cms_DSi.csv")
+sizer_file <- file.path("sizer-outs_monthly", "sizer-outs_monthly_Conc_uM_DSi.csv")
 
 # Read in that SiZer output
 sizer_v1 <- read.csv(file = file.path("data", sizer_file))
