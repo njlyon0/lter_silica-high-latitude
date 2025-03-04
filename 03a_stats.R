@@ -18,22 +18,18 @@
 #install.packages("librarian")
 librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot)
 
-# Clear environment
-rm(list = ls())
-
 # Make needed folder(s)
-dir.create(path = file.path("stats_results"), showWarnings = F)
+dir.create(path = file.path("data", "stats-results"), showWarnings = F, recursive = T)
+
+# Clear environment
+rm(list = ls()); gc()
 
 # Load custom functions
-for(fxn in dir(path = file.path("tools"), pattern = "fxn_")){
-  source(file.path("tools", fxn))
-}
-
-## And remove loop index object from environment
-rm(list = "fxn")
+purrr::walk(.x = dir(path = file.path("tools"), pattern = "fxn_"),
+            .f = ~ source(file.path("tools", .x)))
 
 # Read in desired (prepared) output
-df_v1 <- read.csv(file = file.path("data", "stats-ready_annual_Conc_uM_DSi.csv"))
+df_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
 
 # Check structure
 dplyr::glimpse(df_v1)
@@ -86,7 +82,7 @@ slope_df <- si_conc_v2 %>%
   dplyr::distinct()
 
 # Generate and export the correlation plot
-png(filename = file.path("stats_results", "perc_change_corrplot.png"),
+png(filename = file.path("data", "stats-results", "perc_change_corrplot.png"),
     height = 7, width = 7, units = "in", res = 560)
 ## Generate plot
 slope_corplot <- slope_df %>% 
@@ -102,7 +98,7 @@ mean_df <- si_conc_v2 %>%
   dplyr::distinct()
 
 ## Generate and export the correlation plot
-png(filename = file.path("stats_results", "avg_response_corrplot.png"),
+png(filename = file.path("data", "stats-results", "avg_response_corrplot.png"),
     height = 7, width = 7, units = "in", res = 560)
 
 mean_corplot <- mean_df %>% 
@@ -112,15 +108,17 @@ mean_corplot <- mean_df %>%
 dev.off()
 
 ## ----------------------------------------- ##
-        # % Change Si Response within LTER both across streams and across months ----
+# % Change Si Response within LTER Across Months ----
 ## ----------------------------------------- ##
-#read in monthly data 
 
-# Read in desired (prepared) output
-df_v2 <- read.csv(file = file.path("data", "stats-ready_monthly_Conc_uM_DSi.csv"))
-names(df_v2)
+# Read in monthly (prepared) output
+month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv"))
+
+# Check structure
+dplyr::glimpse(month_v1)
+
 # Pre-statistics wrangling
-si_conc_v2 <- df_v2 %>% 
+month_v2 <- month_v1 %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical, Month,
                 mean_response, percent_change,
@@ -136,19 +134,24 @@ si_conc_v2 <- df_v2 %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
+# Make list for outputs
+month_list <- list()
 
-#Below looking within LTER to see if streams behave the same
-for(ltername in unique(si_conc_v2$LTER)){
-  message("processing LTER:", ltername)
-  one_lter<- si_conc_v2 %>%
-    filter(LTER==ltername)
+# Loop across LTERs to analyze within each
+for(ltername in unique(month_v2$LTER)){
   
-  aov_perc.change <- lm(perc.change_si_conc ~ Stream_Name + as.factor(Month),
-                data = one_lter)
+  # Processing message
+  message("processing LTER: ", ltername)
   
+  # Subset the data
+  month_sub <- dplyr::filter(.data = month_v2, LTER == ltername)
+  
+  # Fit linear model
+  aov_perc.change_month <- lm(perc.change_si_conc ~ Stream_Name + as.factor(Month),
+                              data = month_sub)
   
   # Extract top-level results
-  perc_results1 <- as.data.frame(stats::anova(object = aov_perc.change)) %>%
+  month_results1 <- as.data.frame(stats::anova(object = aov_perc.change_month)) %>%
     # Get terms into column
     tibble::rownames_to_column(.data = ., var = "term") %>% 
     # Drop sum/mean squares columns
@@ -160,15 +163,31 @@ for(ltername in unique(si_conc_v2$LTER)){
     # Remove residuals
     dplyr::filter(term != "Residuals") %>% 
     # Identify significance
-    dplyr::mutate(sig = ifelse(test = p_value < 0.05, yes = "yes", no = "no")) %>%
-    mutate(LTER = ltername, .before=everything())
+    dplyr::mutate(sig = ifelse(test = p_value < 0.05, 
+                               yes = "yes", no = "no")) %>%
+    # Add column for LTER
+    dplyr::mutate(LTER = ltername, .before = dplyr::everything())
   
-  # Export results
-  write.csv(x = perc_results1, row.names = F, na = '',
-            file = file.path("stats_results", paste0("perc_change_DSi_results", ltername,".csv")))
+  # Generate / export a residual plot (to evaluate model fit)
+  ggResidpanel::resid_panel(model = aov_perc.change_month)
+  ggplot2::ggsave(filename = file.path("data", "stats-results", paste0("monthly_perc_change_residuals_", ltername, ".png")),
+                  height = 5, width = 5, units = "in")
   
-  }
+  # Add this to the output list
+  month_list[[ltername]] <- month_results1
+  
+} # Close loop
 
+# Unlist the output
+month_out <- month_list %>% 
+  purrr::list_rbind(x = .)
+
+# Check structure
+dplyr::glimpse(month_out)
+
+# Export results
+write.csv(x = month_out, row.names = F, na = '',
+          file = file.path("data", "stats-results", "monthly_perc_change_DSi_results.csv"))
 
 ## ----------------------------------------- ##
 # % Change Si Response across LTERs ----
@@ -190,7 +209,7 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_npp_kgC.m2.year +
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
-ggplot2::ggsave(filename = file.path("stats_results", "perc_change_residuals.png"),
+ggplot2::ggsave(filename = file.path("data", "stats-results", "perc_change_residuals.png"),
                 height = 5, width = 5, units = "in")
 
 # Extract top-level results
@@ -221,7 +240,7 @@ dplyr::glimpse(perc_results)
 
 # Export results
 write.csv(x = perc_results, row.names = F, na = '',
-          file = file.path("stats_results", "perc_change_DSi_results.csv"))
+          file = file.path("data", "stats-results", "perc_change_DSi_results.csv"))
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 perc_ixn <- perc_results %>% 
@@ -275,7 +294,7 @@ if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = perc_pairs, row.names = F, na = '',
-          file = file.path("stats_results", "perc_change_DSi_results_pairwise.csv"))
+          file = file.path("data", "stats-results", "perc_change_DSi_results_pairwise.csv"))
 
 ## ----------------------------------------- ##
               # Mean Si Response ----
@@ -296,7 +315,7 @@ avg_lm <- lm(mean_si_conc ~ scaled_mean_npp_kgC.m2.year +
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = avg_lm)
-ggplot2::ggsave(filename = file.path("stats_results", "avg_response_residuals.png"),
+ggplot2::ggsave(filename = file.path("data", "stats-results", "avg_response_residuals.png"),
                 height = 5, width = 5, units = "in")
 
 # Extract top-level results
@@ -327,7 +346,7 @@ dplyr::glimpse(avg_results)
 
 # Export results
 write.csv(x = avg_results, row.names = F, na = '',
-          file = file.path("stats_results", "avg_response_DSi_results.csv"))
+          file = file.path("data", "stats-results", "avg_response_DSi_results.csv"))
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 avg_ixn <- avg_results %>% 
@@ -381,6 +400,6 @@ if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = avg_pairs, row.names = F, na = '',
-          file = file.path("stats_results", "avg_response_DSi_results_pairwise.csv"))
+          file = file.path("data", "stats-results", "avg_response_DSi_results_pairwise.csv"))
 
 # End ----
