@@ -963,7 +963,7 @@ for(focal_chem in levels(df_combo$chemical)){
     geom_jitter(aes(color = norm_chem), width = 0.15, alpha = 0.25) +
     geom_violin(aes(fill = norm_chem), alpha = 0.2) +
     # Facet by LTER & chemical
-    facet_wrap(LTER ~ ., scales = "free_y") +
+    facet_wrap(LTER ~ .) +
     # Add averaged points with SE bars
     geom_point(data = focal_summary, aes(x = normalize, y = mean, 
                                       fill = norm_chem, shape = normalize), 
