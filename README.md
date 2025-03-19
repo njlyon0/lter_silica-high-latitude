@@ -13,25 +13,18 @@ This repository contains the code needed for one sub-project created by the Long
 The 'core' scripts in this repository are described below. Any script not described below is exploratory and should be treated as such.
 
 - **`00_data-download.R`** - Downloads the various source data from this working group's Shared Google Drive. Note that only those with access to that Drive will be able to run the script.
-
 - **`01_sizer-workflow.R`** - Runs SiZer workflow to identify changes in slope for WRTDS time series. Works for monthly, seasonal (averaged across sub-season months), and annual input data.
     - Assumes you have either run `00_data-download.R` or manually put the needed input files in a folder named "data"
-
 - **`02_stats-prep.R`** - Combines various data files and calculates covariate columns likely to be useful in the analysis script. Just like `01_sizer-workflow.R`, works for annual/seasonal/monthly input data
     - Assumes you have run `01_sizer-workflow.R`
-
 - **`03a_stats.R`** - Performs desired statistical analysis
     - Assumes you have run `02_stats-prep.R`
-
 - **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
     - Assumes you have run `02_stats-prep.R`
-
 - **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration.
     - Assumes you have either run `00_data-download.R` _and_ `02_stats-prep.R`
-
 - **`04_figures.R`** - Makes publication-quality figures from extracted SiZer information. Written for _only annual_ data
     - Assumes you have run `02_stats-prep.R`
-
 - **`05_tables.R`** - Generates publication-quality summary tables
     - Assumes you have run `03a_stats.R`
 
