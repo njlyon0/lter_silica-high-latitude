@@ -67,6 +67,10 @@ lter_shps <- c("Canada" = 21,
                "NIVA" = 25, "Norway" = 25, 
                "Swedish Goverment" = 22, "Sweden" = 22)
 
+# Palette for chemistry information
+chem_palt <- c("DIN" = "#ff758f", "Si:DIN" = "#b79ced", "DSi" = "#a2d6f9",
+               "Si:DIP" = "#9ef01a", "DIP" = "#ffea00")
+
 # Palette for 'norm chem'
 ## I.e., flow-normalized versus not & chemical
 normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",

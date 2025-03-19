@@ -720,6 +720,106 @@ ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_fnconc_
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
+# Conc. Violins by LTER & Chemical ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in necessary data file(s)
+df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
+                               pattern = "_Conc_uM_"),
+                      .f = ~ read.csv(file = file.path("data", "stats-ready_annual", .x))) %>% 
+  # Stack them vertically
+  purrr::list_rbind(x = .) %>% 
+  # Drop Canada (lacks many chemicals)
+  dplyr::filter(!LTER %in% c("Canada")) %>% 
+  # Keep only significant slopes - excluding marginal
+  # dplyr::filter(significance %in% c("sig")) %>% # excluding for now
+  # Keep only certain durations of trends
+  dplyr::filter(section_duration >= 5) %>% 
+  # Pare down to only desired columns
+  dplyr::select(sizer_groups, LTER, Stream_Name, chemical, mean_response, percent_change) %>% 
+  # Standardize names of LTERs / chemicals
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
+  # Order chemicals
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", 
+                                                       "Si:DIP", "DIP")))
+
+# Check structure
+dplyr::glimpse(df_conc)
+
+# Summarize as well for mean +/- SE bars
+df_summary <- supportR::summary_table(data = df_conc, response = "mean_response",
+                                      groups = c("LTER", "chemical"))
+
+# Check that out
+dplyr::glimpse(df_summary)
+
+# Make a list to store chemical-specific panels
+panel_list <- list()
+
+# Assemble graph panels
+for(focal_chem in levels(df_conc$chemical)){
+  # focal_chem <- "DIN"
+  
+  # Processing message
+  message("Making graph panel for ", focal_chem)
+  
+  # Subset data
+  focal_conc <- dplyr::filter(df_conc, chemical == focal_chem)
+  focal_summary <- dplyr::filter(df_summary, chemical == focal_chem)
+  
+  # Generate desired graph
+  focal_panel <- ggplot(focal_conc, aes(x = chemical, y = mean_response)) +
+    geom_jitter(aes(color = chemical), width = 0.15, alpha = 0.25) +
+    geom_violin(aes(fill = chemical), alpha = 0.2) +
+    # Facet by LTER & chemical
+    facet_grid(LTER ~ chemical, scales = "free_y") +
+    # Add averaged points with SE bars
+    geom_point(data = focal_summary, aes(x = chemical, y = mean, fill = chemical), 
+               size = 3, shape = 21) +
+    geom_errorbar(data = focal_summary, aes(x = chemical, y = mean, 
+                                         ymax = mean + std_error, 
+                                         ymin = mean - std_error), width = 0) +
+    # Aesthetic customization
+    labs(x = "Chemical", y = "Significant Changes in Concentration (Mean Response ± SE)") +
+    scale_color_manual(values = chem_palt) +
+    scale_fill_manual(values = chem_palt) +
+    theme_high_lat +
+    theme(legend.position = "none",
+          axis.title.x = element_blank(),
+          strip.text.y = element_text(size = 11))
+  
+  # For all but left-most chemical, remove y-axis title
+  if(focal_chem != "DIN"){ focal_panel <- focal_panel + 
+    theme(axis.title.y = element_blank()) }
+  
+  # For all but right-most chemical, remove strip text on y-axis
+  if(focal_chem != "DIP"){focal_panel <- focal_panel + 
+    theme(strip.text.y = element_blank()) }
+  
+  # Add to figure list
+  panel_list[[focal_chem]] <- focal_panel
+  
+} # Close list
+
+# Assemble figure
+cowplot::plot_grid(plotlist = panel_list, ncol = 5)
+
+# Export locally
+ggsave(filename = file.path("graphs", "figures", "fig_mean-response-by-chem-and-lter.png"),
+       height = 12, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
 # FN vs. Actual Concentration ----
 ## ----------------------------------------- ##
 
