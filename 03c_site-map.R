@@ -29,7 +29,11 @@ dir.create(path = file.path("graphs"), showWarnings = F)
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
 
 # Read in that SiZer output
-df_v1 <- read.csv(file = file.path("data", "stats-ready_annual", prepped_file))
+df_v1 <- read.csv(file = file.path("data", "stats-ready_annual", prepped_file)) %>%
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
 
 # Check structure
 dplyr::glimpse(df_v1)
