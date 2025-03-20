@@ -720,7 +720,7 @@ ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_fnconc_
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
-# Conc. Violins by LTER & Chemical ----
+# Conc. Violins by LTER & Chemical (Mean) ----
 ## ----------------------------------------- ##
 
 # Re-load graph helpers & needed functions
@@ -820,6 +820,77 @@ ggsave(filename = file.path("graphs", "figures", "fig_mean-response-by-chem-and-
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
+# Conc. Violins by LTER & Chemical (% Change) ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in necessary data file(s)
+df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
+                               pattern = "_Conc_uM_"),
+                      .f = ~ read.csv(file = file.path("data", "stats-ready_annual", .x))) %>% 
+  # Stack them vertically
+  purrr::list_rbind(x = .) %>% 
+  # Drop Canada (lacks many chemicals)
+  dplyr::filter(!LTER %in% c("Canada")) %>% 
+  # Keep only significant slopes - excluding marginal
+  # dplyr::filter(significance %in% c("sig")) %>% # excluding for now
+  # Keep only certain durations of trends
+  dplyr::filter(section_duration >= 5) %>% 
+  # Pare down to only desired columns
+  dplyr::select(sizer_groups, LTER, Stream_Name, chemical, mean_response, percent_change) %>% 
+  # Standardize names of LTERs / chemicals
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
+  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
+  # Order chemicals
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", 
+                                                       "Si:DIP", "DIP")))
+
+# Check structure
+dplyr::glimpse(df_conc)
+
+# Summarize as well for mean +/- SE bars
+df_summary <- supportR::summary_table(data = df_conc, response = "percent_change",
+                                      groups = c("LTER", "chemical"))
+
+# Check that out
+dplyr::glimpse(df_summary)
+
+# Generate desired graph
+ggplot(df_conc, aes(x = chemical, y = percent_change)) +
+  geom_hline(yintercept = 0, linetype = 3) +
+  geom_jitter(aes(color = chemical), width = 0.15, alpha = 0.25) +
+  geom_violin(aes(fill = chemical), alpha = 0.2) +
+  # Facet by LTER & chemical
+  facet_grid(LTER ~ ., scales = "free_y") +
+  # Add averaged points with SE bars
+  geom_point(data = df_summary, aes(x = chemical, y = mean, fill = chemical), 
+             size = 3, shape = 21) +
+  geom_errorbar(data = df_summary, aes(x = chemical, y = mean, 
+                                          ymax = mean + std_error, 
+                                          ymin = mean - std_error), width = 0) +
+  # Aesthetic customization
+  labs(x = "Chemical", y = "Concentration % Change (Mean ± SE)") +
+  scale_color_manual(values = chem_palt) +
+  scale_fill_manual(values = chem_palt) +
+  theme_high_lat +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        strip.text.y = element_text(size = 11))
+
+# Export locally
+ggsave(filename = file.path("graphs", "figures", "fig_perc-change-by-chem-and-lter.png"),
+       height = 12, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
 # FN vs. Actual Concentration ----
 ## ----------------------------------------- ##
 
@@ -868,7 +939,7 @@ df_combo <- dplyr::bind_rows(df_conc, df_fnconc) %>%
 dplyr::glimpse(df_combo)
 
 # Summarize as well for mean +/- SE bars
-df_summary <- supportR::summary_table(data = df_combo, response = "percent_change",
+df_summary <- supportR::summary_table(data = df_combo, response = "mean_response",
                                       groups = c("normalize", "LTER", "chemical")) %>% 
   # Make LTER + chemical column
   dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
@@ -876,33 +947,48 @@ df_summary <- supportR::summary_table(data = df_combo, response = "percent_chang
 # Check that out
 dplyr::glimpse(df_summary)
 
-# Generate desired graph
-ggplot(df_combo, aes(x = normalize, y = percent_change)) +
-  geom_hline(yintercept = 0, linetype = 3, linewidth = 0.5) +
-  geom_jitter(aes(color = norm_chem), width = 0.15, alpha = 0.25) +
-  geom_violin(aes(fill = norm_chem), alpha = 0.2) +
-  # Facet by LTER & chemical
-  facet_grid(LTER ~ chemical, scales = "free_y") +
-  # Add averaged points with SE bars
-  geom_point(data = df_summary, aes(x = normalize, y = mean, 
-                                    fill = norm_chem, shape = normalize), 
-             size = 3) +
-  geom_errorbar(data = df_summary, aes(x = normalize, y = mean, 
-                                       ymax = mean + std_error, 
-                                       ymin = mean - std_error), width = 0) +
-  # Aesthetic customization
-  labs(x = "Flow-Normalization Status", 
-       y = "Significant Changes in Concentration (Mean % Change ± SE)") +
-  scale_color_manual(values = normchem_palt) +
-  scale_fill_manual(values = normchem_palt) +
-  scale_shape_manual(values = c("FN" = 24, "Not" = 21)) +
-  theme_high_lat +
-  theme(legend.position = "none",
-        strip.text.y = element_text(size = 11))
+# Assemble graph panels
+for(focal_chem in levels(df_combo$chemical)){
+  # focal_chem <- "DIN"
+  
+  # Processing message
+  message("Making graph panel for ", focal_chem)
+  
+  # Subset data
+  focal_combo <- dplyr::filter(df_combo, chemical == focal_chem)
+  focal_summary <- dplyr::filter(df_summary, chemical == focal_chem)
 
-# Export locally
-ggsave(filename = file.path("graphs", "figures", "fig_conc-vs-fnconc.png"),
-       height = 12, width = 8, units = "in")
+  # Generate graph
+  ggplot(focal_combo, aes(x = normalize, y = mean_response)) +
+    geom_jitter(aes(color = norm_chem), width = 0.15, alpha = 0.25) +
+    geom_violin(aes(fill = norm_chem), alpha = 0.2) +
+    # Facet by LTER & chemical
+    facet_wrap(LTER ~ .) +
+    # Add averaged points with SE bars
+    geom_point(data = focal_summary, aes(x = normalize, y = mean, 
+                                      fill = norm_chem, shape = normalize), 
+               size = 3) +
+    geom_errorbar(data = focal_summary, aes(x = normalize, y = mean, 
+                                         ymax = mean + std_error, 
+                                         ymin = mean - std_error), width = 0) +
+    # Aesthetic customization
+    labs(x = "Flow-Normalization Status", 
+         y = paste("Sig. Changes in", focal_chem,  "Concentration (Mean ± SE)")) +
+    scale_color_manual(values = normchem_palt) +
+    scale_fill_manual(values = normchem_palt) +
+    scale_shape_manual(values = c("FN" = 24, "Not" = 21)) +
+    theme_high_lat +
+    theme(legend.position = "none",
+          strip.text.y = element_text(size = 11))
+  
+  # Make a local filename
+  focal_file <- paste0("fig_conc-vs-fnconc-", tolower(focal_chem), ".png")
+  
+  # Export locally
+  ggsave(filename = file.path("graphs", "figures", focal_file),
+         height = 6, width = 8, units = "in")
+  
+}
 
 # Tidy environment
 rm(list = ls()); gc()
