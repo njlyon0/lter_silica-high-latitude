@@ -46,7 +46,7 @@ si_conc_v1 <- df_v1 %>%
                 dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
                 -dplyr::contains("_FNConc_"),
-                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
+                -dplyr::contains("_NO3_"), 
                 -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
                 -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
   # Change certain column names to be more informative
