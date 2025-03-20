@@ -52,6 +52,10 @@ si_conc_v1 <- df_v1 %>%
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream ")) %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
@@ -131,6 +135,11 @@ month_v2 <- month_v1 %>%
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
+  #drop MCM sites not longer using
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream ")) %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
