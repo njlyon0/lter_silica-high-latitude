@@ -204,17 +204,20 @@ write.csv(x = month_out, row.names = F, na = '',
 
 #Below is looking across LTERs
 # Q: Is percent change (of DSi) affected by driver x LTER interactions?
-perc_lm <- lm(perc.change_si_conc ~ scaled_slope_npp_kgC.m2.year + 
-                scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
+#includes all predictors that do not have covariation of R > 0.61 (Q and temp) but rest r < 0.45 of mean values
+#these predictors same as for avg model below for simplicity
+perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
                 scaled_slope_temp_degC + scaled_slope_P_Conc_uM + 
-                scaled_slope_Discharge_cms + LTER +
-                scaled_slope_npp_kgC.m2.year:LTER + 
+                scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + LTER + 
                 scaled_slope_precip_mm.per.day:LTER +
                 scaled_slope_snow_max.prop.area:LTER + 
-                scaled_slope_temp_degC:LTER + 
-                scaled_slope_P_Conc_uM:LTER + 
-                scaled_slope_Discharge_cms:LTER,
+                scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
+                scaled_slope_P_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER,
               data = si_conc_v2)
+
+summary(perc_lm) 
+#r2 = 0.71, adj r2 = 0.54 if include DIN, adj r2 = 0.65 w/o DIN, adj r2 = 0.62 w/o Q
+#no npp, no DIN adj r2 = 0.61
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
@@ -310,17 +313,18 @@ write.csv(x = perc_pairs, row.names = F, na = '',
 ## ----------------------------------------- ##
 
 # Q: Is mean response (of DSi) affected by driver x LTER interactions?
-avg_lm <- lm(mean_si_conc ~ scaled_mean_npp_kgC.m2.year + 
+avg_lm <- lm(mean_si_conc ~ 
                 scaled_mean_precip_mm.per.day + scaled_mean_snow_max.prop.area + 
-                scaled_mean_temp_degC + scaled_mean_P_Conc_uM + 
+                scaled_mean_temp_degC + scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
                 scaled_mean_Discharge_cms + LTER +
-                scaled_mean_npp_kgC.m2.year:LTER + 
+               scaled_mean_evapotrans_kg.m2:LTER +
                 scaled_mean_precip_mm.per.day:LTER +
                 scaled_mean_snow_max.prop.area:LTER + 
                 scaled_mean_temp_degC:LTER + 
                 scaled_mean_P_Conc_uM:LTER + 
                 scaled_mean_Discharge_cms:LTER,
               data = si_conc_v2)
+summary(avg_lm)
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = avg_lm)
