@@ -216,8 +216,10 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slop
               data = si_conc_v2)
 
 summary(perc_lm) 
-#r2 = 0.71, adj r2 = 0.54 if include DIN, adj r2 = 0.65 w/o DIN, adj r2 = 0.62 w/o Q
-#no npp, no DIN adj r2 = 0.61
+
+#export the coefficients, sign of predictors and adj R2 of the model
+write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef.csv"))
+write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
@@ -325,6 +327,10 @@ avg_lm <- lm(mean_si_conc ~
                 scaled_mean_Discharge_cms:LTER,
               data = si_conc_v2)
 summary(avg_lm)
+
+#export the coefficients, sign of predictors and adj R2 of the model
+write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef.csv"))
+write.csv(glance(avg_lm), file = file.path("data", "stats-results", "avg_lm_R2.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = avg_lm)
