@@ -16,7 +16,7 @@
 
 # Load libraries
 #install.packages("librarian")
-librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot)
+librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot, broom)
 
 # Make needed folder(s)
 dir.create(path = file.path("data", "stats-results"), showWarnings = F, recursive = T)
