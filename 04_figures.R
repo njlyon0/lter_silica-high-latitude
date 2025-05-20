@@ -69,6 +69,43 @@ dplyr::glimpse(df_q_simp)
 (streams_per_lter <- lter_ct(data = df_q_simp))
 
 # Create a bookmark graph for line direction alone (but only when significant)
+ggplot(data = df_q_simp, aes(x = Year, y = LTER_stream)) +
+  # Add points with underlying lines for each section
+  geom_path(aes(group = sizer_groups, color = slope_direction), 
+            lwd = 3, alpha = 0.7) +
+  geom_point(aes(group = sizer_groups, fill = slope_direction, 
+                 shape = slope_direction), size = 2) +
+  # Manually specify point/line colors and point shapes
+  scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), guide = "none") +
+  scale_fill_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA")) +
+  scale_shape_manual(values = dir_shps, breaks = c("pos", "neg", "NS", "NA")) +
+  # Add lines between streams from different LTERs
+  geom_hline(yintercept = streams_per_lter$line_positions) +
+  ## Add LTER-specific annotations
+  geom_text(x = 1992, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
+  annotate(geom = "text", x = 1993, color = "black", angle = 90, hjust = "center",
+           y = c(14, 27.5, 35.5, 43, 49.5, 62), 
+           label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden")) +
+  # Customize labels and axis titles
+  labs(x = "Year", y = "Stream", title = "Discharge (cms)") +
+  # Modify theme elements for preferred aesthetics
+  theme(panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        axis.line = element_line(color = "black"),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 12),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.position = "inside",
+        legend.position.inside = c(0.425, 0.88))
+
+# Export graph
+ggsave(filename = file.path("graphs", "figures", "fig_bookmark-discharge.png"),
+       height = 9, width = 5, units = "in")
+
+
+# Create a bookmark graph for line direction alone (but only when significant)
 ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_direction)) +
   # Add paths for 'long' duration SiZer chunks
   geom_path(data = df_q_simp[df_q_simp$duration_bin == "long", ], 
@@ -101,10 +138,6 @@ ggplot(data = df_q_simp, mapping = aes(x = Year, y = LTER_stream, color = slope_
         legend.background = element_blank(),
         legend.position = "inside",
         legend.position.inside = c(0.425, 0.88))
-
-# Export graph
-ggsave(filename = file.path("graphs", "figures", "fig_bookmark-discharge.png"),
-       height = 9, width = 5, units = "in")
 
 # Tidy environment
 rm(list = setdiff(x = ls(), y = c("df_q_simp")))
