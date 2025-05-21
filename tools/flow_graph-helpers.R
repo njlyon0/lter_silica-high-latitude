@@ -42,11 +42,11 @@ p_palt <- c("sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col, "NA" = n
 r2_palt <- c("great" = "#184e77", "good" = "#1a759f", "fine" = "#76c893", 
              "bad" = "#b5e48c", "NA" = na_col)
 ## Slope direction palette
-dir_palt <- c("pos" = "#ff5400", "neg" = "#03045e", "NS" = nonsig_col, "NA" = na_col)
+dir_palt <- c("pos" = "#ff5400", "neg" = "#023e8a", "NS" = nonsig_col, "NA" = na_col)
 dir_shps <- c("pos" = 24, "neg" = 25, "NS" = 22, "NA" = 21)
 ## Direction + P value palette
 dir_p_palt <- c("pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
-                "neg-sig" = "#03045e", "neg-marg" = "#00b4d8",
+                "neg-sig" = "#023e8a", "neg-marg" = "#00b4d8",
                 "NS" = nonsig_col, "NA" = na_col)
 ## Direction + R2 palette
 dir_fit_palt <- c("pos-great" = "#f5bd1f", "pos-good" = "#facb2e", 
