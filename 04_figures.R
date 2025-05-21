@@ -72,7 +72,7 @@ dplyr::glimpse(df_q_simp)
 ggplot(data = df_q_simp, aes(x = Year, y = LTER_stream)) +
   # Add points with underlying lines for each section
   geom_path(aes(group = sizer_groups, color = slope_direction), 
-            lwd = 3, alpha = 0.7) +
+            lwd = 2.5, alpha = 0.6) +
   geom_point(aes(group = sizer_groups, fill = slope_direction, 
                  shape = slope_direction), size = 2) +
   # Manually specify point/line colors and point shapes
