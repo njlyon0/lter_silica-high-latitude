@@ -628,134 +628,70 @@ ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean.png"),
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
-# Monthly DSi Conc (FN v. Not) Boxplots ----
+# Monthly Concentration (FN v. Not) Boxplots ----
 ## ----------------------------------------- ##
 
 # Re-load graph helpers & needed functions
 source(file.path("tools", "flow_graph-helpers.R"))
 
-# Read in necessary data file(s)
-## Not normalized
-month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv")) %>% 
-  dplyr::mutate(normalize = "Not")
-## Flow-Normalized (FN)
-fn_month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_FNConc_uM_DSi.csv")) %>% 
-  dplyr::mutate(normalize = "FN")
+# Loop across chemicals
+for(focal_chem in c("DSi", "DIN", "P")){
+  # focal_chem <- "P"
+  
+  # Progress message
+  message("Creating normalization comparison graphs for: ", focal_chem)
 
-# Combine & do some minor wrangling
-month_v2 <- dplyr::bind_rows(month_v1, fn_month_v1) %>%
-  # Make synthetic column for aesthetic mapping
-  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical)) %>% 
-  # Filter to only significant periods
-  dplyr::filter(test_p_value < 0.05) %>% 
-  # Simplify (some) LTER names
-  dplyr::mutate(LTER = dplyr::case_when(
-    LTER == "Finnish Environmental Institute" ~ "Finland",
-    LTER == "Swedish Goverment" ~ "Sweden",
-    LTER == "NIVA" ~ "Norway",
-    T ~ LTER))
-
-# Check structure
-dplyr::glimpse(month_v2)
-
-# Make figure
-ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, 
-                               fill = norm_chem)) +
-  geom_boxplot(outlier.shape = 21) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  facet_grid(LTER ~ ., scales = "free", axes = "all") +
-  scale_color_manual(values = normchem_palt) +
-  scale_fill_manual(values = normchem_palt) +
-  labs(y = "Significant DSi Concentration Change (%)", x = "LTER") +
-  theme_facetbox
-
-# Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_conc_um.png"),
-       height = 12, width = 8, units = "in")
-
-
-
-## ----------------------------------------- ##
-  # Monthly DSi Concentration Boxplots ----
-## ----------------------------------------- ##
-
-# Re-load graph helpers & needed functions
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Read in necessary data file(s)
-month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv"))
-
-# Do some minor wrangling
-month_v2 <- month_v1 %>% 
-  # Filter to only significant periods
-  dplyr::filter(test_p_value < 0.05) %>% 
-  # Simplify (some) LTER names
-  dplyr::mutate(LTER = dplyr::case_when(
-    LTER == "Finnish Environmental Institute" ~ "Finland",
-    LTER == "Swedish Goverment" ~ "Sweden",
-    LTER == "NIVA" ~ "Norway",
-    T ~ LTER))
-
-# Check structure
-dplyr::glimpse(month_v2)
-
-# Make figure
-ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, fill = LTER)) +
-  geom_boxplot(outlier.shape = 21) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  facet_grid(LTER ~ ., scales = "free", axes = "all") +
-  scale_fill_manual(values = lter_palt) +
-  labs(y = "Significant DSi Concentration Change (%)", x = "LTER") +
-  theme_facetbox
-
-# Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_conc_um.png"),
-       height = 12, width = 8, units = "in")
-
-# Tidy environment
-rm(list = ls()); gc()
-
-## ----------------------------------------- ##
-# Monthly DSi Flow-Normalized Conc. Boxplots ----
-## ----------------------------------------- ##
-
-# Re-load graph helpers & needed functions
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Read in necessary data file(s)
-month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_FNConc_uM_DSi.csv"))
-
-# Do some minor wrangling
-month_v2 <- month_v1 %>% 
-  # Filter to only significant periods
-  dplyr::filter(test_p_value < 0.05) %>% 
-  # Simplify (some) LTER names
-  dplyr::mutate(LTER = dplyr::case_when(
-    LTER == "Finnish Environmental Institute" ~ "Finland",
-    LTER == "Swedish Goverment" ~ "Sweden",
-    LTER == "NIVA" ~ "Norway",
-    T ~ LTER))
-
-# Check structure
-dplyr::glimpse(month_v2)
-
-# Make figure
-ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, fill = LTER)) +
-  geom_boxplot(outlier.shape = 21) +
-  geom_hline(yintercept = 0, linetype = 2) +
-  facet_grid(LTER ~ ., scales = "free", axes = "all") +
-  scale_fill_manual(values = lter_palt) +
-  labs(y = "Significant DSi Flow-Normalized Conc. Change (%)", x = "LTER") +
-  theme(panel.background = element_blank(),
-        axis.line = element_line(color = "black"),
-        axis.title.x = element_blank(),
-        legend.position = "none",
-        strip.background = element_blank(),
-        strip.text = element_text(size = 12))
-
-# Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_monthly-boxplot_si_fnconc_um.png"),
-       height = 12, width = 8, units = "in")
+  # Identify desired files
+  # Read in necessary data file(s)
+  ## Not normalized
+  month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", 
+                                        paste0("stats-ready_monthly_Conc_uM_",
+                                               focal_chem, ".csv"))) %>% 
+    dplyr::mutate(normalize = "Not")
+  ## Flow-Normalized (FN)
+  fn_month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", 
+                                           paste0("stats-ready_monthly_FNConc_uM_",
+                                                  focal_chem, ".csv"))) %>% 
+    dplyr::mutate(normalize = "FN")
+  
+  # Combine & do some minor wrangling
+  month_v2 <- dplyr::bind_rows(month_v1, fn_month_v1) %>%
+    # Make synthetic column for aesthetic mapping
+    dplyr::mutate(norm_chem = paste0(normalize, "_", chemical)) %>% 
+    # Filter to only significant periods
+    dplyr::filter(test_p_value < 0.05) %>% 
+    # Simplify (some) LTER names
+    dplyr::mutate(LTER = dplyr::case_when(
+      LTER == "Finnish Environmental Institute" ~ "Finland",
+      LTER == "Swedish Goverment" ~ "Sweden",
+      LTER == "NIVA" ~ "Norway",
+      T ~ LTER))
+  
+  # Make a prettier version of P
+  if(focal_chem == "P"){ 
+    pretty_chem <- "DIP"
+    month_v2$chemical <- pretty_chem
+    month_v2$norm_chem <- gsub(pattern = "P", replacement = pretty_chem, 
+                               x = month_v2$norm_chem) 
+    } else { pretty_chem <- focal_chem }
+  
+  # Make figure
+  ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, 
+                                 fill = norm_chem)) +
+    geom_boxplot(outlier.shape = 21) +
+    geom_hline(yintercept = 0, linetype = 2) +
+    facet_grid(LTER ~ ., scales = "free", axes = "all") +
+    scale_fill_manual(values = normchem_palt) +
+    labs(y = paste0("Significant ", pretty_chem, " Concentration Change (%)"), 
+         x = "LTER") +
+    theme_facetbox
+  
+  # Export as a figure
+  ggsave(filename = file.path("graphs", "figures", 
+                              paste0("fig_monthly-boxplot-", tolower(pretty_chem), 
+                                     "-conc_um.png")),
+         height = 12, width = 8, units = "in")
+}
 
 # Tidy environment
 rm(list = ls()); gc()
