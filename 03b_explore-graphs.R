@@ -144,8 +144,10 @@ ggplot(sig_simp, aes(x = slope_estimate, y = Stream_Name, fill = section_duratio
                 width = 0.2, linewidth = 0.75, color = "gray66") +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(x = "Slope Estimate", y = "Stream", fill = "Duration (years)") +
-  theme_bw() +
-  theme(legend.position = "inside", legend.position.inside = c(0.9, 0.85))
+  theme_high_lat +
+  theme(legend.position = "inside", 
+        legend.position.inside = c(0.9, 0.85),
+        axis.text.y = element_blank())
 
 # Export this graph!
 ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_slope-duration-barplot.png")),
@@ -166,8 +168,10 @@ ggplot(sig_simp, aes(x = percent_change, y = Stream_Name, fill = section_duratio
   geom_col() +
   geom_vline(xintercept = 0, linewidth = 0.5, color = 'black', linetype = 2) +
   labs(x = "Slope Estimate", y = "Stream", fill = "Duration (years)") +
-  theme_bw() +
-  theme(legend.position = "inside", legend.position.inside = c(0.1, 0.15))
+  theme_high_lat +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.1, 0.15),
+        axis.text.y = element_blank())
 
 # Export this graph
 ggsave(filename = file.path("graphs", "explore", paste0(graph_prefix, "_perc-change-duration-barplot.png")),

@@ -85,7 +85,9 @@ normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",
 ## ----------------------------------------- ##
 
 # ggplot2 theme tweaks
-theme_high_lat <- theme_bw() +
-  theme(legend.title = element_blank())
+theme_high_lat <- theme(legend.title = element_blank(),
+                        axis.line = element_line(color = "black"),
+                        axis.text = element_text(color = "black"),
+                        panel.background = element_blank())
 
 # End ----
