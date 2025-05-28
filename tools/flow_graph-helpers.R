@@ -81,7 +81,7 @@ normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",
                    "Not_DIP" = "#ffea00", "FN_DIP" = "#ffaa00")
 
 ## ----------------------------------------- ##
-# `ggplot2` Theme
+# Generic `ggplot2` Theme ----
 ## ----------------------------------------- ##
 
 # ggplot2 theme tweaks
@@ -89,5 +89,21 @@ theme_high_lat <- theme(legend.title = element_blank(),
                         axis.line = element_line(color = "black"),
                         axis.text = element_text(color = "black"),
                         panel.background = element_blank())
+
+## ----------------------------------------- ##
+# Figure Themes ----
+## ----------------------------------------- ##
+# Certain figure types need special themes that only they use
+
+# bookmark theme
+theme_bookmark <- theme(panel.background = element_blank(),
+                        plot.title = element_text(hjust = 0.5),
+                        axis.line = element_line(color = "black"),
+                        axis.text = element_text(color = "black"),
+                        axis.text.y = element_blank(),
+                        axis.text.x = element_text(size = 12),
+                        axis.title.y = element_blank(),
+                        legend.title = element_blank(),
+                        legend.background = element_blank())
 
 # End ----

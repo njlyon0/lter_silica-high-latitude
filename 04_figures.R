@@ -73,8 +73,9 @@ ggplot(data = df_q_simp, aes(x = Year, y = LTER_stream)) +
   # Add points with underlying lines for each section
   geom_path(aes(group = sizer_groups, color = slope_direction), 
             lwd = 2.5, alpha = 0.6) +
+  geom_point(aes(shape = slope_direction), color = "white", size = 2.5) +
   geom_point(aes(group = sizer_groups, fill = slope_direction, 
-                 shape = slope_direction), size = 2) +
+                 shape = slope_direction), size = 1.9) +
   # Manually specify point/line colors and point shapes
   scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
                      guide = "none") +
@@ -90,15 +91,8 @@ ggplot(data = df_q_simp, aes(x = Year, y = LTER_stream)) +
   # Customize labels and axis titles
   labs(x = "Year", y = "Stream", title = "Discharge (cms)") +
   # Modify theme elements for preferred aesthetics
-  theme(panel.background = element_blank(),
-        plot.title = element_text(hjust = 0.5),
-        axis.line = element_line(color = "black"),
-        axis.text.y = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.title.y = element_blank(),
-        legend.title = element_blank(),
-        legend.background = element_blank(),
-        legend.position = "inside",
+  theme_bookmark +
+  theme(legend.position = "inside",
         legend.position.inside = c(0.425, 0.88))
 
 # Export graph
@@ -188,8 +182,9 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
       # Add points with underlying lines for each section
       geom_path(aes(group = sizer_groups, color = slope_direction), 
                 lwd = 2.5, alpha = 0.6) +
+      geom_point(aes(shape = slope_direction), color = "white", size = 2.5) +
       geom_point(aes(group = sizer_groups, fill = slope_direction, 
-                     shape = slope_direction), size = 2) +
+                     shape = slope_direction), size = 1.9) +
       # Manually specify point/line colors and point shapes
       scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
                          guide = "none") +
@@ -206,15 +201,8 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
       labs(x = "Year", y = "Stream", 
            title = paste0(chem, " ", resp_lab)) +
       # Modify theme elements for preferred aesthetics
-      theme(panel.background = element_blank(),
-            plot.title = element_text(hjust = 0.5),
-            axis.line = element_line(color = "black"),
-            axis.text.y = element_blank(),
-            axis.text.x = element_text(size = 12),
-            axis.title.y = element_blank(),
-            legend.title = element_blank(),
-            legend.background = element_blank(),
-            legend.position = "inside",
+      theme_bookmark +
+      theme(legend.position = "inside",
             legend.position.inside = c(0.225, 0.88))
     
     # Remove the legend from all but specified chemicals
