@@ -244,6 +244,9 @@ perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
 # Check structure
 dplyr::glimpse(perc_results)
 
+#export the coefficients, sign of predictors and adj R2 of the model
+write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_coef_toplevel.csv"))
+
 # Interpretation note:
 ## Look at interactions first!
 ## If interaction is sig, effect of driver on DSi % change **depends on LTER**
@@ -252,9 +255,9 @@ dplyr::glimpse(perc_results)
 ## If interaction is NS but variable is sig, driver effects DSi **regardless of LTER**
 ## If interaction and variable are NS, driver does not (significantly) affect DSi
 
-# Export results
-write.csv(x = perc_results, row.names = F, na = '',
-          file = file.path("data", "stats-results", "perc_change_DSi_results.csv"))
+# Export results - doesn't work so commented it out for now - prob file path issue
+#write.csv(x = perc_results, row.names = F, na = '',
+          #file = file.path("data", "stats-results", "perc_change_DSi_results.csv"))
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 perc_ixn <- perc_results %>% 
