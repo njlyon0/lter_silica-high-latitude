@@ -112,7 +112,6 @@ theme_facetbox <- theme(legend.position = "none",
                         plot.title = element_text(hjust = 0.5),
                         axis.line = element_line(color = "black"),
                         axis.text = element_text(color = "black"),
-                        axis.text.x = element_blank(),
                         axis.title.x = element_blank(),
                         strip.background = element_blank(),
                         strip.text = element_text(size = 15))

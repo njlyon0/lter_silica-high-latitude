@@ -319,7 +319,8 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
   geom_text(label = "Norway", x = 49.5, y = 300, hjust = "center") + 
   geom_text(label = "Sweden", x = 62, y = 300, hjust = "center") + 
   # Customize the legend
-  theme_facetbox
+  theme_facetbox +
+  theme(axis.text.x = element_blank())
 
 # Export graph
 ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals_conc_um.png"),
@@ -412,7 +413,8 @@ for(focal_chem in unique(df_conc_sub$chemical)){
     geom_vline(xintercept = streams_per_lter$line_positions,
                linetype = 2, color = "gray66") +
     theme_facetbox +
-    theme(strip.text = element_blank())
+    theme(strip.text = element_blank(),
+          axis.text.x = element_blank())
   
   # Generate local file name
   focal_out <- paste0("fig_boxplot-chemicals-", tolower(focal_chem), "-zoom_conc_um.png")
