@@ -319,14 +319,7 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
   geom_text(label = "Norway", x = 49.5, y = 300, hjust = "center") + 
   geom_text(label = "Sweden", x = 62, y = 300, hjust = "center") + 
   # Customize the legend
-  theme(legend.position = "none",
-        panel.background = element_blank(),
-        plot.title = element_text(hjust = 0.5),
-        axis.line = element_line(color = "black"),
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 15))
+  theme_facetbox
 
 # Export graph
 ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals_conc_um.png"),
@@ -398,33 +391,36 @@ df_conc_sub <- df_conc %>%
 # Check the structure
 dplyr::glimpse(df_conc_sub)
 
-# Count streams / LTER
-(streams_per_lter <- lter_ct(data = df_conc_sub)[-5,])
-
-# Create the boxplot strips *with the "zoomed in" data object*
-ggplot(df_conc_sub, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
-  geom_boxplot(outlier.shape = 21, lwd = 0.2) +
-  facet_grid(chemical ~ ., scales = "free", axes = "all") +
-  scale_fill_manual(values = lter_palt) +
-  labs(x = "Stream", y = "Concentration (uM)") +
-  geom_vline(xintercept = streams_per_lter$line_positions[-7], linetype = 2, color = "gray66") +
-  geom_text(label = "GRO", x = 3.5, y = 95, hjust = "center") + 
-  geom_text(label = "Krycklan", x = 11, y = 95, hjust = "center") + 
-  geom_text(label = "MCM", x = 19, y = 95, hjust = "center") + 
-  geom_text(label = "Norway", x = 25.5, y = 85, hjust = "center") + 
-  geom_text(label = "Sweden", x = 39, y = 95, hjust = "center") + 
-  theme(legend.position = "none",
-        panel.background = element_blank(),
-        plot.title = element_text(hjust = 0.5),
-        axis.line = element_line(color = "black"),
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 15))
-
-# Export graph
-ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals-zoom_conc_um.png"),
-       height = 7, width = 10, units = "in")
+# Loop across chemicals
+for(focal_chem in unique(df_conc_sub$chemical)){
+  # focal_chem <- "DSi"
+  
+  # Subset data again to just this chemical
+  df_conc_sub2 <- df_conc_sub %>% 
+    dplyr::filter(chemical == focal_chem)
+  
+  # Count 'streams per LTER'
+  streams_per_lter <- lter_ct(data = df_conc_sub2) %>% 
+    dplyr::filter(LTER != "Swedish Goverment")
+  
+  # Create the boxplot strips *with the "zoomed in" data object*
+  ggplot(df_conc_sub2, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
+    geom_boxplot(outlier.shape = 21, lwd = 0.2) +
+    facet_grid(chemical ~ ., scales = "free", axes = "all") +
+    scale_fill_manual(values = lter_palt) +
+    labs(x = "Stream", y = "Concentration (uM)") +
+    geom_vline(xintercept = streams_per_lter$line_positions,
+               linetype = 2, color = "gray66") +
+    theme_facetbox +
+    theme(strip.text = element_blank())
+  
+  # Generate local file name
+  focal_out <- paste0("fig_boxplot-chemicals-", tolower(focal_chem), "-zoom_conc_um.png")
+  
+  # Export locally
+  ggsave(filename = file.path("graphs", "figures", focal_out),
+         height = 2, width = 6, units = "in")
+}
 
 # Tidy environment
 rm(list = ls()); gc()
