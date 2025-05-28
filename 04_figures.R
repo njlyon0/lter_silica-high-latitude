@@ -463,37 +463,43 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
   theme(legend.position = "inside",
         legend.position.inside = c(0.8, 0.8),
         legend.direction = "vertical",
+        axis.text = element_text(color = "black"),
         legend.background = element_blank()); perc_ET
 ## Precipitation
 perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
             exp_var = "slope_precip_mm.per.day", sig = "ixn") +
   labs(y = "DSi Concentration (% Change)",
        x = "Precipitation (mm/day) Annual Change") +
-  theme(legend.position = "none"); perc_ppt
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_ppt
 ## Snow (Proportion Area)
 perc_snow <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                         exp_var = "slope_snow_max.prop.area", sig = "ixn") +
   labs(y = "DSi Concentration (% Change)",
        x = "Snow (Max Proportion Area) Annual Change") +
-  theme(legend.position = "none"); perc_snow
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_snow
 ## Temperature
 perc_temp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                         exp_var = "slope_temp_degC", sig = "main") +
   labs(y = "DSi Concentration (% Change)",
        x = "Temperature (C) Annual Change") +
-  theme(legend.position = "none"); perc_temp
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_temp
 ## Phosphorus concentration
 perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                         exp_var = "slope_P_Conc_uM", sig = "NS") +
   labs(y = "DSi Concentration (% Change)",
        x = "P Concentration (uM) Annual Change") +
-  theme(legend.position = "none"); perc_pconc
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_pconc
 ## Discharge
 perc_disc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                           exp_var = "slope_Discharge_cms", sig = "NS") +
   labs(y = "DSi Concentration (% Change)",
        x = "Discharge (cms) Annual Change") +
-  theme(legend.position = "none"); perc_disc
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_disc
 ## LTER boxplots
 perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
@@ -505,6 +511,7 @@ perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   theme(panel.background = element_blank(),
         axis.line = element_line(color = "black"),
         axis.title.x = element_blank(),
+        axis.text = element_text(color = "black"),
         legend.position = "none"); perc_box
 
 # Assemble into grid of plots
@@ -553,13 +560,15 @@ avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
                         exp_var = "mean_evapotrans_kg.m2", sig = "ixn") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Evapotranspiration (kg/m2)") +
-  theme(legend.position = "none"); avg_ET
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); avg_ET
 ## Precipitation
 avg_ppt <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                         exp_var = "mean_precip_mm.per.day", sig = "NS") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Precipitation (mm/day)") +
-  theme(legend.position = "none"); avg_ppt
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); avg_ppt
 ## Snow (Proportion Area)
 avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "mean_snow_max.prop.area", sig = "ixn") +
@@ -568,6 +577,7 @@ avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
   theme(legend.position = "inside",
         legend.position.inside = c(0.8, 0.8),
         legend.direction = "vertical",
+        axis.text = element_text(color = "black"),
         legend.background = element_blank()); avg_snow
 ## Temperature
 avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
@@ -577,19 +587,22 @@ avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
   theme(legend.position = "inside",
         legend.position.inside = c(0.2, 0.8),
         legend.direction = "vertical",
+        axis.text = element_text(color = "black"),
         legend.background = element_blank()); avg_temp
 ## Phosphorus concentration
 avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                           exp_var = "mean_P_Conc_uM", sig = "main") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean P Concentration (uM)") +
-  theme(legend.position = "none"); avg_pconc
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); avg_pconc
 ## Discharge
 avg_disc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "mean_Discharge_cms", sig = "NS") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Discharge (cms)") +
-  theme(legend.position = "none"); avg_disc
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); avg_disc
 ## LTER boxplots
 avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
@@ -600,6 +613,7 @@ avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
   theme(panel.background = element_blank(),
         axis.line = element_line(color = "black"),
         axis.title.x = element_blank(),
+        axis.text = element_text(color = "black"),
         legend.position = "none"); avg_box
 
 # Assemble into grid of plots
