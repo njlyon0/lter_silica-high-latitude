@@ -682,7 +682,7 @@ for(focal_chem in c("DSi", "DIN", "P")){
                                  fill = norm_chem)) +
     geom_boxplot(outlier.shape = 21) +
     geom_hline(yintercept = 0, linetype = 2) +
-    facet_grid(LTER ~ ., scales = "free", axes = "all") +
+    facet_grid(LTER ~ ., scales = "free") +
     scale_fill_manual(values = normchem_palt) +
     labs(y = paste0("Significant ", pretty_chem, " Concentration Change (%)"), 
          x = "LTER") +
@@ -722,7 +722,7 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   # Standardize names of LTERs / chemicals
   dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
@@ -770,10 +770,8 @@ for(focal_chem in levels(df_conc$chemical)){
     labs(x = "Chemical", y = "Significant Changes in Concentration (Mean Response ± SE)") +
     scale_color_manual(values = chem_palt) +
     scale_fill_manual(values = chem_palt) +
-    theme_high_lat +
-    theme(legend.position = "none",
-          axis.title.x = element_blank(),
-          strip.text.y = element_text(size = 11))
+    theme_facetbox +
+    theme(strip.text.y = element_text(size = 11))
   
   # For all but left-most chemical, remove y-axis title
   if(focal_chem != "DIN"){ focal_panel <- focal_panel + 
@@ -822,7 +820,7 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   # Standardize names of LTERs / chemicals
   dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
@@ -857,10 +855,8 @@ ggplot(df_conc, aes(x = chemical, y = percent_change)) +
   labs(x = "Chemical", y = "Concentration % Change (Mean ± SE)") +
   scale_color_manual(values = chem_palt) +
   scale_fill_manual(values = chem_palt) +
-  theme_high_lat +
-  theme(legend.position = "none",
-        axis.title.x = element_blank(),
-        strip.text.y = element_text(size = 11))
+  theme_facetbox +
+  theme(strip.text.y = element_text(size = 11))
 
 # Export locally
 ggsave(filename = file.path("graphs", "figures", "fig_perc-change-by-chem-and-lter.png"),
@@ -905,7 +901,7 @@ df_combo <- dplyr::bind_rows(df_conc, df_fnconc) %>%
   # Standardize names of LTERs / chemicals
   dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Goverment", replacement = "Government", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
@@ -956,9 +952,8 @@ for(focal_chem in levels(df_combo$chemical)){
     scale_color_manual(values = normchem_palt) +
     scale_fill_manual(values = normchem_palt) +
     scale_shape_manual(values = c("FN" = 24, "Not" = 21)) +
-    theme_high_lat +
-    theme(legend.position = "none",
-          strip.text.y = element_text(size = 11))
+    theme_facetbox +
+    theme(strip.text.y = element_text(size = 11))
   
   # Make a local filename
   focal_file <- paste0("fig_conc-vs-fnconc-", tolower(focal_chem), ".png")
