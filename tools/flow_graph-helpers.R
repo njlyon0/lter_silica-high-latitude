@@ -33,7 +33,7 @@ dir_fit_levels <- c("pos-great", "pos-good", "pos-fine", "pos-bad",
 
 # Define the missing and non significant colors
 na_col <- "#fff"
-nonsig_col <- "#6c757d"
+nonsig_col <- "gray70"
 
 # Define color palettes
 ## P value palette
@@ -42,7 +42,7 @@ p_palt <- c("sig" = "#132a13",  "marg" = "#006400",  "NS" = nonsig_col, "NA" = n
 r2_palt <- c("great" = "#184e77", "good" = "#1a759f", "fine" = "#76c893", 
              "bad" = "#b5e48c", "NA" = na_col)
 ## Slope direction palette
-dir_palt <- c("pos" = "#ff5400", "neg" = "#023e8a", "NS" = nonsig_col, "NA" = na_col)
+dir_palt <- c("pos" = "#ff5400", "neg" = "#00a6fb", "NS" = nonsig_col, "NA" = na_col)
 dir_shps <- c("pos" = 24, "neg" = 25, "NS" = 22, "NA" = 21)
 ## Direction + P value palette
 dir_p_palt <- c("pos-sig" = "#ff5400", "pos-marg" = "#ff9e00", 
