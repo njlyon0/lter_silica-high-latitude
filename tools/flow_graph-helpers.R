@@ -99,10 +99,10 @@ theme_high_lat <- theme(legend.title = element_blank(),
 theme_bookmark <- theme(panel.background = element_blank(),
                         plot.title = element_text(hjust = 0.5),
                         axis.line = element_line(color = "black"),
-                        axis.text = element_text(color = "black"),
                         axis.text.y = element_blank(),
-                        axis.text.x = element_text(size = 12),
+                        axis.text.x = element_text(size = 13, color = "black"),
                         axis.title.y = element_blank(),
+                        axis.title.x = element_text(size = 16),
                         legend.title = element_blank(),
                         legend.background = element_blank())
 
@@ -111,8 +111,9 @@ theme_facetbox <- theme(legend.position = "none",
                         panel.background = element_blank(),
                         plot.title = element_text(hjust = 0.5),
                         axis.line = element_line(color = "black"),
-                        axis.text = element_text(color = "black"),
                         axis.title.x = element_blank(),
+                        axis.title.y = element_text(size = 16),
+                        axis.text = element_text(size = 13, color = "black"),
                         strip.background = element_blank(),
                         strip.text = element_text(size = 15))
 
