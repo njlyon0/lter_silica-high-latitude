@@ -703,10 +703,12 @@ for(focal_chem in c("DSi", "DIN", "P")){
           legend.background = element_blank(),
           plot.title = element_text(hjust = 0.5),
           axis.line = element_line(color = "black"),
-          axis.text = element_text(color = "black"),
+          axis.text = element_text(size = 13, color = "black"),
           axis.title.x = element_blank(),
+          axis.title.y = element_text(size = 16),
           strip.background = element_blank(),
-          strip.text = element_text(size = 11))
+          strip.text = element_text(size = 11),
+          panel.spacing = unit(x = 2, units = "lines"))
   
   # Export as a figure
   ggsave(filename = file.path("graphs", "figures", 
