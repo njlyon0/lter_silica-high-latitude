@@ -638,7 +638,7 @@ source(file.path("tools", "flow_graph-helpers.R"))
 
 # Loop across chemicals
 for(focal_chem in c("DSi", "DIN", "P")){
-  # focal_chem <- "P"
+  # focal_chem <- "DIN"
   
   # Progress message
   message("Creating normalization comparison graphs for: ", focal_chem)
@@ -677,6 +677,15 @@ for(focal_chem in c("DSi", "DIN", "P")){
                                x = month_v2$norm_chem) 
     } else { pretty_chem <- focal_chem }
   
+  # Conditional vertical placement of legend for each element
+  if(focal_chem == "P"){
+    leg_y <- 0.48
+  } else if(focal_chem == "DIN"){
+    leg_y <- 0.45
+  } else if(focal_chem == "DSi"){
+    leg_y <- 0.43
+  }
+  
   # Make figure
   ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, 
                                  fill = norm_chem)) +
@@ -685,13 +694,22 @@ for(focal_chem in c("DSi", "DIN", "P")){
     facet_grid(LTER ~ ., scales = "free") +
     scale_fill_manual(values = normchem_palt) +
     labs(y = paste0("Significant ", pretty_chem, " Concentration Change (%)"), 
-         x = "LTER") +
-    theme_facetbox
+         x = "LTER", fill = "Normalize_Chem.") +
+    theme(panel.background = element_blank(),
+          legend.position = "inside",
+          legend.position.inside = c(0.6, leg_y),
+          legend.background = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.line = element_line(color = "black"),
+          axis.text = element_text(color = "black"),
+          axis.title.x = element_blank(),
+          strip.background = element_blank(),
+          strip.text = element_text(size = 11))
   
   # Export as a figure
   ggsave(filename = file.path("graphs", "figures", 
                               paste0("fig_monthly-boxplot-", tolower(pretty_chem), 
-                                     "-conc_um.png")),
+                                     "-conc-vs-fnconc.png")),
          height = 12, width = 8, units = "in")
 }
 
