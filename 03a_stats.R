@@ -245,7 +245,7 @@ perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
 dplyr::glimpse(perc_results)
 
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_coef_toplevel.csv"))
+write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_toplevel.csv"))
 
 # Interpretation note:
 ## Look at interactions first!
@@ -368,7 +368,7 @@ dplyr::glimpse(avg_results)
 
 # Export results
 write.csv(x = avg_results, row.names = F, na = '',
-          file = file.path("data", "stats-results", "avg_response_DSi_results.csv"))
+          file = file.path("data", "stats-results", "avg_response_lm_fstats_toplevel.csv"))
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 avg_ixn <- avg_results %>% 
