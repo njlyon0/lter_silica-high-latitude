@@ -16,7 +16,9 @@
 
 # Load libraries
 #install.packages("librarian")
-librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot, broom)
+librarian::shelf(tidyverse, ggResidpanel, emmeans, supportR, multcompView, corrplot, broom, car)
+              
+                
 
 # Make needed folder(s)
 dir.create(path = file.path("data", "stats-results"), showWarnings = F, recursive = T)
@@ -42,8 +44,8 @@ dplyr::glimpse(df_v1)
 si_conc_v1 <- df_v1 %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
-                mean_response, percent_change,
-                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+                mean_response, percent_change, major_rock, major_land, land_total_forest, land_tundra, 
+                land_shrubland_grassland, dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
                 -dplyr::contains("_FNConc_"),
                 -dplyr::contains("_NO3_"), 
@@ -59,19 +61,26 @@ si_conc_v1 <- df_v1 %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
+#want to make new major land category of just forest to reduce predictors in model
+si_conc_v1<-si_conc_v1 %>%
+  dplyr::mutate(major_land2 = case_when(major_land %in% c("evergreen_needleleaf_forest", 
+                                                           "mixed_forest", "deciduous_needleleaf_forest") ~ "total_forest",
+                                         TRUE ~ major_land))
+names(si_conc_v1)
 # Scale & center the driver variables
 scaled_df <- si_conc_v1 %>% 
-  dplyr::mutate(dplyr::across(.cols = slope_P_Conc_uM:mean_Discharge_cms,
+  dplyr::mutate(dplyr::across(.cols = land_total_forest:mean_Discharge_cms,
                               .fns = ~ as.numeric(scale(x = ., center = T, scale = T)))) %>% 
   # Rename the modified columns to be explicit about what they are
-  dplyr::rename_with(.col = slope_P_Conc_uM:mean_Discharge_cms,
+  dplyr::rename_with(.col = land_total_forest:mean_Discharge_cms,
                      .fn = ~ paste0("scaled_", .))
 
 # Integrate the scaled data back into the 'main' data
 si_conc_v2 <- si_conc_v1 %>% 
   dplyr::left_join(x = ., y = scaled_df,
                    by = dplyr::join_by(sizer_groups, LTER, Stream_Name, LTER_stream, 
-                                       drainSqKm, chemical, mean_si_conc, perc.change_si_conc))
+                                       drainSqKm, chemical, mean_si_conc, perc.change_si_conc, 
+                                       major_rock))
 
 # Check structure
 dplyr::glimpse(si_conc_v2)
@@ -80,10 +89,12 @@ dplyr::glimpse(si_conc_v2)
 # Correlation Checks ----
 ## ----------------------------------------- ##
 
-# Get just 'slope of _' columns in a data object
+# Get just 'slope of _' columns in a data object and % forest and tundra
 slope_df <- si_conc_v2 %>% 
-  dplyr::select(dplyr::starts_with("slope_")) %>% 
+  dplyr::select(land_total_forest, land_tundra, land_shrubland_grassland, dplyr::starts_with("slope_")) %>% 
   dplyr::distinct()
+
+dplyr::glimpse(slope_df)
 
 # Generate and export the correlation plot
 png(filename = file.path("data", "stats-results", "perc_change_corrplot.png"),
@@ -98,7 +109,7 @@ dev.off()
 # Do the same set of steps for the mean values
 ## Get mean columns alone
 mean_df <- si_conc_v2 %>% 
-  dplyr::select(dplyr::starts_with("mean_")) %>% 
+  dplyr::select(land_total_forest, land_tundra, land_shrubland_grassland, dplyr::starts_with("mean_")) %>% 
   dplyr::distinct()
 
 ## Generate and export the correlation plot
@@ -206,24 +217,31 @@ write.csv(x = month_out, row.names = F, na = '',
 # Q: Is percent change (of DSi) affected by driver x LTER interactions?
 #includes all predictors that do not have covariation of R > 0.61 (Q and temp) but rest r < 0.45 of mean values
 #these predictors same as for avg model below for simplicity
-perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
-                scaled_slope_temp_degC + scaled_slope_P_Conc_uM + 
-                scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + LTER + 
+perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_num.days + 
+                scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + 
+                scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + major_land2 + LTER + 
                 scaled_slope_precip_mm.per.day:LTER +
-                scaled_slope_snow_max.prop.area:LTER + 
+                scaled_slope_snow_num.days:LTER + 
                 scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
-                scaled_slope_P_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER,
+                scaled_slope_P_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER +
+                major_rock + scaled_slope_precip_mm.per.day:major_land2 +
+                scaled_slope_snow_num.days:major_land2 + 
+                scaled_slope_npp_kgC.m2.year:major_land2 + scaled_slope_P_Conc_uM:major_land2,
               data = si_conc_v2)
+names(si_conc_v2)
 
+#removing LTER from here reduced R2 a lot
+
+#copy from LTER onward and replace w/ major rock and only include interactions we think are meaningful
 summary(perc_lm) 
 
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef.csv"))
-write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2.csv"))
+write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef_wlandRocks.csv"))
+write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2wlandRocks.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
-ggplot2::ggsave(filename = file.path("data", "stats-results", "perc_change_residuals.png"),
+ggplot2::ggsave(filename = file.path("data", "stats-results", "perc_change_residuals_land_rocks_lter.png"),
                 height = 5, width = 5, units = "in")
 
 # Extract top-level results
@@ -244,8 +262,11 @@ perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
 # Check structure
 dplyr::glimpse(perc_results)
 
-#export the coefficients, sign of predictors and adj R2 of the model
-write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_toplevel.csv"))
+#export the fstats
+write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_wlter_land_rocks.csv"))
+
+#do this above
+#lm(Conc_uM ~ stream, data = one_lter)
 
 # Interpretation note:
 ## Look at interactions first!
@@ -318,18 +339,21 @@ write.csv(x = perc_pairs, row.names = F, na = '',
 ## ----------------------------------------- ##
 
 # Q: Is mean response (of DSi) affected by driver x LTER interactions?
-avg_lm <- lm(mean_si_conc ~ 
-                scaled_mean_precip_mm.per.day + scaled_mean_snow_max.prop.area + 
-                scaled_mean_temp_degC + scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
-                scaled_mean_Discharge_cms + LTER +
+avg_lm <- lm(mean_si_conc ~ scaled_land_total_forest + scaled_mean_temp_degC +
+                scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
+                scaled_mean_Discharge_cms + LTER + major_rock + scaled_land_total_forest:LTER +
                scaled_mean_evapotrans_kg.m2:LTER +
-                scaled_mean_precip_mm.per.day:LTER +
-                scaled_mean_snow_max.prop.area:LTER + 
-                scaled_mean_temp_degC:LTER + 
+               scaled_mean_temp_degC:LTER +
+               scaled_mean_snow_num.days:LTER + 
+               scaled_mean_npp_kgC.m2.year:LTER + 
                 scaled_mean_P_Conc_uM:LTER + 
-                scaled_mean_Discharge_cms:LTER,
+                scaled_mean_Discharge_cms:LTER + 
+               scaled_mean_temp_degC:major_rock +
+               scaled_slope_snow_num.days:major_rock + 
+               scaled_mean_P_Conc_uM:major_rock,
               data = si_conc_v2)
 summary(avg_lm)
+vif(avg_lm)
 
 #export the coefficients, sign of predictors and adj R2 of the model
 write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef.csv"))
