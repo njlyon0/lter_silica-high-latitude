@@ -629,7 +629,7 @@ ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean.png"),
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
-# Monthly Concentration (FN v. Not) Boxplots ----
+# Monthly Concentration (FN v. Not) Violins ----
 ## ----------------------------------------- ##
 
 # Re-load graph helpers & needed functions
@@ -685,22 +685,34 @@ for(focal_chem in c("DSi", "DIN", "P")){
     leg_y <- 0.43
   }
   
+  # Get a summary table for monthly data too
+  month_smry <- supportR::summary_table(data = month_v2, 
+                                        groups = c("LTER", "norm_chem", "normalize", "Month"),
+                                        response = "percent_change", drop_na = T)
+  
   # Make figure
-  ggplot(month_v2, mapping = aes(x = as.factor(Month), y = percent_change, 
-                                 fill = norm_chem)) +
-    geom_boxplot(outlier.shape = 21) +
+  ggplot() +
+    geom_violin(month_v2, mapping = aes(x = normalize, y = percent_change, 
+                                        fill = norm_chem), alpha = 0.8) +
+    geom_point(month_smry, mapping = aes(x = normalize, y = mean, 
+                                       fill = norm_chem), pch = 21, size = 3) +
+    geom_errorbar(month_smry, mapping = aes(x = normalize, y = mean,
+                                            ymax = mean + std_error,
+                                            ymin = mean - std_error),
+                  width = 0.1) +
     geom_hline(yintercept = 0, linetype = 2) +
-    facet_grid(LTER ~ ., scales = "free") +
+    facet_grid(LTER ~ Month, scales = "free") +
     scale_fill_manual(values = normchem_palt) +
     labs(y = paste0("Significant ", pretty_chem, " Concentration Change (%)"), 
-         x = "LTER", fill = "Normalize_Chem.") +
+         x = "Normalization", fill = "Normalize_Chem") +
     theme(panel.background = element_blank(),
-          legend.position = "inside",
-          legend.position.inside = c(0.6, leg_y),
+          legend.position = "none",
+          # legend.position.inside = c(0.6, leg_y),
           legend.background = element_blank(),
           plot.title = element_text(hjust = 0.5),
           axis.line = element_line(color = "black"),
-          axis.text = element_text(size = 13, color = "black"),
+          axis.text.y = element_text(size = 13, color = "black"),
+          axis.text.x = element_text(size = 8, color = "black"),
           axis.title.x = element_blank(),
           axis.title.y = element_text(size = 16),
           strip.background = element_blank(),
@@ -711,7 +723,7 @@ for(focal_chem in c("DSi", "DIN", "P")){
   ggsave(filename = file.path("graphs", "figures", 
                               paste0("fig_monthly-boxplot-", tolower(pretty_chem), 
                                      "-conc-vs-fnconc.png")),
-         height = 12, width = 8, units = "in")
+         height = 12, width = 10, units = "in")
 }
 
 # Tidy environment
