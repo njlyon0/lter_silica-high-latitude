@@ -236,6 +236,140 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
 } # Close response variable loop
 
 # Tidy environment
+rm(list = setdiff(x = ls(), y = c("df_q_simp")))
+
+## ----------------------------------------- ##
+# Chemical Monthly Bookmarks ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
+
+# Identify conserved file stem
+file_stem <- "stats-ready_monthly"
+
+# Read in all chemical for this response
+df_chem_all <- purrr::map(.x = dir(path = file.path("data", file_stem),
+                                   pattern = "_Conc_uM"),
+                          .f = ~ read.csv(file = file.path("data", file_stem, .x))) %>% 
+  # Stack them vertically
+  purrr::list_rbind(x = .) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
+
+# Wrangle this like we wrangled discharge (see above)
+df_chem_simp <- df_chem_all %>% 
+  dplyr::arrange(LTER, Stream_Name) %>%
+  dplyr::mutate(
+    chemical = gsub(pattern = "_", replacement = ":", x = chemical),
+    chemical = gsub(pattern = "P", replacement = "DIP", x = chemical),
+    slope_direction = dplyr::case_when(
+      significance == "NS" ~ "NS",
+      significance == "marg" ~ "NS",
+      is.na(slope_direction) == T ~ "NA",
+      T ~ slope_direction),
+    slope_direction = factor(slope_direction, levels = c("pos", "neg", "NS", "NA")), 
+    duration_bin = ifelse(test = (section_duration <= 5),
+                          yes = "short", no = "long") ) %>% 
+  dplyr::filter(stringr::str_detect(string = chemical, pattern = ":") != T) %>% 
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, chemical, Year, Month,
+                Conc_uM, significance, slope_direction, duration_bin) %>%
+  dplyr::distinct()
+
+# Count streams / LTER
+(streams_per_lter <- lter_ct(data = df_chem_simp))
+
+# Loop across chemicals
+for(chem in unique(df_chem_simp$chemical)){
+  # chem <- "DSi"
+  
+  # Message
+  message("Creating bookmark graph for ", chem, " Concentration (uM)")
+  
+  # Subset data
+  df_chem_sub <- dplyr::filter(df_chem_simp, chemical == chem)
+  
+  # Identify any streams that don't have data for this chemical
+  df_missing <- df_q_simp %>% 
+    dplyr::filter(!LTER_stream %in% unique(df_chem_sub$LTER_stream)) %>% 
+    dplyr::mutate(significance = "NA", slope_direction = "NA")
+  
+  # Re-attach any streams that were dropped (we want the same number of 'rows' in all graphs)
+  df_chem <- dplyr::bind_rows(df_chem_sub, df_missing)
+  
+  # Make an empty list for storing outputs
+  mo_list <- list()
+  
+  # Loop across months
+  for(mo in sort(unique(df_chem$Month))){
+    # mo <- 1
+    
+    # Progress message
+    message("Creating bookmark graph for month ", mo)
+    
+    # Subset data again
+    df_chem_mo <- dplyr::filter(df_chem, Month == mo)
+    
+    # Create the bookmark graph 
+    q <- ggplot(data = df_chem, mapping = aes(x = Year, y = LTER_stream)) +
+      # Add points with underlying lines for each section
+      geom_path(aes(group = sizer_groups, color = slope_direction), 
+                lwd = 2.5, alpha = 0.6) +
+      geom_point(aes(group = sizer_groups, fill = slope_direction, 
+                     shape = slope_direction), size = 2) +
+      geom_point(data = df_chem[df_chem$slope_direction != "NA", ],
+                 aes(shape = slope_direction), color = "white", size = 2, fill = NA) +
+      # Manually specify point/line colors and point shapes
+      scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
+                         guide = "none") +
+      scale_fill_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA")) +
+      scale_shape_manual(values = dir_shps, breaks = c("pos", "neg", "NS", "NA")) +
+      # Add lines between streams from different LTERs
+      geom_hline(yintercept = streams_per_lter$line_positions) +
+      # Customize labels and axis titles
+      labs(x = "Year", y = "Stream", title = mo) +
+      # Modify theme elements for preferred aesthetics
+      theme_bookmark +
+      theme(legend.position = "inside",
+            legend.position.inside = c(0.3, 0.88),
+            axis.text.x = element_text(size = 9),
+            axis.title.x = element_blank())
+    
+    # Remove the legend from all months except January
+    if(mo > 1){
+      q <- q +
+        theme(legend.position = "none")
+    }
+    
+    # Add research network annotations to only January
+    if(mo %in% c(1, 7)){
+      q <- q +
+        geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") +
+        annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
+                 y = c(14, 27.5, 35.5, 44, 50.5, 62),
+                 label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden"))
+    }
+    
+    # Add to list
+    mo_list[[paste0("month_", mo)]] <- q
+    
+  } # Close month loop
+  
+  # Assemble the desired figure
+  cowplot::plot_grid(plotlist = mo_list, nrow = 2, ncol = 6)
+  
+  # And export it
+  ggsave(filename = file.path("graphs", "figures", 
+                              paste0("fig_bookmark_monthly-", tolower(chem), "_conc_um.png")),
+         height = 16, width = 20, units = "in")
+  
+} # Close chem loop
+
+# Tidy environment
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
