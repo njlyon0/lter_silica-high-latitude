@@ -72,4 +72,27 @@ if(dir.exists(map_path)){
   
 }
 
+## ----------------------------------------- ##
+# Upload Land/Rock Graphs (3D) ----
+## ----------------------------------------- ##
+
+# Define path
+rock_path <- file.path("graphs", "land-rock")
+
+# Define Drive folder
+rock_url <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1t7s3bZcHHjEXa8tvup6zK5erDpmle88l")
+
+# If outputs exist:
+if(dir.exists(rock_path)){
+  
+  # Identify local files
+  rock_local <- dir(path = rock_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = rock_local,
+              .f = ~ googledrive::drive_upload(media = file.path(rock_path, .x), 
+                                               overwrite = T, path = rock_url))
+  
+}
+
 # End ----
