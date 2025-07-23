@@ -225,17 +225,6 @@ write.csv(x = month_out, row.names = F, na = '',
 # Q: Is percent change (of DSi) affected by driver x LTER interactions?
 #interactions with LTER
 
-#same model predictors as for mean response
-perc_lm <- lm(perc.change_si_conc ~ scaled_slope_snow_max.prop.area + 
-                scaled_slope_P_Conc_uM + scaled_slope_temp_degC +
-                scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + LTER + 
-                scaled_slope_snow_max.prop.area:LTER + 
-                scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
-                scaled_slope_P_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER, data = si_conc_v2)
-
-summary(perc_lm) 
-AIC(perc_lm) 
-
 #putting all meterological predictors in (non correlated)
 perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
                 scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + scaled_slope_DIN_Conc_uM + scaled_slope_temp_degC +
@@ -355,8 +344,7 @@ write.csv(x = perc_pairs, row.names = F, na = '',
 avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
                 scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
                 scaled_mean_Discharge_cms + scaled_mean_snow_max.prop.area + LTER + 
-                scaled_mean_temp_degC:LTER + scaled_land_total_forest:LTER +
-               scaled_mean_P_Conc_uM:LTER + scaled_mean_evapotrans_kg.m2:LTER +
+                scaled_mean_temp_degC:LTER + scaled_mean_P_Conc_uM:LTER + scaled_mean_evapotrans_kg.m2:LTER +
                scaled_mean_Discharge_cms:LTER + scaled_mean_snow_max.prop.area:LTER,
               data = si_conc_v2)
 summary(avg_lm)
@@ -392,10 +380,10 @@ avg_results <- as.data.frame(stats::anova(object = avg_lm)) %>%
 dplyr::glimpse(avg_results)
 
 # Interpretation note:
-## Look at interactions first!
+## Look at interactions first! (use f stats)
 ## If interaction is sig, effect of driver on DSi % change **depends on LTER**
 ### Also, interpreting var without interaction doesn't make sense
-## If interaction is NS, look at regular variable
+## If interaction is NS, look at regular variable (use t stats)
 ## If interaction is NS but variable is sig, driver effects DSi **regardless of LTER**
 ## If interaction and variable are NS, driver does not (significantly) affect DSi
 
