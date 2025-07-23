@@ -650,7 +650,7 @@ si_v2 <- si_v1 %>%
                 mean_response, percent_change,
                 dplyr::starts_with(c("slope_", "mean_"))) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
-                -dplyr::contains(c("_FNConc_", "_NO3_", "_DIN_", "_NH4_",
+                -dplyr::contains(c("_FNConc_", "_NO3_", "_NH4_",
                                    "_NOx_", "_Si.DIN_", "_Si.P_"))) %>% 
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
@@ -674,7 +674,7 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
         legend.background = element_blank()); perc_ET
 ## Precipitation
 perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-            exp_var = "slope_precip_mm.per.day", sig = "main") +
+            exp_var = "slope_precip_mm.per.day", sig = "ixn") +
   labs(y = "DSi Concentration (% Change)",
        x = "Precipitation (mm/day) Annual Change") +
   theme(legend.position = "none",
@@ -700,6 +700,20 @@ perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "P Concentration (uM) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_pconc
+## Nitrogen concentration
+perc_nconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                          exp_var = "slope_DIN_Conc_uM", sig = "NS") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "N Concentration (uM) Annual Change") +
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_nconc
+## NPP concentration
+perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                          exp_var = "slope_npp_kgC.m2.year", sig = "NS") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "NPP Concentration (Kg C/m2/yr) Annual Change") +
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); perc_npp
 ## Discharge
 perc_disc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                           exp_var = "slope_Discharge_cms", sig = "NS") +
@@ -722,11 +736,11 @@ perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
         legend.position = "none"); perc_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_box, perc_temp, perc_pconc, perc_disc,
-                   nrow = 2, labels = "AUTO")
+cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nconc, perc_npp, perc_disc,
+                   perc_box, nrow = 3, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_july25.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
@@ -769,13 +783,6 @@ avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
        x = "Mean Evapotranspiration (kg/m2)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_ET
-## Precipitation
-avg_ppt <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                        exp_var = "mean_precip_mm.per.day", sig = "ixn") +
-  labs(y = "Mean DSi Concentration (uM)",
-       x = "Mean Precipitation (mm/day)") +
-  theme(legend.position = "none",
-        axis.text = element_text(color = "black")); avg_ppt
 ## Snow (Proportion Area)
 avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "mean_snow_max.prop.area", sig = "ixn") +
@@ -785,7 +792,7 @@ avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
         axis.text = element_text(color = "black")); avg_snow
 ## Temperature
 avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                         exp_var = "mean_temp_degC", sig = "ixn") +
+                         exp_var = "mean_temp_degC", sig = "main") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Temperature (C)") +
   theme(legend.position = "inside",
@@ -821,11 +828,11 @@ avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
         legend.position = "none"); avg_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(avg_ET, avg_ppt, avg_snow, avg_box, avg_temp, avg_pconc, avg_disc,
+cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_disc, avg_box, 
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_July2025.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
