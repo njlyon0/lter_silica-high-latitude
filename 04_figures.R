@@ -315,13 +315,13 @@ for(chem in unique(df_chem_simp$chemical)){
     df_chem_mo <- dplyr::filter(df_chem, Month == mo)
     
     # Create the bookmark graph 
-    q <- ggplot(data = df_chem, mapping = aes(x = Year, y = LTER_stream)) +
+    q <- ggplot(data = df_chem_mo, mapping = aes(x = Year, y = LTER_stream)) +
       # Add points with underlying lines for each section
       geom_path(aes(group = sizer_groups, color = slope_direction), 
                 lwd = 2.5, alpha = 0.6) +
       geom_point(aes(group = sizer_groups, fill = slope_direction, 
                      shape = slope_direction), size = 2) +
-      geom_point(data = df_chem[df_chem$slope_direction != "NA", ],
+      geom_point(data = df_chem_mo[df_chem_mo$slope_direction != "NA", ],
                  aes(shape = slope_direction), color = "white", size = 2, fill = NA) +
       # Manually specify point/line colors and point shapes
       scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
