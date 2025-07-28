@@ -745,6 +745,82 @@ ggsave(filename = file.path("graphs", "figures",
                             "fig_stack-bar_monthly-dsi-conc-um_slope-dir.png"),
        height = 6, width = 8, units = "in")
 
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Stacked Barplot of Discharge ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in relevant data
+disc <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Discharge_cms_DSi.csv")) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
+# Check structure
+dplyr::glimpse(disc)
+
+# Parse the data into the necessary format
+disc_v2 <- disc %>% 
+  # Standardize some LTER names
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>% 
+  # Flesh out 'slope direction' column slightly
+  dplyr::mutate(slope_direction = dplyr::case_when(
+    significance == "NS" ~ "NS",
+    significance == "marg" ~ "NS",
+    is.na(slope_direction) == T ~ "NA",
+    T ~ slope_direction),
+    slope_direction = factor(slope_direction, levels = c("pos", "NS", "neg", "NA"))) %>% 
+  # Get just necessary columns & unique rows
+  dplyr::select(sizer_groups, LTER, Year, Month, LTER_stream, slope_direction) %>% 
+  dplyr::distinct() %>% 
+  # Calculate necessary summary info within groups
+  dplyr::group_by(LTER, Month) %>% 
+  dplyr::mutate(total_ct = dplyr::n()) %>% 
+  dplyr::group_by(LTER, Month, total_ct, slope_direction) %>% 
+  dplyr::summarize(slope_ct = dplyr::n(),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  # Define other key variables
+  dplyr::mutate(prop_slope = slope_ct / total_ct)
+
+# Re-check structure
+dplyr::glimpse(disc_v2)
+
+# Create desired graph
+ggplot(disc_v2, aes(x = as.factor(Month), y = prop_slope, 
+                  fill = slope_direction, color = "x")) +
+  geom_bar(stat = "identity") +
+  facet_wrap(LTER ~ ., ncol = 4, axes = "all_x") +
+  scale_fill_manual(values = dir_palt) +
+  scale_color_manual(values = "#000") +
+  guides(color = "none") +
+  labs(x = "Month", y = "Slope Direction Proportion") +
+  theme_facetbox +
+  theme(legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.position = "inside",
+        legend.position.inside = c(1, 0),
+        legend.justification = c(1.8, -0.5),
+        strip.text = element_text(size = 14),
+        axis.text.x = element_text(size = 8))
+
+# Export locally
+ggsave(filename = file.path("graphs", "figures", 
+                            "fig_stack-bar_monthly-discharge_slope-dir.png"),
+       height = 6, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
+
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' DSi % Change Figure ----
 ## ----------------------------------------- ##
