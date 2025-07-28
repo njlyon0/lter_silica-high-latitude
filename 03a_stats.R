@@ -221,6 +221,96 @@ dplyr::glimpse(month_out)
 write.csv(x = month_out, row.names = F, na = '',
           file = file.path("data", "stats-results", "monthly_perc_change_DSi_results.csv"))
 
+
+
+## ----------------------------------------- ##
+# Mean Si Response within LTER Across Months ----
+## ----------------------------------------- ##
+
+# Read in monthly (prepared) output
+month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv"))
+
+# Check structure
+dplyr::glimpse(month_v1)
+
+# Pre-statistics wrangling
+month_v2 <- month_v1 %>% 
+  # Pare down to only what is needed
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical, Month,
+                mean_response, percent_change,
+                dplyr::starts_with("slope_"),  dplyr::starts_with("mean_")) %>% 
+  dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
+                -dplyr::contains("_FNConc_"),
+                -dplyr::contains("_NO3_"), -dplyr::contains("_DIN_"),
+                -dplyr::contains("_NH4_"), -dplyr::contains("_NOx_"),
+                -dplyr::contains("_Si.DIN_"), -dplyr::contains("_Si.P_")) %>% 
+  # Change certain column names to be more informative
+  dplyr::rename(mean_si_conc = mean_response,
+                perc.change_si_conc = percent_change) %>% 
+  #drop MCM sites not longer using
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream ")) %>%
+  # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
+  dplyr::distinct()
+
+# Make list for outputs
+month_list <- list()
+
+# Loop across LTERs to analyze within each
+for(ltername in unique(month_v2$LTER)){
+  
+  # Processing message
+  message("processing LTER: ", ltername)
+  
+  # Subset the data
+  month_sub <- dplyr::filter(.data = month_v2, LTER == ltername)
+  
+  # Fit linear model
+  aov_meanSi_month <- lm(mean_si_conc ~ Stream_Name + as.factor(Month),
+                              data = month_sub)
+  
+  # Extract top-level results
+  month_results1 <- as.data.frame(stats::anova(object = aov_meanSi_month)) %>%
+    # Get terms into column
+    tibble::rownames_to_column(.data = ., var = "term") %>% 
+    # Drop sum/mean squares columns
+    dplyr::select(-`Sum Sq`, -`Mean Sq`) %>% 
+    # Rename other columns
+    dplyr::rename(deg_free = Df,
+                  f_stat = `F value`,
+                  p_value = `Pr(>F)`) %>% 
+    # Remove residuals
+    dplyr::filter(term != "Residuals") %>% 
+    # Identify significance
+    dplyr::mutate(sig = ifelse(test = p_value < 0.05, 
+                               yes = "yes", no = "no")) %>%
+    # Add column for LTER
+    dplyr::mutate(LTER = ltername, .before = dplyr::everything())
+  
+  # Generate / export a residual plot (to evaluate model fit)
+  ggResidpanel::resid_panel(model = aov_meanSi_month)
+  ggplot2::ggsave(filename = file.path("data", "stats-results", paste0("monthly_meanSi_residuals_", ltername, ".png")),
+                  height = 5, width = 5, units = "in")
+  
+  # Add this to the output list
+  month_list[[ltername]] <- month_results1
+  
+} # Close loop
+
+# Unlist the output
+month_out <- month_list %>% 
+  purrr::list_rbind(x = .)
+
+# Check structure
+dplyr::glimpse(month_out)
+
+# Export results
+write.csv(x = month_out, row.names = F, na = '',
+          file = file.path("data", "stats-results", "monthly_meanSi_results.csv"))
+
+
 ## ----------------------------------------- ##
 # % Change Si Response across LTERs ----
 ## ----------------------------------------- ##  
