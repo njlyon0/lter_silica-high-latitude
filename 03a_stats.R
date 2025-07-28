@@ -135,6 +135,9 @@ dev.off()
 # % Change Si Response within LTER Across Months ----
 ## ----------------------------------------- ##
 
+#do this above
+#lm(Conc_uM ~ stream, data = one_lter)
+
 # Read in monthly (prepared) output
 month_v1 <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv"))
 
@@ -266,9 +269,6 @@ dplyr::glimpse(perc_results)
 
 #export the fstats
 write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_7.18.25.csv"))
-
-#do this above
-#lm(Conc_uM ~ stream, data = one_lter)
 
 # Interpretation note:
 ## Look at interactions first!
