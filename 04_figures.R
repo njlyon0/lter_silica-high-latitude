@@ -315,13 +315,13 @@ for(chem in unique(df_chem_simp$chemical)){
     df_chem_mo <- dplyr::filter(df_chem, Month == mo)
     
     # Create the bookmark graph 
-    q <- ggplot(data = df_chem, mapping = aes(x = Year, y = LTER_stream)) +
+    q <- ggplot(data = df_chem_mo, mapping = aes(x = Year, y = LTER_stream)) +
       # Add points with underlying lines for each section
       geom_path(aes(group = sizer_groups, color = slope_direction), 
                 lwd = 2.5, alpha = 0.6) +
       geom_point(aes(group = sizer_groups, fill = slope_direction, 
                      shape = slope_direction), size = 2) +
-      geom_point(data = df_chem[df_chem$slope_direction != "NA", ],
+      geom_point(data = df_chem_mo[df_chem_mo$slope_direction != "NA", ],
                  aes(shape = slope_direction), color = "white", size = 2, fill = NA) +
       # Manually specify point/line colors and point shapes
       scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
@@ -368,6 +368,119 @@ for(chem in unique(df_chem_simp$chemical)){
          height = 16, width = 20, units = "in")
   
 } # Close chem loop
+
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Discharge Monthly Bookmarks ----
+## ----------------------------------------- ##
+
+# Load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_lter-ct.R"))
+
+# Read in discharge data
+df_q <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Discharge_cms_DSi.csv")) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
+
+# Simplify this object
+df_q_simp <- df_q %>% 
+  # Arrange by LTER and site
+  dplyr::arrange(LTER, Stream_Name) %>%
+  # Do some final tweaks
+  dplyr::mutate(
+    ## Fix slope direction categories
+    slope_direction = dplyr::case_when(
+      significance == "NS" ~ "NS",
+      significance == "marg" ~ "NS",
+      is.na(slope_direction) == T ~ "NA",
+      T ~ slope_direction),
+    ## Assign level order
+    slope_direction = factor(slope_direction, levels = names(dir_palt)), 
+    ## Bin duration
+    duration_bin = ifelse(test = (section_duration <= 5),
+                          yes = "short", no = "long") ) %>% 
+  # Pare down to only needed columns
+  dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, chemical, Year, Month,
+                Discharge_cms, significance, slope_direction, duration_bin) %>%
+  # Drop non-unique rows
+  dplyr::distinct()
+
+# Check structure
+dplyr::glimpse(df_q_simp)
+
+# Count streams / LTER
+(streams_per_lter <- lter_ct(data = df_q_simp))
+
+# Make an empty list for storing outputs
+mo_list <- list()
+
+# Loop across months
+for(mo in sort(unique(df_q_simp$Month))){
+  # mo <- 1
+  
+  # Progress message
+  message("Creating discharge bookmark graph for month ", mo)
+  
+  # Subset data again
+  df_q_mo <- dplyr::filter(df_q_simp, Month == mo)
+  
+  # Create the bookmark graph 
+  q <- ggplot(data = df_q_mo, mapping = aes(x = Year, y = LTER_stream)) +
+    # Add points with underlying lines for each section
+    geom_path(aes(group = sizer_groups, color = slope_direction), 
+              lwd = 2.5, alpha = 0.6) +
+    geom_point(aes(group = sizer_groups, fill = slope_direction, 
+                   shape = slope_direction), size = 2) +
+    geom_point(data = df_q_mo[df_q_mo$slope_direction != "NA", ],
+               aes(shape = slope_direction), color = "white", size = 2, fill = NA) +
+    # Manually specify point/line colors and point shapes
+    scale_color_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA"), 
+                       guide = "none") +
+    scale_fill_manual(values = dir_palt, breaks = c("pos", "neg", "NS", "NA")) +
+    scale_shape_manual(values = dir_shps, breaks = c("pos", "neg", "NS", "NA")) +
+    # Add lines between streams from different LTERs
+    geom_hline(yintercept = streams_per_lter$line_positions) +
+    # Customize labels and axis titles
+    labs(x = "Year", y = "Stream", title = mo) +
+    # Modify theme elements for preferred aesthetics
+    theme_bookmark +
+    theme(legend.position = "inside",
+          legend.position.inside = c(0.3, 0.88),
+          axis.text.x = element_text(size = 9),
+          axis.title.x = element_blank())
+  
+  # Remove the legend from all months except January
+  if(mo > 1){
+    q <- q +
+      theme(legend.position = "none")
+  }
+  
+  # Add research network annotations to only January
+  if(mo %in% c(1, 7)){
+    q <- q +
+      geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") +
+      annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
+               y = c(14, 27.5, 35.5, 44, 50.5, 62),
+               label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden"))
+  }
+  
+  # Add to list
+  mo_list[[paste0("month_", mo)]] <- q
+  
+} # Close month loop
+
+# Assemble the desired figure
+cowplot::plot_grid(plotlist = mo_list, nrow = 2, ncol = 6)
+
+# And export it
+ggsave(filename = file.path("graphs", "figures", "fig_bookmark_monthly-discharge.png"),
+       height = 16, width = 20, units = "in")
 
 # Tidy environment
 rm(list = ls()); gc()
@@ -631,6 +744,82 @@ ggplot(si_v2, aes(x = as.factor(Month), y = prop_slope,
 ggsave(filename = file.path("graphs", "figures", 
                             "fig_stack-bar_monthly-dsi-conc-um_slope-dir.png"),
        height = 6, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Stacked Barplot of Discharge ----
+## ----------------------------------------- ##
+
+# Re-load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+
+# Read in relevant data
+disc <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Discharge_cms_DSi.csv")) %>% 
+  # Remove McMurdo streams with incomplete chemical information
+  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
+                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
+                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
+                                    "MCM_Priscu Stream "))
+# Check structure
+dplyr::glimpse(disc)
+
+# Parse the data into the necessary format
+disc_v2 <- disc %>% 
+  # Standardize some LTER names
+  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
+  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>% 
+  # Flesh out 'slope direction' column slightly
+  dplyr::mutate(slope_direction = dplyr::case_when(
+    significance == "NS" ~ "NS",
+    significance == "marg" ~ "NS",
+    is.na(slope_direction) == T ~ "NA",
+    T ~ slope_direction),
+    slope_direction = factor(slope_direction, levels = c("pos", "NS", "neg", "NA"))) %>% 
+  # Get just necessary columns & unique rows
+  dplyr::select(sizer_groups, LTER, Year, Month, LTER_stream, slope_direction) %>% 
+  dplyr::distinct() %>% 
+  # Calculate necessary summary info within groups
+  dplyr::group_by(LTER, Month) %>% 
+  dplyr::mutate(total_ct = dplyr::n()) %>% 
+  dplyr::group_by(LTER, Month, total_ct, slope_direction) %>% 
+  dplyr::summarize(slope_ct = dplyr::n(),
+                   .groups = "keep") %>% 
+  dplyr::ungroup() %>% 
+  # Define other key variables
+  dplyr::mutate(prop_slope = slope_ct / total_ct)
+
+# Re-check structure
+dplyr::glimpse(disc_v2)
+
+# Create desired graph
+ggplot(disc_v2, aes(x = as.factor(Month), y = prop_slope, 
+                  fill = slope_direction, color = "x")) +
+  geom_bar(stat = "identity") +
+  facet_wrap(LTER ~ ., ncol = 4, axes = "all_x") +
+  scale_fill_manual(values = dir_palt) +
+  scale_color_manual(values = "#000") +
+  guides(color = "none") +
+  labs(x = "Month", y = "Slope Direction Proportion") +
+  theme_facetbox +
+  theme(legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.position = "inside",
+        legend.position.inside = c(1, 0),
+        legend.justification = c(1.8, -0.5),
+        strip.text = element_text(size = 14),
+        axis.text.x = element_text(size = 8))
+
+# Export locally
+ggsave(filename = file.path("graphs", "figures", 
+                            "fig_stack-bar_monthly-discharge_slope-dir.png"),
+       height = 6, width = 8, units = "in")
+
+# Tidy environment
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
 # 'Pick Up Sticks' DSi % Change Figure ----
