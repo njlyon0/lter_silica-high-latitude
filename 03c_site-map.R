@@ -98,7 +98,7 @@ if("permafrost-simple.tif" %in% dir(path = file.path("data", "map-data")) != T){
   rm(list = setdiff(x = ls(), y = c("site_df"))); gc() }
 
 ## ------------------------------------------ ##
-              # Site Map Prep ----
+# Site Map Prep ----
 ## ------------------------------------------ ##
 
 # Read in permafrost data
@@ -119,6 +119,10 @@ range(high_lats$lat); range(high_lats$lon)
 # Define borders of maps so that the site points will be nicely inside the borders
 low_lims <- list("lat" = c(-80, -60), "lon" = c(-180, 180))
 high_lims <- list("lat" = c(55, 80), "lon" = c(-170, 170)) 
+
+## ------------------------------------------ ##
+# Site Map Creation (Global) ----
+## ------------------------------------------ ##
 
 # Define the bits of the map that all sub-maps will want to re-use
 core_map <-  borders %>% 
@@ -185,7 +189,7 @@ ggsave(filename = file.path("graphs", "map_global.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
 ## ------------------------------------------ ##
-        # Site Map Creation (V2) ----
+# Site Map Creation (Antarctica Inset) ----
 ## ------------------------------------------ ##
 # Make a zoomed in low latitude map
 
@@ -218,49 +222,5 @@ ggsave(filename = file.path("graphs", "map_mcmurdo.jpg"),
 
 # Clean up environment and collect garbage to speed R up going forward
 rm(list = ls()); gc()
-
-## ------------------------------------------ ##
-# 'Top Down' Map ----
-## ------------------------------------------ ##
-
-borders %>% 
-  sf::st_crop(x = ., y = c(xmin = -2500000, ymin = -2500000, xmax = 2500000, ymax = 2500000)) %>% 
-  # sf::st_transform(x = ., crs = 3413) %>% 
-  ggplot() +
-  geom_sf(fill = "gray95")
-  
-
-
-borders %>% 
-  ggplot() +
-  geom_sf(fill = "gray95", sf::st_crs(3413)) +
-  # Add permafrost to this section
-  # stars::geom_stars(data = pf_stars, downsample = 10) +
-  labs(x = "", y = "") +
-  # scale_fill_continuous(na.value = "transparent") +
-  supportR::theme_lyon(text_size = 13)  +
-  # Set map extent
-  coord_sf(xlim = high_lims[["lon"]], ylim = high_lims[["lat"]], expand = F) +
-  # Add points for sites and customize point aesthetics
-  geom_point(data = site_df, aes(x = lon, y = lat, color = mean_si,
-                                 size = drainSqKm), shape = 19, alpha = 0.75) +
-  # Make axis tick marks nice and neat
-  scale_x_continuous(limits = high_lims[["lon"]], 
-                     breaks = seq(from = min(high_lims[["lon"]]), 
-                                  to = max(high_lims[["lon"]]), 
-                                  by = 50)) + 
-  scale_y_continuous(limits = high_lims[["lat"]], 
-                     breaks = seq(from = min(high_lims[["lat"]]) + 5, 
-                                  to = max(high_lims[["lat"]]), 
-                                  by = 15)) + 
-  # Customize fill & color
-  scale_fill_gradient(low = "#8ecae6", high = "#8ecae6", na.value = "transparent") +
-  scale_color_gradient(low = "#780116", high = "#f7b538") +
-  # Customize point size bins
-  scale_size_binned(breaks = c(10^3, 10^6)) +
-  theme(legend.position = "none") +
-  guides(fill = "none")
-
-# EPSG:32661 for the North Pole and EPSG:32761 for the South Pole
 
 # End ----
