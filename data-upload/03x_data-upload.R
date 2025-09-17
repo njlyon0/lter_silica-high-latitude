@@ -95,4 +95,30 @@ if(dir.exists(rock_path)){
   
 }
 
+## ----------------------------------------- ##
+# Upload Figures (3E) ----
+## ----------------------------------------- ##
+
+# Define path
+fig_path <- file.path("graphs", "figures")
+
+# Define Drive folder
+fig_url <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/11Ya520cy7IRyUAmRhtrk0C4FgcjtnH4t")
+
+# If outputs exist:
+if(dir.exists(fig_path)){
+  
+  # Identify local files
+  fig_local <- dir(path = fig_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = fig_local,
+              .f = ~ googledrive::drive_upload(media = file.path(fig_path, .x), 
+                                               overwrite = T, path = fig_url))
+  
+}
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
 # End ----
