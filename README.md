@@ -1,6 +1,6 @@
 # Decadal Shifts Towards Higher Riverine Silicon Relative to Nitrogen and Phosphorus Across High Latitudes
 
-[![Code DOI](https://img.shields.io/badge/Code%20DOI-10.5281/zenodo.17144356-green.svg)](https://doi.org/10.5281/zenodo.17144356) | [![Data DOI](https://img.shields.io/badge/Data%20DOI-10.5066/P138M8AR-blue.svg)](https://www.sciencebase.gov/catalog/item/66eaf6a0d34e0606a9dbaa19)
+[![Code DOI](https://img.shields.io/badge/Code-10.5281/zenodo.17144356-orange.svg)](https://doi.org/10.5281/zenodo.17144356) / [![Data DOI](https://img.shields.io/badge/Data-10.5066/P138M8AR-blue.svg)](https://www.sciencebase.gov/catalog/item/66eaf6a0d34e0606a9dbaa19)
 
 Joanna C. Carey, [Nicholas J Lyon](https://njlyon0.github.io/), [Keira Johnson](https://orcid.org/0000-0003-0671-3901), Pamela L. Sullivan, [Sidney A. Bush](https://orcid.org/0000-0002-8359-7927), Lienne Sethna, Ruth Heindel, Hjalmar Laudon, Diane McKnight, Pirkko Kortelainen, Amanda Poste, Antti Raike, Kathi Jo Jankowski
 
