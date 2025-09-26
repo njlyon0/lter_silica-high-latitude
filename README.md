@@ -12,7 +12,8 @@ All scripts listed below assume that you have run the preceding number script. S
 - **`02_stats-prep.R`** - Combines various data files and calculates covariate columns likely to be useful in the analysis script. Just like `01_sizer-workflow.R`, works for annual/seasonal/monthly input data
 - **`03a_stats.R`** - Performs desired statistical analysis
 - **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
-- **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration.
+- **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration
+- **`03d_land-rock-graphs.R`** - Makes simple graphs of element concentration against lithology/land cover categories
 - **`03e_figures.R`** - Makes publication-quality figures from extracted SiZer information
 - **`04_tables.R`** - Generates publication-quality summary tables
 
