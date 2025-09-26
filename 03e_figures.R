@@ -844,6 +844,8 @@ si_v2 <- si_v1 %>%
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
+  # remove MCM b/c wasn't used to create these stats
+  dplyr::filter(!LTER %in% c("MCM")) %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
@@ -915,7 +917,7 @@ perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
   scale_fill_manual(values = lter_palt) +
   scale_x_discrete(labels = c("Canada", "Finland", "GRO", "Krycklan", 
-                              "MCM", "Norway", "Sweden")) +
+                              "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)", x = "LTER") +
   geom_text(label = "NS", x = 1, y = 14, hjust = "center") + 
   theme(panel.background = element_blank(),
@@ -929,7 +931,7 @@ cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nco
                    perc_box, nrow = 3, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_july25.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_Sept25.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
@@ -946,11 +948,16 @@ source(file.path("tools", "fxn_stick-graph.R"))
 # Read in DSi data
 si_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
 
-# Process this as needed
+#create new column for water yield
+si_v1$Qnorm <- si_v1$mean_Discharge_cms/si_v1$drainSqKm
+
+names(si_v1)
+
+# Process this as needed - remove MCM b/c wasn't used in MLR
 si_v2 <- si_v1 %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
-                mean_response, percent_change,
+                mean_response, percent_change, Qnorm,
                 dplyr::starts_with(c("slope_", "mean_"))) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
                 -dplyr::contains(c("_FNConc_", "_NO3_", "_DIN_", "_NH4_",
@@ -958,8 +965,14 @@ si_v2 <- si_v1 %>%
   # Change certain column names to be more informative
   dplyr::rename(mean_si_conc = mean_response,
                 perc.change_si_conc = percent_change) %>% 
+  # remove MCM b/c wasn't used to create these stats
+  dplyr::filter(!LTER %in% c("MCM")) %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
+
+#creating new dataframe without Krycklan for water yield graph
+si_v3 <- si_v2 %>%
+  dplyr::filter(!LTER %in% c("Krycklan"))
 
 # Check structure
 dplyr::glimpse(si_v2)
@@ -991,24 +1004,24 @@ avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
         legend.background = element_blank()); avg_temp
 ## Phosphorus concentration
 avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                          exp_var = "mean_P_Conc_uM", sig = "main") +
+                          exp_var = "mean_P_Conc_uM", sig = "ixn") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean P Concentration (uM)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_pconc
-## Discharge
-avg_disc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                         exp_var = "mean_Discharge_cms", sig = "NS") +
+## Specific Discharge
+avg_Qnorm <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
+                         exp_var = "Qnorm", sig = "ixn") +
   labs(y = "Mean DSi Concentration (uM)",
-       x = "Mean Discharge (cms)") +
+       x = "Mean Water Yield (m3/s/km2)") +
   theme(legend.position = "none",
-        axis.text = element_text(color = "black")); avg_disc
+        axis.text = element_text(color = "black")); avg_Qnorm
 ## LTER boxplots
 avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
   scale_fill_manual(values = lter_palt) +
   scale_x_discrete(labels = c("Canada", "Finland", "GRO", "Krycklan", 
-                              "MCM", "Norway", "Sweden")) +
+                              "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)", x = "LTER") +
   theme(panel.background = element_blank(),
         axis.line = element_line(color = "black"),
@@ -1017,12 +1030,26 @@ avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
         legend.position = "none"); avg_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_disc, avg_box, 
+cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_Qnorm, avg_box, 
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_July2025.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_Sept2025.png"),
        height = 10, width = 15, units = "in")
+
+
+## Specific Discharge without Krycklan for insert
+Qnorm2<-stick_graph(data = si_v3, resp_var = "mean_si_conc",  
+                         exp_var = "Qnorm", sig = "ixn") +
+  labs(y = "Mean DSi Concentration (uM)",
+       x = "Mean Water Yield (m3/s/km2)") +
+  theme(legend.position = "none",
+        axis.text = element_text(color = "black")); Qnorm2
+cowplot::plot_grid(Qnorm2, nrow = 1)
+# Export as a figure
+ggsave(filename = file.path("graphs", "figures", "Qnorm_noKrycklan.png"),
+       height = 3, width = 5, units = "in")
+
 
 # Tidy environment
 rm(list = ls()); gc()

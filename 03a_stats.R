@@ -72,12 +72,26 @@ si_conc_v1<-si_conc_v1 %>%
 si_conc_v1 <- si_conc_v1 %>%
   relocate(drainSqKm, .after=major_land)
 
+#create new column for water yield
+si_conc_v1$Qnorm <- si_conc_v1$mean_Discharge_cms/si_conc_v1$drainSqKm
+
+#create new column for slope changes in water yield
+si_conc_v1$slope_Qnorm <- si_conc_v1$slope_Discharge_cms/si_conc_v1$drainSqKm
+
+#move Qnorm after major land for scaling to work
+si_conc_v1 <- si_conc_v1 %>%
+  relocate(Qnorm, .after=major_land)
+
+#move slope of Qnorm after major land for scaling to work
+si_conc_v1 <- si_conc_v1 %>%
+  relocate(slope_Qnorm, .after=major_land)
+
 # Scale & center the driver variables
 scaled_df <- si_conc_v1 %>% 
-  dplyr::mutate(dplyr::across(.cols = drainSqKm:mean_Discharge_cms,
+  dplyr::mutate(dplyr::across(.cols = slope_Qnorm:mean_Discharge_cms,
                               .fns = ~ as.numeric(scale(x = ., center = T, scale = T)))) %>% 
   # Rename the modified columns to be explicit about what they are
-  dplyr::rename_with(.col = drainSqKm:mean_Discharge_cms,
+  dplyr::rename_with(.col = slope_Qnorm:mean_Discharge_cms,
                      .fn = ~ paste0("scaled_", .))
 
 # Integrate the scaled data back into the 'main' data
@@ -96,12 +110,10 @@ dplyr::glimpse(si_conc_v2)
 
 # Get just 'slope of _' columns in a data object and % forest and tundra
 slope_df <- si_conc_v2 %>% 
-  dplyr::select(perc.change_si_conc, drainSqKm, dplyr::starts_with("slope_")) %>% 
+  dplyr::select(perc.change_si_conc, dplyr::starts_with("slope_")) %>% 
   dplyr::distinct()
 
 dplyr::glimpse(slope_df)
-
-names(si_conc_v2)
 
 # Generate and export the correlation plot
 png(filename = file.path("data", "stats-results", "perc_change_corrplot.png"),
@@ -113,21 +125,19 @@ slope_corplot <- slope_df %>%
 ## Exit this saving step
 dev.off()
 
-names(si_conc_v2)
-
 # Do the same set of steps for the mean values
 ## Get mean columns alone
 mean_df <- si_conc_v2 %>% 
-  dplyr::select(land_total_forest, land_tundra, land_shrubland_grassland, drainSqKm, dplyr::starts_with("mean_")) %>% 
+  dplyr::select(land_total_forest, land_tundra, land_shrubland_grassland, drainSqKm, Qnorm, dplyr::starts_with("mean_")) %>% 
   dplyr::distinct()
 
 ## Generate and export the correlation plot
 png(filename = file.path("data", "stats-results", "avg_response_corrplot.png"),
-    height = 7, width =10, units = "in", res = 560)
+    height = 7, width =12, units = "in", res = 560)
 
 mean_corplot <- mean_df %>% 
   stats::cor(x = ., use = "complete.obs") %>% 
-  corrplot::corrplot(corr = ., method = "number")
+  corrplot::corrplot(corr = ., method = "number", number.cex = 0.8, tl.cex = 0.8)
 
 dev.off()
 
@@ -418,7 +428,12 @@ write.csv(x = month_out, row.names = F, na = '',
 # Q: Is percent change (of DSi) affected by driver x LTER interactions?
 #interactions with LTER
 
+#remove MCM here b/c no spatial data for there (actually model removes it anyways)
+si_conc_v2 <- si_conc_v2 %>%
+  dplyr::filter(!LTER %in% c("MCM")) 
+
 #putting all meterological predictors in (non correlated)
+#using discharge here
 perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
                 scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + scaled_slope_DIN_Conc_uM + scaled_slope_temp_degC +
                 scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + LTER + 
@@ -430,9 +445,21 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slop
 summary(perc_lm) #keep all predictors
 AIC(perc_lm) 
 
+#using changing Q normalized - don't use - worse output
+perc_lm <- lm(perc.change_si_conc ~ scaled_slope_Qnorm + scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
+                scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + scaled_slope_DIN_Conc_uM + scaled_slope_temp_degC +
+                scaled_slope_evapotrans_kg.m2 + LTER + scaled_slope_Qnorm:LTER +
+                scaled_slope_precip_mm.per.day:LTER + scaled_slope_snow_max.prop.area:LTER + 
+                scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
+                scaled_slope_P_Conc_uM:LTER + scaled_slope_DIN_Conc_uM:LTER +  
+                scaled_slope_npp_kgC.m2.year:LTER, data = si_conc_v2)
+
+summary(perc_lm) #keep all predictors
+AIC(perc_lm) #AIC higher and adj R2 lower using specific discharge (water yield)
+
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef_7.18.25.csv"))
-write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2_7.18.25.csv"))
+write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef_9.26.25.csv"))
+write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2_9.26.25.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
@@ -458,7 +485,7 @@ perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
 dplyr::glimpse(perc_results)
 
 #export the fstats
-write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_7.18.25.csv"))
+write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_9.26.25.csv"))
 
 # Interpretation note:
 ## Look at interactions first!
@@ -524,13 +551,19 @@ if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = perc_pairs, row.names = F, na = '',
-          file = file.path("data", "stats-results", "perc_change_DSi_results_pairwise.csv"))
+          file = file.path("data", "stats-results", "perc_change_DSi_results_pairwise_9.26.25.csv"))
 
 ## ----------------------------------------- ##
               # Mean Si Response ----
 ## ----------------------------------------- ##
 
 # Q: Is mean response (of DSi) affected by driver x LTER interactions?
+
+#need to remove MCM here b/c no spatial data for there
+si_conc_v2 <- si_conc_v2 %>%
+  dplyr::filter(!LTER %in% c("MCM")) 
+
+#using discharge
 avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
                 scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
                 scaled_mean_Discharge_cms + scaled_mean_snow_max.prop.area + LTER + 
@@ -538,13 +571,22 @@ avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
                scaled_mean_Discharge_cms:LTER + scaled_mean_snow_max.prop.area:LTER,
               data = si_conc_v2)
 summary(avg_lm)
+
+
+#using specific discharge (i.e. water yield rather than discharge)
+avg_lm <- lm(mean_si_conc ~ scaled_Qnorm + scaled_mean_temp_degC +
+               scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
+               scaled_mean_snow_max.prop.area + LTER + 
+               scaled_Qnorm:LTER + scaled_mean_temp_degC:LTER + scaled_mean_P_Conc_uM:LTER + 
+               scaled_mean_evapotrans_kg.m2:LTER + scaled_mean_snow_max.prop.area:LTER,
+             data = si_conc_v2)
+summary(avg_lm)
 AIC(avg_lm)
-vif(avg_lm)
-names(si_conc_v2)
+
 
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef.csv"))
-write.csv(glance(avg_lm), file = file.path("data", "stats-results", "avg_lm_R2.csv"))
+write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef_w_wateryield.csv"))
+write.csv(glance(avg_lm), file = file.path("data", "stats-results", "avg_lm_R2_w_wateryield.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = avg_lm)
@@ -633,6 +675,6 @@ if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = avg_pairs, row.names = F, na = '',
-          file = file.path("data", "stats-results", "avg_response_DSi_results_pairwise.csv"))
+          file = file.path("data", "stats-results", "avg_response_DSi_results_pairwise_w_wateryield.csv"))
 
 # End ----
