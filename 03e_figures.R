@@ -294,12 +294,12 @@ for(chem in unique(df_chem_simp$chemical)){
   df_chem_sub <- dplyr::filter(df_chem_simp, chemical == chem)
   
   # Identify any streams that don't have data for this chemical
-  df_missing <- df_q_simp %>% 
+  df_chem_missing <- df_chem_all %>% 
     dplyr::filter(!LTER_stream %in% unique(df_chem_sub$LTER_stream)) %>% 
     dplyr::mutate(significance = "NA", slope_direction = "NA")
   
   # Re-attach any streams that were dropped (we want the same number of 'rows' in all graphs)
-  df_chem <- dplyr::bind_rows(df_chem_sub, df_missing)
+  df_chem <- dplyr::bind_rows(df_chem_sub, df_chem_missing)
   
   # Make an empty list for storing outputs
   mo_list <- list()
@@ -314,8 +314,16 @@ for(chem in unique(df_chem_simp$chemical)){
     # Subset data again
     df_chem_mo <- dplyr::filter(df_chem, Month == mo)
     
+    # Identify any streams that don't have data for this month
+    df_mo_missing <- df_chem_all %>% 
+      dplyr::filter(!LTER_stream %in% unique(df_chem_mo$LTER_stream)) %>% 
+      dplyr::mutate(significance = "NA", slope_direction = "NA")
+    
+    # Re-attach any streams that were dropped (we want the same number of 'rows' in all graphs)
+    df_chem_mo_actual <- dplyr::bind_rows(df_chem_mo, df_mo_missing)
+    
     # Create the bookmark graph 
-    q <- ggplot(data = df_chem_mo, mapping = aes(x = Year, y = LTER_stream)) +
+    q <- ggplot(data = df_chem_mo_actual, mapping = aes(x = Year, y = LTER_stream)) +
       # Add points with underlying lines for each section
       geom_path(aes(group = sizer_groups, color = slope_direction), 
                 lwd = 2.5, alpha = 0.6) +
