@@ -152,7 +152,11 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
                             yes = "short", no = "long") ) %>% 
     dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, chemical, Year, 
                   dplyr::all_of(x = file_resp), significance, slope_direction, duration_bin) %>%
-    dplyr::distinct()
+    dplyr::distinct() %>% 
+    # Add "D" to chemical ratios
+    dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
+                                    yes = gsub("Si", "DSi", chemical),
+                                    no = chemical))
   
   # Count streams / LTER
   (streams_per_lter <- lter_ct(data = df_chem_simp))
@@ -208,7 +212,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
             legend.position.inside = c(0.225, 0.88))
     
     # Remove the legend from all but specified chemicals
-    if(!chem %in% c("DSi", "Si:DIN")){
+    if(!chem %in% c("DSi", "DSi:DIN")){
       q <- q +
         theme(legend.position = "none")
     }
@@ -228,7 +232,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
          height = 9, width = 15, units = "in")
   
   # Assemble & export the second figure (ratios only)
-  cowplot::plot_grid(chem_bookmarks[["Si:DIN"]], chem_bookmarks[["Si:DIP"]], nrow = 1)
+  cowplot::plot_grid(chem_bookmarks[["DSi:DIN"]], chem_bookmarks[["DSi:DIP"]], nrow = 1)
   ggsave(filename = file.path("graphs", "figures", paste0("fig_bookmark-chemical-ratios_", 
                                                 tolower(file_resp), ".png")),
          height = 9, width = 10, units = "in")
@@ -319,7 +323,7 @@ for(chem in unique(df_chem_simp$chemical)){
       dplyr::filter(!LTER_stream %in% unique(df_chem_mo$LTER_stream)) %>% 
       dplyr::mutate(significance = "NA", slope_direction = "NA")
     
-    # Re-attach any streams that were dropped (we want the same number of 'rows' in all graphs)
+    # Re-attach those streams
     df_chem_mo_actual <- dplyr::bind_rows(df_chem_mo, df_mo_missing)
     
     # Create the bookmark graph 
@@ -438,8 +442,16 @@ for(mo in sort(unique(df_q_simp$Month))){
   # Subset data again
   df_q_mo <- dplyr::filter(df_q_simp, Month == mo)
   
+  # Identify any streams that don't have data for this month
+  df_mo_missing <- df_q %>% 
+    dplyr::filter(!LTER_stream %in% unique(df_q_mo$LTER_stream)) %>% 
+    dplyr::mutate(significance = "NA", slope_direction = "NA")
+  
+  # Re-attach those streams
+  df_q_mo_actual <- dplyr::bind_rows(df_q_mo, df_mo_missing)
+  
   # Create the bookmark graph 
-  q <- ggplot(data = df_q_mo, mapping = aes(x = Year, y = LTER_stream)) +
+  q <- ggplot(data = df_q_mo_actual, mapping = aes(x = Year, y = LTER_stream)) +
     # Add points with underlying lines for each section
     geom_path(aes(group = sizer_groups, color = slope_direction), 
               lwd = 2.5, alpha = 0.6) +
@@ -1045,19 +1057,17 @@ cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_Qnorm, avg_box,
 ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_Sept2025.png"),
        height = 10, width = 15, units = "in")
 
-
 ## Specific Discharge without Krycklan for insert
-Qnorm2<-stick_graph(data = si_v3, resp_var = "mean_si_conc",  
-                         exp_var = "Qnorm", sig = "ixn") +
+Qnorm2 <- stick_graph(data = si_v3, resp_var = "mean_si_conc",  
+                    exp_var = "Qnorm", sig = "ixn") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Water Yield (m3/s/km2)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); Qnorm2
-cowplot::plot_grid(Qnorm2, nrow = 1)
+
 # Export as a figure
 ggsave(filename = file.path("graphs", "figures", "Qnorm_noKrycklan.png"),
        height = 3, width = 5, units = "in")
-
 
 # Tidy environment
 rm(list = ls()); gc()
@@ -1192,8 +1202,11 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
   # Order chemicals
-  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", 
-                                                       "Si:DIP", "DIP")))
+  dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
+                                  yes = gsub("Si", "DSi", chemical),
+                                  no = chemical)) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "DSi:DIN", "DSi", 
+                                                       "DSi:DIP", "DIP")))
 
 # Check structure
 dplyr::glimpse(df_conc)
@@ -1293,13 +1306,16 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
   dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
-  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
-  # Generate 'norm chem' combo column
-  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize) %>% 
+  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>%
   # Order chemicals
-  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", 
-                                                       "Si:DIP", "DIP")))
-
+  dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
+                                  yes = gsub("Si", "DSi", chemical),
+                                  no = chemical)) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "DSi:DIN", "DSi", 
+                                                       "DSi:DIP", "DIP"))) %>% 
+  # Generate 'norm chem' combo column
+  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
+  
 # Check structure
 dplyr::glimpse(df_conc)
 
@@ -1370,11 +1386,14 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
-  # Generate 'norm chem' combo column
-  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize) %>% 
   # Order chemicals
-  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", 
-                                                       "Si:DIP", "DIP")))
+  dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
+                                  yes = gsub("Si", "DSi", chemical),
+                                  no = chemical)) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "DSi:DIN", "DSi", 
+                                                       "DSi:DIP", "DIP"))) %>% 
+  # Generate 'norm chem' combo column
+  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize) 
 
 # Check structure
 dplyr::glimpse(df_conc)
@@ -1454,7 +1473,11 @@ df_combo <- dplyr::bind_rows(df_conc, df_fnconc) %>%
   dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
   dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>% 
   # Order chemicals
-  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "Si:DIN", "DSi", "Si:DIP", "DIP"))) %>% 
+  dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
+                                  yes = gsub("Si", "DSi", chemical),
+                                  no = chemical)) %>% 
+  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "DSi:DIN", "DSi", 
+                                                       "DSi:DIP", "DIP"))) %>% 
   # Make normalization method + chemical column
   dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
 
