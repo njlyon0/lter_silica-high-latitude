@@ -968,13 +968,10 @@ source(file.path("tools", "fxn_stick-graph.R"))
 # Read in DSi data
 si_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_annual_Conc_uM_DSi.csv"))
 
-#create new column for water yield
-si_v1$Qnorm <- si_v1$mean_Discharge_cms/si_v1$drainSqKm
-
-names(si_v1)
-
 # Process this as needed - remove MCM b/c wasn't used in MLR
 si_v2 <- si_v1 %>% 
+  # Create new column for water yield
+  dplyr::mutate(Qnorm = mean_Discharge_cms / drainSqKm) %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
                 mean_response, percent_change, Qnorm,
@@ -1005,6 +1002,7 @@ avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
        x = "Mean Evapotranspiration (kg/m2)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_ET
+
 ## Snow (Proportion Area)
 avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "mean_snow_max.prop.area", sig = "ixn") +
@@ -1012,6 +1010,7 @@ avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
        x = "Mean Snow (Max Proportion Area)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_snow
+
 ## Temperature
 avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "mean_temp_degC", sig = "main") +
@@ -1022,6 +1021,7 @@ avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
         legend.direction = "vertical",
         axis.text = element_text(color = "black"),
         legend.background = element_blank()); avg_temp
+
 ## Phosphorus concentration
 avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                           exp_var = "mean_P_Conc_uM", sig = "ixn") +
@@ -1029,6 +1029,7 @@ avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
        x = "Mean P Concentration (uM)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_pconc
+
 ## Specific Discharge
 avg_Qnorm <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
                          exp_var = "Qnorm", sig = "ixn") +
@@ -1036,6 +1037,7 @@ avg_Qnorm <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
        x = "Mean Water Yield (m3/s/km2)") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_Qnorm
+
 ## LTER boxplots
 avg_box <- ggplot(si_v2, aes(x = LTER, y = mean_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
@@ -1061,7 +1063,7 @@ ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_Sept2025.pn
 Qnorm2 <- stick_graph(data = si_v3, resp_var = "mean_si_conc",  
                     exp_var = "Qnorm", sig = "ixn") +
   labs(y = "Mean DSi Concentration (uM)",
-       x = "Mean Water Yield (m3/s/km2)") +
+       x = expression(paste("Mean Water Yield (", m^3, "/s/k", m^2, ")"))) +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); Qnorm2
 
