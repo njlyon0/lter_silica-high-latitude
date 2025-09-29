@@ -69,15 +69,15 @@ lter_shps <- c("Canada" = 21,
                "Swedish Goverment" = 22, "Sweden" = 22)
 
 # Palette for chemistry information
-chem_palt <- c("DIN" = "#ff758f", "Si:DIN" = "#b79ced", "DSi" = "#a2d6f9",
-               "Si:DIP" = "#9ef01a", "DIP" = "#ffea00")
+chem_palt <- c("DIN" = "#ff758f", "DSi:DIN" = "#b79ced", "DSi" = "#a2d6f9",
+               "DSi:DIP" = "#9ef01a", "DIP" = "#ffea00")
 
 # Palette for 'norm chem'
 ## I.e., flow-normalized versus not & chemical
 normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",
-                   "Not_Si:DIN" = "#b79ced", "FN_Si:DIN" = "#9d4edd", 
+                   "Not_DSi:DIN" = "#b79ced", "FN_DSi:DIN" = "#9d4edd", 
                    "Not_DSi" = "#a2d6f9", "FN_DSi" = "#0077b6", 
-                   "Not_Si:DIP" = "#9ef01a", "FN_Si:DIP" = "#38b000",  
+                   "Not_DSi:DIP" = "#9ef01a", "FN_DSi:DIP" = "#38b000",  
                    "Not_DIP" = "#ffea00", "FN_DIP" = "#ffaa00")
 
 ## ----------------------------------------- ##
@@ -100,9 +100,10 @@ theme_bookmark <- theme(panel.background = element_blank(),
                         plot.title = element_text(hjust = 0.5),
                         axis.line = element_line(color = "black"),
                         axis.text.y = element_blank(),
-                        axis.text.x = element_text(size = 13, color = "black"),
+                        axis.text.x = element_text(size = 14, color = "black"),
                         axis.title.y = element_blank(),
                         axis.title.x = element_text(size = 16),
+                        strip.text = element_text(size = 16),
                         legend.title = element_blank(),
                         legend.background = element_blank())
 
