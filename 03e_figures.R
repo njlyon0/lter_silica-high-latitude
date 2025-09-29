@@ -1013,7 +1013,7 @@ avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
 
 ## Temperature
 avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                         exp_var = "mean_temp_degC", sig = "main") +
+                         exp_var = "mean_temp_degC", sig = "NS") +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Temperature (C)") +
   theme(legend.position = "inside",
@@ -1056,7 +1056,7 @@ cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_Qnorm, avg_box,
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_mean_Sept2025.png"),
+ggsave(filename = file.path("graphs", "fig_sticks_si_mean_Sept2025.png"),
        height = 10, width = 15, units = "in")
 
 ## Specific Discharge without Krycklan for insert
