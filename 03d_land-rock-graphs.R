@@ -19,6 +19,7 @@ librarian::shelf(tidyverse, supportR)
 
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs", "land-rock"), showWarnings = F, recursive = T)
+dir.create(path = file.path("graphs", "figures"), showWarnings = F)
 
 # Clear environment
 rm(list = ls()); gc()
@@ -48,8 +49,13 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
                 chemical, Year, Conc_uM) %>% 
   dplyr::distinct() %>% 
   # Fill McMurdo categories
-  dplyr::mutate(major_rock = ifelse(LTER == "MCM", yes = "ice", no = major_rock),
-                major_land = ifelse(LTER == "MCM", yes = "ice", no = major_land))
+  dplyr::mutate(major_rock = ifelse(LTER == "MCM", yes = "glacial drift", no = major_rock),
+                major_land = ifelse(LTER == "MCM", yes = "barren", no = major_land)) %>% 
+  # Tidy up categories slightly
+  dplyr::mutate(major_land = gsub("_", " ", x = major_land)) %>% 
+  dplyr::mutate(major_land = gsub("shrubland grassland", "shrubland / grassland", x = major_land)) %>% 
+  dplyr::mutate(dplyr::across(.cols = dplyr::starts_with("major_"),
+                              .fns = stringr::str_to_title))
 
 # Check structure
 dplyr::glimpse(df_conc)
@@ -63,46 +69,74 @@ supportR::count(df_conc$major_land)
 ## ----------------------------------------- ##
 
 # Make desired graph
-ggplot(df_conc, aes(x = reorder(major_rock, -Conc_uM), y = Conc_uM, fill = major_rock)) +
+graph_rock <- ggplot(df_conc, aes(x = reorder(major_rock, -Conc_uM), 
+                                  y = Conc_uM, fill = major_rock)) +
   geom_jitter(width = 0.25, alpha = 0.2, pch = 21) +
   geom_violin(alpha = 0.6) +
   facet_grid(chemical ~ ., axes = "all_y", scales = "free_y") +
   labs(x = "Dominant Lithology", y = "Concentration (uM)") +
-  scale_fill_manual(values = c("metamorphic" = "#8338ec",
-                               "plutonic" = "#fb5607",
-                               "plutonic; metamorphic" = "#ff006e",
-                               "sedimentary" = "#dda15e",
-                               "ice" = "#8ecae6",
-                               "volcanic" = "#c1121f")) +
+  scale_fill_manual(values = c("Metamorphic" = "#8338ec",
+                               "Plutonic" = "#fb5607",
+                               "Plutonic; Metamorphic" = "#ff006e",
+                               "Sedimentary" = "#dda15e",
+                               "Glacial Drift" = "#8ecae6",
+                               "Volcanic" = "#c1121f")) +
   theme_facetbox +
   theme(axis.text.x = element_text(angle = 35, hjust = 1))
 
+# Check it out
+graph_rock
+
 # Export locally
 ggsave(file.path("graphs", "land-rock", "conc-by-rock.png"),
-                 height = 7, width = 6, units = "in")
+                 height = 7, width = 8, units = "in")
 
 ## ----------------------------------------- ##
 # Land Graph ----
 ## ----------------------------------------- ##
 
 # Make desired graph
-ggplot(df_conc, aes(x = reorder(major_land, -Conc_uM), y = Conc_uM, fill = major_land)) +
+graph_land <- ggplot(df_conc, aes(x = reorder(major_land, -Conc_uM),
+                                  y = Conc_uM, fill = major_land)) +
   geom_jitter(width = 0.25, alpha = 0.2, pch = 21) +
   geom_violin(alpha = 0.6) +
   facet_grid(chemical ~ ., axes = "all_y", scales = "free_y") +
   labs(x = "Dominant Lithology", y = "Concentration (uM)") +
-  scale_fill_manual(values = c("evergreen_needleleaf_forest" = "#31572c",
-                               "mixed_forest" = "#4f772d",
-                               "deciduous_needleleaf_forest" = "#90a955",
-                               "tundra" = "#b0c4b1",
-                               "cropland" = "#ffb703",
-                               "ice" = "#8ecae6",
-                               "shrubland_grassland" = "#ff4d6d")) +
+  scale_fill_manual(values = c("Evergreen Needleleaf Forest" = "#31572c",
+                               "Mixed Forest" = "#4f772d",
+                               "Deciduous Needleleaf Forest" = "#90a955",
+                               "Tundra" = "#b0c4b1",
+                               "Cropland" = "#ffb703",
+                               "Barren" = "#8ecae6",
+                               "Shrubland / Grassland" = "#ff4d6d")) +
   theme_facetbox +
   theme(axis.text.x = element_text(angle = 35, hjust = 1))
 
+# Check it out
+graph_land
+
 # Export locally
 ggsave(file.path("graphs", "land-rock", "conc-by-land.png"),
-       height = 7, width = 6, units = "in")
+       height = 7, width = 8, units = "in")
+
+## ----------------------------------------- ##
+# Assemble Multi-Panel Figure ----
+## ----------------------------------------- ##
+
+# Minor tweaks to each graph
+## Drop redundant strip labels for left side graph
+graph_land_v2 <- graph_land +
+  theme(strip.text = element_blank())
+## Drop redundant Y-axis labels for rightside graph
+graph_rock_v2 <- graph_rock +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+# Combine these graphs into one figure
+cowplot::plot_grid(graph_land_v2, graph_rock_v2, nrow = 1, align = "h")
+
+# Export locally
+ggsave(file.path("graphs", "figures", "fig_conc-by-land-and-rock.png"),
+       height = 7, width = 14, units = "in")
 
 # End ----
