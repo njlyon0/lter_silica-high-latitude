@@ -61,8 +61,6 @@ si_conc_v1 <- df_v1 %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
-unique(si_conc_v1$major_rock)
-
 #want to make new major land category of just forest to reduce predictors in model
 si_conc_v1<-si_conc_v1 %>%
   dplyr::mutate(major_land2 = case_when(major_land %in% c("evergreen_needleleaf_forest", 
@@ -435,21 +433,9 @@ si_conc_v2 <- si_conc_v2 %>%
   dplyr::filter(!LTER %in% c("MCM")) 
 
 #putting all meterological predictors in (non correlated)
-#using discharge here
-perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
+perc_lm <- lm(perc.change_si_conc ~ scaled_slope_Qnorm + scaled_drainSqKm + scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
                 scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + scaled_slope_DIN_Conc_uM + scaled_slope_temp_degC +
-                scaled_slope_evapotrans_kg.m2 + scaled_slope_Discharge_cms + LTER + 
-                scaled_slope_precip_mm.per.day:LTER + scaled_slope_snow_max.prop.area:LTER + 
-                scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
-                scaled_slope_P_Conc_uM:LTER + scaled_slope_DIN_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER + 
-                scaled_slope_npp_kgC.m2.year:LTER, data = si_conc_v2)
-summary(perc_lm) #keep all predictors
-AIC(perc_lm) 
-
-#using changing Q normalized - don't use - worse output
-perc_lm <- lm(perc.change_si_conc ~ scaled_slope_Qnorm + scaled_slope_precip_mm.per.day + scaled_slope_snow_max.prop.area + 
-                scaled_slope_npp_kgC.m2.year + scaled_slope_P_Conc_uM + scaled_slope_DIN_Conc_uM + scaled_slope_temp_degC +
-                scaled_slope_evapotrans_kg.m2 + LTER + scaled_slope_Qnorm:LTER +
+                scaled_slope_evapotrans_kg.m2 + LTER + scaled_slope_Qnorm:LTER + major_rock +
                 scaled_slope_precip_mm.per.day:LTER + scaled_slope_snow_max.prop.area:LTER + 
                 scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
                 scaled_slope_P_Conc_uM:LTER + scaled_slope_DIN_Conc_uM:LTER +  
@@ -564,21 +550,11 @@ write.csv(x = perc_pairs, row.names = F, na = '',
 #need to remove MCM here b/c no spatial data for there
 si_conc_v2 <- si_conc_v2 %>%
   dplyr::filter(!LTER %in% c("MCM")) 
-unique(si_conc_v2$major_rock)
-
-#using discharge
-avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
-                scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
-                scaled_mean_Discharge_cms + scaled_mean_snow_max.prop.area + LTER + 
-                scaled_mean_temp_degC:LTER + scaled_mean_P_Conc_uM:LTER + scaled_mean_evapotrans_kg.m2:LTER +
-               scaled_mean_Discharge_cms:LTER + scaled_mean_snow_max.prop.area:LTER,
-              data = si_conc_v2)
-summary(avg_lm)
-
 
 #trying out different models for AIC table
-avg_lm <- lm(mean_si_conc ~ scaled_Qnorm + scaled_mean_temp_degC + scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
-               scaled_mean_snow_max.prop.area + LTER +  major_rock +
+avg_lm <- lm(mean_si_conc ~ scaled_Qnorm + scaled_drainSqKm + scaled_mean_temp_degC + 
+               scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
+               scaled_mean_snow_max.prop.area + LTER +  major_rock + 
                scaled_Qnorm:LTER + scaled_mean_temp_degC:LTER + scaled_mean_P_Conc_uM:LTER + 
                scaled_mean_evapotrans_kg.m2:LTER + scaled_mean_snow_max.prop.area:LTER,
              data = si_conc_v2)
