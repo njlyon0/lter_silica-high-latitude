@@ -854,6 +854,8 @@ si_v1 <- read.csv(file = file.path("data", "stats-ready_annual", "stats-ready_an
 
 # Process this as needed
 si_v2 <- si_v1 %>% 
+  # Create new column for water yield
+  dplyr::mutate(slope_Qnorm = slope_Discharge_cms / drainSqKm) %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
                 mean_response, percent_change,
@@ -871,7 +873,19 @@ si_v2 <- si_v1 %>%
 
 # Check structure
 dplyr::glimpse(si_v2)
+unique(si_v2$LTER)
 ## tibble::view(si_v2)
+
+## Water Yield
+perc_WaterYield <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
+                       exp_var = "slope_Qnorm", sig = "main") +
+  labs(y = "DSi Concentration (% Change)",
+       x = "Water Yield (m3/s/km2) Annual Change") +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.8, 0.8),
+        legend.direction = "vertical",
+        axis.text = element_text(color = "black"),
+        legend.background = element_blank()); perc_WaterYield
 
 ## Evaporation
 perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
@@ -883,6 +897,7 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
         legend.direction = "vertical",
         axis.text = element_text(color = "black"),
         legend.background = element_blank()); perc_ET
+
 ## Precipitation
 perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
             exp_var = "slope_precip_mm.per.day", sig = "ixn") +
@@ -913,7 +928,7 @@ perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
         axis.text = element_text(color = "black")); perc_pconc
 ## Nitrogen concentration
 perc_nconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-                          exp_var = "slope_DIN_Conc_uM", sig = "NS") +
+                          exp_var = "slope_DIN_Conc_uM", sig = "ixn") +
   labs(y = "DSi Concentration (% Change)",
        x = "N Concentration (uM) Annual Change") +
   theme(legend.position = "none",
@@ -925,13 +940,6 @@ perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "NPP Concentration (Kg C/m2/yr) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_npp
-## Discharge
-perc_disc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-                          exp_var = "slope_Discharge_cms", sig = "NS") +
-  labs(y = "DSi Concentration (% Change)",
-       x = "Discharge (cms) Annual Change") +
-  theme(legend.position = "none",
-        axis.text = element_text(color = "black")); perc_disc
 ## LTER boxplots
 perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
@@ -944,14 +952,15 @@ perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
         axis.line = element_line(color = "black"),
         axis.title.x = element_blank(),
         axis.text = element_text(color = "black"),
-        legend.position = "none"); perc_box
+        legend.position = "inside",
+        legend.position.inside = c(0.8, 0.8)); perc_box
 
 # Assemble into grid of plots
-cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nconc, perc_npp, perc_disc,
+cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nconc, perc_npp, perc_WaterYield,
                    perc_box, nrow = 3, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_Sept25.png"),
+ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_Oct_4_25.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
@@ -974,7 +983,7 @@ si_v2 <- si_v1 %>%
   dplyr::mutate(Qnorm = mean_Discharge_cms / drainSqKm) %>% 
   # Pare down to only what is needed
   dplyr::select(sizer_groups, LTER, Stream_Name, LTER_stream, drainSqKm, chemical,
-                mean_response, percent_change, Qnorm,
+                mean_response, percent_change, Qnorm, land_total_forest, 
                 dplyr::starts_with(c("slope_", "mean_"))) %>% 
   dplyr::select(-slope_estimate, -slope_direction, -slope_std_error,
                 -dplyr::contains(c("_FNConc_", "_NO3_", "_DIN_", "_NH4_",
@@ -1056,7 +1065,7 @@ cowplot::plot_grid(avg_ET, avg_snow, avg_temp, avg_pconc, avg_Qnorm, avg_box,
                    nrow = 2, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "fig_sticks_si_mean_Sept2025.png"),
+ggsave(filename = file.path("graphs", "fig_sticks_si_mean_Oct2025.png"),
        height = 10, width = 15, units = "in")
 
 ## Specific Discharge without Krycklan for insert

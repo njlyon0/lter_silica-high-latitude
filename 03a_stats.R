@@ -61,6 +61,8 @@ si_conc_v1 <- df_v1 %>%
   # Drop non-unique rows (leftover from previously annual replication; now replicate is SiZer chunk)
   dplyr::distinct()
 
+unique(si_conc_v1$major_rock)
+
 #want to make new major land category of just forest to reduce predictors in model
 si_conc_v1<-si_conc_v1 %>%
   dplyr::mutate(major_land2 = case_when(major_land %in% c("evergreen_needleleaf_forest", 
@@ -441,7 +443,6 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_precip_mm.per.day + scaled_slop
                 scaled_slope_temp_degC:LTER + scaled_slope_evapotrans_kg.m2:LTER +
                 scaled_slope_P_Conc_uM:LTER + scaled_slope_DIN_Conc_uM:LTER + scaled_slope_Discharge_cms:LTER + 
                 scaled_slope_npp_kgC.m2.year:LTER, data = si_conc_v2)
-
 summary(perc_lm) #keep all predictors
 AIC(perc_lm) 
 
@@ -457,13 +458,14 @@ perc_lm <- lm(perc.change_si_conc ~ scaled_slope_Qnorm + scaled_slope_precip_mm.
 summary(perc_lm) #keep all predictors
 AIC(perc_lm) #AIC higher and adj R2 lower using specific discharge (water yield)
 
+
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef_9.26.25.csv"))
-write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2_9.26.25.csv"))
+write.csv(tidy(perc_lm), file = file.path("data", "stats-results", "perc_lm_coef_wateryield.csv"))
+write.csv(glance(perc_lm), file = file.path("data", "stats-results", "perc_lm_R2_wateryield.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = perc_lm)
-ggplot2::ggsave(filename = file.path("data", "stats-results", "perc_change_residuals_land_rocks_lter.png"),
+ggplot2::ggsave(filename = file.path("data", "stats-results", "perc_change_residuals_wateryield.png"),
                 height = 5, width = 5, units = "in")
 
 # Extract top-level results
@@ -485,7 +487,7 @@ perc_results <- as.data.frame(stats::anova(object = perc_lm)) %>%
 dplyr::glimpse(perc_results)
 
 #export the fstats
-write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_9.26.25.csv"))
+write.csv(perc_results, file = file.path("data", "stats-results", "perc_lm_fstats_wateryield.csv"))
 
 # Interpretation note:
 ## Look at interactions first!
@@ -551,7 +553,7 @@ if(perc_results[perc_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = perc_pairs, row.names = F, na = '',
-          file = file.path("data", "stats-results", "perc_change_DSi_results_pairwise_9.26.25.csv"))
+          file = file.path("data", "stats-results", "perc_change_DSi_results_pairwise_wateryield.csv"))
 
 ## ----------------------------------------- ##
               # Mean Si Response ----
@@ -562,6 +564,7 @@ write.csv(x = perc_pairs, row.names = F, na = '',
 #need to remove MCM here b/c no spatial data for there
 si_conc_v2 <- si_conc_v2 %>%
   dplyr::filter(!LTER %in% c("MCM")) 
+unique(si_conc_v2$major_rock)
 
 #using discharge
 avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
@@ -573,20 +576,18 @@ avg_lm <- lm(mean_si_conc ~ scaled_mean_temp_degC +
 summary(avg_lm)
 
 
-#using specific discharge (i.e. water yield rather than discharge)
-avg_lm <- lm(mean_si_conc ~ scaled_Qnorm + scaled_mean_temp_degC +
-               scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
-               scaled_mean_snow_max.prop.area + LTER + 
+#trying out different models for AIC table
+avg_lm <- lm(mean_si_conc ~ scaled_Qnorm + scaled_mean_temp_degC + scaled_mean_P_Conc_uM + scaled_mean_evapotrans_kg.m2 +
+               scaled_mean_snow_max.prop.area + LTER +  major_rock +
                scaled_Qnorm:LTER + scaled_mean_temp_degC:LTER + scaled_mean_P_Conc_uM:LTER + 
                scaled_mean_evapotrans_kg.m2:LTER + scaled_mean_snow_max.prop.area:LTER,
              data = si_conc_v2)
 summary(avg_lm)
 AIC(avg_lm)
 
-
 #export the coefficients, sign of predictors and adj R2 of the model
-write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef_w_wateryield.csv"))
-write.csv(glance(avg_lm), file = file.path("data", "stats-results", "avg_lm_R2_w_wateryield.csv"))
+write.csv(tidy(avg_lm), file = file.path("data", "stats-results", "avg_lm_coef_w_wateryieldwRock.csv"))
+write.csv(glance(avg_lm), file = file.path("data", "stats-results", "avg_lm_R2_w_wateryieldwRock.csv"))
 
 # Evalulate metrics for model fit / appropriateness
 ggResidpanel::resid_panel(model = avg_lm)
@@ -621,7 +622,7 @@ dplyr::glimpse(avg_results)
 
 # Export results
 write.csv(x = avg_results, row.names = F, na = '',
-          file = file.path("data", "stats-results", "avg_response_lm_fstats_toplevel.csv"))
+          file = file.path("data", "stats-results", "avg_response_lm_fstats_toplevel_wateryeild_wRock.csv"))
 
 # Flexibly identify the variables that have significant 'by LTER' interactions
 avg_ixn <- avg_results %>% 
@@ -675,6 +676,6 @@ if(avg_results[avg_results$term == "LTER", ]$sig == "yes"){
 
 # Export these too
 write.csv(x = avg_pairs, row.names = F, na = '',
-          file = file.path("data", "stats-results", "avg_response_DSi_results_pairwise_w_wateryield.csv"))
+          file = file.path("data", "stats-results", "avg_response_DSi_results_pairwise_w_wateryield_wRock.csv"))
 
 # End ----
