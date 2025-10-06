@@ -889,7 +889,8 @@ perc_WaterYield <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
 
 ## Evaporation
 perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-            exp_var = "slope_evapotrans_kg.m2", sig = "ixn") +
+                       exp_var = "slope_evapotrans_kg.m2", sig = "ixn",
+                       lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
        x = "Evapotranspiration (kg/m2) Annual Change") +
   theme(legend.position = "inside",
@@ -900,21 +901,24 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
 
 ## Precipitation
 perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-            exp_var = "slope_precip_mm.per.day", sig = "ixn") +
+            exp_var = "slope_precip_mm.per.day", sig = "ixn",
+            lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
        x = "Precipitation (mm/day) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_ppt
 ## Snow (Proportion Area)
 perc_snow <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-                        exp_var = "slope_snow_max.prop.area", sig = "ixn") +
+                        exp_var = "slope_snow_max.prop.area", sig = "ixn",
+                        lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
        x = "Snow (Max Proportion Area) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_snow
 ## Temperature
 perc_temp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-                        exp_var = "slope_temp_degC", sig = "ixn") +
+                        exp_var = "slope_temp_degC", sig = "ixn",
+                        lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
        x = "Temperature (C) Annual Change") +
   theme(legend.position = "none",
@@ -928,7 +932,8 @@ perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
         axis.text = element_text(color = "black")); perc_pconc
 ## Nitrogen concentration
 perc_nconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
-                          exp_var = "slope_DIN_Conc_uM", sig = "ixn") +
+                          exp_var = "slope_DIN_Conc_uM", sig = "ixn",
+                          lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
        x = "N Concentration (uM) Annual Change") +
   theme(legend.position = "none",
@@ -943,7 +948,9 @@ perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
 ## LTER boxplots
 perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
-  scale_fill_manual(values = lter_palt) +
+  scale_fill_manual(values = lter_palt, 
+                    labels = c("Canada", "Finland", "GRO", 
+                               "Krycklan", "Norway", "Sweden")) +
   scale_x_discrete(labels = c("Canada", "Finland", "GRO", "Krycklan", 
                               "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)", x = "LTER") +
@@ -1006,7 +1013,8 @@ dplyr::glimpse(si_v2)
 
 ## ET
 avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                        exp_var = "mean_evapotrans_kg.m2", sig = "ixn") +
+                        exp_var = "mean_evapotrans_kg.m2", sig = "ixn",
+                      lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Evapotranspiration (kg/m2)") +
   theme(legend.position = "none",
@@ -1014,7 +1022,8 @@ avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
 
 ## Snow (Proportion Area)
 avg_snow <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                         exp_var = "mean_snow_max.prop.area", sig = "ixn") +
+                         exp_var = "mean_snow_max.prop.area", sig = "ixn",
+                        lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Snow (Max Proportion Area)") +
   theme(legend.position = "none",
@@ -1033,7 +1042,8 @@ avg_temp <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
 
 ## Phosphorus concentration
 avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                          exp_var = "mean_P_Conc_uM", sig = "ixn") +
+                          exp_var = "mean_P_Conc_uM", sig = "ixn",
+                         lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean P Concentration (uM)") +
   theme(legend.position = "none",
@@ -1041,7 +1051,8 @@ avg_pconc <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
 
 ## Specific Discharge
 avg_Qnorm <- stick_graph(data = si_v2, resp_var = "mean_si_conc",  
-                         exp_var = "Qnorm", sig = "ixn") +
+                         exp_var = "Qnorm", sig = "ixn",
+                         lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
        x = "Mean Water Yield (m3/s/km2)") +
   theme(legend.position = "none",
@@ -1070,7 +1081,8 @@ ggsave(filename = file.path("graphs", "fig_sticks_si_mean_Oct2025.png"),
 
 ## Specific Discharge without Krycklan for insert
 Qnorm2 <- stick_graph(data = si_v3, resp_var = "mean_si_conc",  
-                    exp_var = "Qnorm", sig = "ixn") +
+                    exp_var = "Qnorm", sig = "ixn",
+                    lters = c("Canada", "Finland", "GRO", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
        x = expression(paste("Mean Water Yield (", m^3, "/s/k", m^2, ")"))) +
   theme(legend.position = "none",
