@@ -5,13 +5,16 @@
 #' @param data (data.frame) data object from which to create a bookmark graph
 #' @param exp_var (character) name of column in 'data' to map to X axis
 #' @param resp_var (character) name of column in 'data' to map to Y axis
+#' @param lters (character) LTER names to use in legend (in alphabetical order)
 #' @param sig (character) one of "ixn", "main", or "NS" for whether the interaction was significant, only the main effect was significant, or no significance was found respectively
 #'
 #'
-stick_graph <- function(data = NULL, exp_var = NULL, resp_var = NULL, sig = NULL){
+stick_graph <- function(data = NULL, exp_var = NULL, resp_var = NULL, sig = NULL,
+                        lters = c("Canada", "Finland", "GRO", "Krycklan", 
+                                  "MCM", "Norway", "Sweden")){
   
   # Errors for missing arguments
-  if(any(is.null(data) | is.null(exp_var) | is.null(resp_var) | is.null(sig)))
+  if(any(is.null(data) | is.null(exp_var) | is.null(resp_var) | is.null(sig) | is.null(lters)))
     stop("All arguments must be specified")
   
   # Error for wrong data type
@@ -41,11 +44,9 @@ stick_graph <- function(data = NULL, exp_var = NULL, resp_var = NULL, sig = NULL
       geom_point(aes(fill = LTER, shape = LTER), size = 2) +
       scale_color_manual(values = lter_palt, guide = "none") +
       scale_fill_manual(values = lter_palt, 
-                        labels = c("Canada", "Finland", "GRO", "Krycklan", 
-                                   "MCM", "Norway", "Sweden")) +
+                        labels = lters) +
       scale_shape_manual(values = lter_shps, 
-                         labels = c("Canada", "Finland", "GRO", "Krycklan", 
-                                    "MCM", "Norway", "Sweden"))
+                         labels = lters)
     
     # If only main effect is sig, fit just one line
   } else if (sig == "main") {
