@@ -894,7 +894,7 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
   labs(y = "DSi Concentration (% Change)",
        x = "Evapotranspiration (kg/m2) Annual Change") +
   theme(legend.position = "inside",
-        legend.position.inside = c(0.8, 0.8),
+        legend.position.inside = c(0.8, 0.75),
         legend.direction = "vertical",
         axis.text = element_text(color = "black"),
         legend.background = element_blank()); perc_ET
@@ -960,7 +960,7 @@ perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
         axis.title.x = element_blank(),
         axis.text = element_text(color = "black"),
         legend.position = "inside",
-        legend.position.inside = c(0.8, 0.8)); perc_box
+        legend.position.inside = c(0.85, 0.75)); perc_box
 
 # Assemble into grid of plots
 cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nconc, perc_npp, perc_WaterYield,
