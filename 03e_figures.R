@@ -200,7 +200,7 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
       geom_hline(yintercept = streams_per_lter$line_positions) +
       ## Add LTER-specific annotations
       geom_text(x = 1989, y = 1.5, label = "Canada", color = "black", hjust = "left") + 
-      annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center",
+      annotate(geom = "text", x = 1990, color = "black", angle = 90, hjust = "center", 
                y = c(14, 27.5, 35.5, 43, 49.5, 62), 
                label = c("Finland", "GRO", "Krycklan", "MCM", "Norway", "Sweden")) +
       # Customize labels and axis titles
@@ -348,7 +348,7 @@ for(chem in unique(df_chem_simp$chemical)){
       theme_bookmark +
       theme(legend.position = "inside",
             legend.position.inside = c(0.3, 0.88),
-            axis.text.x = element_text(size = 9),
+            axis.text.x = element_text(size = 10),
             axis.title.x = element_blank())
     
     # Remove the legend from all months except January
@@ -472,7 +472,7 @@ for(mo in sort(unique(df_q_simp$Month))){
     theme_bookmark +
     theme(legend.position = "inside",
           legend.position.inside = c(0.3, 0.88),
-          axis.text.x = element_text(size = 9),
+          axis.text.x = element_text(size = 10),
           axis.title.x = element_blank())
   
   # Remove the legend from all months except January
@@ -683,7 +683,9 @@ for(focal_chem in unique(df_conc_sub$chemical)){
                linetype = 2, color = "gray66") +
     theme_facetbox +
     theme(strip.text = element_blank(),
-          axis.text.x = element_blank())
+          axis.text.x = element_blank(),
+          axis.text.y = element_text(size = 13),
+          axis.title.y = element_text(size = 16))
   
   # Generate local file name
   focal_out <- paste0("fig_boxplot-chemicals-", tolower(focal_chem), "-zoom_conc_um.png")
@@ -880,7 +882,7 @@ unique(si_v2$LTER)
 perc_WaterYield <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                                exp_var = "slope_Qnorm", sig = "main") +
   labs(y = "DSi Concentration (% Change)",
-       x = "Water Yield (m3/s/km2) Annual Change") +
+       x = expression(paste("Water Yield (", m^3, "/s/k", m^2, ") Annual Change"))) +
   theme(legend.position = "inside",
         legend.position.inside = c(0.8, 0.8),
         legend.direction = "vertical",
@@ -892,7 +894,7 @@ perc_ET <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
                        exp_var = "slope_evapotrans_kg.m2", sig = "ixn",
                        lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "DSi Concentration (% Change)",
-       x = "Evapotranspiration (kg/m2) Annual Change") +
+       x = expression(paste("Evapotranspiration (kg/", m^2, ") Annual Change"))) +
   theme(legend.position = "inside",
         legend.position.inside = c(0.8, 0.75),
         legend.direction = "vertical",
@@ -907,6 +909,7 @@ perc_ppt <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "Precipitation (mm/day) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_ppt
+
 ## Snow (Proportion Area)
 perc_snow <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                          exp_var = "slope_snow_max.prop.area", sig = "ixn",
@@ -915,6 +918,7 @@ perc_snow <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "Snow (Max Proportion Area) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_snow
+
 ## Temperature
 perc_temp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                          exp_var = "slope_temp_degC", sig = "ixn",
@@ -923,6 +927,7 @@ perc_temp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "Temperature (C) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_temp
+
 ## Phosphorus concentration
 perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                           exp_var = "slope_P_Conc_uM", sig = "main") +
@@ -930,6 +935,7 @@ perc_pconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "P Concentration (uM) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_pconc
+
 ## Nitrogen concentration
 perc_nconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                           exp_var = "slope_DIN_Conc_uM", sig = "ixn",
@@ -938,13 +944,15 @@ perc_nconc <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",
        x = "N Concentration (uM) Annual Change") +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_nconc
+
 ## NPP concentration
 perc_npp <- stick_graph(data = si_v2, resp_var = "perc.change_si_conc",  
                         exp_var = "slope_npp_kgC.m2.year", sig = "NS") +
   labs(y = "DSi Concentration (% Change)",
-       x = "NPP Concentration (Kg C/m2/yr) Annual Change") +
+       x = expression(paste("NPP Concentration (kg C/", m^2, "/yr) Annual Change"))) +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); perc_npp
+
 ## LTER boxplots
 perc_box <- ggplot(si_v2, aes(x = LTER, y = perc.change_si_conc, fill = LTER)) +
   geom_boxplot(outlier.shape = 21) +
@@ -1016,7 +1024,7 @@ avg_ET <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
                       exp_var = "mean_evapotrans_kg.m2", sig = "ixn",
                       lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
-       x = "Mean Evapotranspiration (kg/m2)") +
+       x = expression(paste("Mean Evapotranspiration (kg/", m^2, ")"))) +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_ET
 
@@ -1054,7 +1062,7 @@ avg_Qnorm <- stick_graph(data = si_v2, resp_var = "mean_si_conc",
                          exp_var = "Qnorm", sig = "ixn",
                          lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
   labs(y = "Mean DSi Concentration (uM)",
-       x = "Mean Water Yield (m3/s/km2)") +
+       x = expression(paste("Mean Water Yield (", m^3, "/s/k", m^2, ")"))) +
   theme(legend.position = "none",
         axis.text = element_text(color = "black")); avg_Qnorm
 
@@ -1178,12 +1186,12 @@ for(focal_chem in c("DSi", "DIN", "P")){
           legend.background = element_blank(),
           plot.title = element_text(hjust = 0.5),
           axis.line = element_line(color = "black"),
-          axis.text.y = element_text(size = 13, color = "black"),
+          axis.text.y = element_text(size = 14, color = "black"),
           axis.text.x = element_text(size = 8, color = "black"),
           axis.title.x = element_blank(),
-          axis.title.y = element_text(size = 16),
+          axis.title.y = element_text(size = 17),
           strip.background = element_blank(),
-          strip.text = element_text(size = 11),
+          strip.text = element_text(size = 12),
           panel.spacing = unit(x = 2, units = "lines"))
   
   # Export as a figure
@@ -1272,7 +1280,7 @@ for(focal_chem in levels(df_conc$chemical)){
     scale_color_manual(values = chem_palt) +
     scale_fill_manual(values = chem_palt) +
     theme_facetbox +
-    theme(strip.text.y = element_text(size = 11))
+    theme(strip.text.y = element_text(size = 12))
   
   # For all but left-most chemical, remove y-axis title
   if(focal_chem != "DIN"){ focal_panel <- focal_panel + 
@@ -1367,7 +1375,7 @@ ggplot(df_conc, aes(x = normalize, y = percent_change)) +
   scale_color_manual(values = normchem_palt) +
   scale_fill_manual(values = normchem_palt) +
   theme_facetbox +
-  theme(strip.text.y = element_text(size = 11))
+  theme(strip.text.y = element_text(size = 12))
 
 # Export locally
 ggsave(filename = file.path("graphs", "figures", "fig_conc-perc-change-by-chem-and-lter-and-normalize.png"),
@@ -1446,7 +1454,7 @@ ggplot(df_conc, aes(x = normalize, y = percent_change)) +
   scale_color_manual(values = normchem_palt) +
   scale_fill_manual(values = normchem_palt) +
   theme_facetbox +
-  theme(strip.text.y = element_text(size = 11))
+  theme(strip.text.y = element_text(size = 12))
 
 # Export locally
 ggsave(filename = file.path("graphs", "figures", "fig_yield-perc-change-by-chem-and-lter-and-normalize.png"),
@@ -1547,7 +1555,7 @@ for(focal_chem in levels(df_combo$chemical)){
     scale_fill_manual(values = normchem_palt) +
     scale_shape_manual(values = c("FN" = 24, "Not" = 21)) +
     theme_facetbox +
-    theme(strip.text.y = element_text(size = 11))
+    theme(strip.text.y = element_text(size = 12))
   
   # Make a local filename
   focal_file <- paste0("fig_conc-vs-fnconc-", tolower(focal_chem), ".png")
