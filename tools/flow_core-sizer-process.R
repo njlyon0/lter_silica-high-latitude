@@ -59,7 +59,7 @@ if(nrow(sizer_info) == 0){
   demo_plot <- HERON::sizer_ggplot(raw_data = place_info, sizer_data = sizer_info,
                                    x = explanatory, y = response,
                                    trendline = 'sharp', vline = "none") +
-    ggtitle(label = paste0("h = 5 Slope Changes (None)"))
+    ggplot2::ggtitle(label = paste0("h = 5 Slope Changes (None)"))
   
   ## If inflection points (slope sign changes) are found:
 } else if(length(inflects) > 0){ 
@@ -77,7 +77,7 @@ if(nrow(sizer_info) == 0){
                                    x = explanatory, y = response,
                                    trendline = 'sharp', vline = "inflections",
                                    sharp_colors = c("#bbbbbb", "green")) +
-    ggtitle(label = paste0("h = 5 Inflection Points"))
+    ggplot2::ggtitle(label = paste0("h = 5 Inflection Points"))
   
   ## If slope changes (but not inflection points) are found:
 } else {
@@ -95,7 +95,7 @@ if(nrow(sizer_info) == 0){
                                    x = explanatory, y = response,
                                    trendline = 'sharp', vline = "changes",
                                    sharp_colors = c("#bbbbbb", "green")) +
-    ggtitle(label = paste0("h = 5 Slope Changes"))
+    ggplot2::ggtitle(label = paste0("h = 5 Slope Changes"))
 }
 
 # Export whichever graph got made
