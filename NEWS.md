@@ -4,6 +4,7 @@ This is the development version of the repository. Changes from the preceding ve
 
 - Added DOI badges for code and data to README
 - Land / rock multi-panel figure now created (in `03d`)
+- Green-up day analysis and figure now created (in `03f`)
 - Monthly bookmark graphs now more clear about lack of MCM data except in January, February, and December
 - All silica ratios in graphs are named "DSi" instead of "Si"
 - Increased text size in figures and made superscript (in axis titles for variable units) numbers actually superscript
