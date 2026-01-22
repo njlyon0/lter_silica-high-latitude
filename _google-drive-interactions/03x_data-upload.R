@@ -121,4 +121,29 @@ if(dir.exists(fig_path)){
 # Clear environment + collect garbage
 rm(list = ls()); gc()
 
+## ----------------------------------------- ##
+# Upload Green-Up Graphs (3F) ----
+## ----------------------------------------- ##
+
+# Define path
+gup_path <- file.path("graphs", "greenup")
+
+# Define Drive folder
+gup_url <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/1t7s3bZcHHjEXa8tvup6zK5erDpmle88l")
+
+# If outputs exist:
+if(dir.exists(gup_path)){
+  
+  # Identify local files
+  gup_local <- dir(path = gup_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = gup_local,
+    .f = ~ googledrive::drive_upload(media = file.path(gup_path, .x), 
+      overwrite = T, path = gup_url))
+}
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
 # End ----
