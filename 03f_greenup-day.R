@@ -88,4 +88,32 @@ gup_results
 write.csv(x = gup_results, na = '', row.names = F,
   file = file.path("data", "stats-results", "greenup-lm_results.csv"))
 
+## ----------------------------------------- ##
+# Graph(s) ----
+## ----------------------------------------- ##
+# Load graph helpers & needed functions
+source(file.path("tools", "flow_graph-helpers.R"))
+source(file.path("tools", "fxn_stick-graph.R"))
+
+# Summarize gup data
+gup_smry <- supportR::summary_table(data = gup_v02, groups = c("LTER", "year"),
+  response = "greenup_doy", drop_na = T)
+
+# Check that out quickly
+gup_smry
+
+# Make graph!
+stick_graph(data = gup_smry, resp_var = "mean",  
+    exp_var = "year", sig = "ixn",
+    lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
+  labs(y = "Green-Up Day of Year)",
+    x = "Year") +
+  theme(legend.position = "inside",
+    legend.position.inside = c(0.85, 0.85),
+    axis.text = element_text(color = "black"))
+
+# Export this locally
+ggplot2::ggsave(filename = file.path("graphs", "greenup", "sticks_greenup-day-of-year.png"),
+  height = 5, width = 5, units = "in")
+
 # End ----
