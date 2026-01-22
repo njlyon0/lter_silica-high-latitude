@@ -1,14 +1,13 @@
 ## ------------------------------------------------------- ##
                  # Download / Retrieve Data
 ## ------------------------------------------------------- ##
-# Written by: Nick J Lyon & Joanna Carey
-
 # Purpose:
 ## Identify & download data from Google Drive
 
 # IMPORTANT CAVEAT:
 ## This script requires access to the "LTER-WG_Silica-Export" Shared Drive
 ## It will not work if you don't have prior access
+## Also assumes you've authenticated the `googledrive` R package to work on your behalf
 
 ## ----------------------------------------- ##
               # Housekeeping ----
@@ -24,6 +23,7 @@ rm(list = ls())
 # Make needed folder(s)
 dir.create(path = file.path("data"), showWarnings = F)
 dir.create(path = file.path("data", "map-data"), showWarnings = F)
+dir.create(path = file.path("data", "driver-only"), showWarnings = F)
 
 ## ----------------------------------------- ##
         # WRTDS Outputs Download ----
@@ -102,6 +102,26 @@ pf_out
 purrr::walk2(.x = pf_out$id, .y = pf_out$name,
              .f = ~ googledrive::drive_download(file = .x, overwrite = T,
                                                 path = file.path("data", "map-data", .y)))
+
+# Clear environment
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Green Up Day Download ----
+## ----------------------------------------- ##
+
+# Identify driver file(s)
+gup_outs <- googledrive::drive_ls(path = googledrive::as_id("https://drive.google.com/drive/u/0/folders/1FBq2-FW6JikgIuGVMX5eyFRB6Axe2Hld")) %>% 
+  # Filter to only desired file (omitting date stamp in file name for flexibility)
+  dplyr::filter(stringr::str_detect(string = name, pattern = "greenup"))
+
+# Check 'em
+gup_outs
+
+# Download that file
+purrr::walk2(.x = gup_outs$id, .y = gup_outs$name,
+  .f = ~ googledrive::drive_download(file = .x, overwrite = T,
+      path = file.path("data", "map-data", .y)))
 
 # Clear environment
 rm(list = ls()); gc()
