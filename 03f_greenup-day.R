@@ -13,7 +13,7 @@
 
 # Load libraries
 # install.packages("librarian")
-librarian::shelf(tidyverse, supportR)
+librarian::shelf(tidyverse, emmeans, supportR)
 
 # Make a folder for exporting graphs
 dir.create(path = file.path("data", "stats-results"), showWarnings = F, recursive = T)
@@ -87,6 +87,19 @@ gup_results
 # Export it locally
 write.csv(x = gup_results, na = '', row.names = F,
   file = file.path("data", "stats-results", "greenup-lm_results.csv"))
+
+# Get pairwise comparisons
+gup_pair <- as.data.frame(emmeans::emtrends(object = gup_lm, pairwise ~ LTER, 
+      var = "year")$contrasts) %>% 
+    dplyr::mutate(sig = ifelse(test = p.value < 0.05, 
+      yes = "yes", no = "no"))    
+
+# Check what that yields
+gup_pair
+
+# Export it locally
+write.csv(x = gup_pair, na = '', row.names = F,
+  file = file.path("data", "stats-results", "greenup-lm_pair-results.csv"))
 
 ## ----------------------------------------- ##
 # Graph(s) ----
