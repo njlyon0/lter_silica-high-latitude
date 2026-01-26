@@ -88,6 +88,18 @@ gup_results
 write.csv(x = gup_results, na = '', row.names = F,
   file = file.path("data", "stats-results", "greenup-lm_results.csv"))
 
+# Get the coefficients
+gup_coef <- data.frame(group = names(gup_lm$coefficients),
+    coef = gup_lm$coefficients) %>% 
+  dplyr::mutate(test = "greenup", .before = dplyr::everything())
+
+# Check that out
+dplyr::glimpse(gup_coef)
+
+# Export it locally
+write.csv(x = gup_coef, na = '', row.names = F,
+  file = file.path("data", "stats-results", "greenup-lm_coefficients.csv"))
+
 # Get pairwise comparisons
 gup_pair <- as.data.frame(emmeans::emtrends(object = gup_lm, pairwise ~ LTER, 
       var = "year")$contrasts) %>% 
