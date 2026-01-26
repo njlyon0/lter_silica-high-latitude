@@ -42,6 +42,9 @@ if(dir.exists(stat_path)){
   
 }
 
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
 ## ----------------------------------------- ##
 # Upload Exploratory Graphs (3B) ----
 ## ----------------------------------------- ##
@@ -72,6 +75,9 @@ if(dir.exists(map_path)){
   
 }
 
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
 ## ----------------------------------------- ##
 # Upload Land/Rock Graphs (3D) ----
 ## ----------------------------------------- ##
@@ -94,6 +100,9 @@ if(dir.exists(rock_path)){
                                                overwrite = T, path = rock_url))
   
 }
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
 # Upload Figures (3E) ----
