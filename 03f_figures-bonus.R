@@ -114,7 +114,7 @@ source(file.path("tools", "fxn_lter-ct.R"))
 file_stem <- "stats-ready_annual"
 
 # Loop across response variables
-for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
+for(file_resp in c("FNConc_uM", "FNYield")){
   # file_resp <- "Conc_uM"
   
   # Generate a version of response variable name for plot labels
@@ -698,151 +698,6 @@ for(focal_chem in unique(df_conc_sub$chemical)){
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
-# Stacked Barplot of DSi Conc ----
-## ----------------------------------------- ##
-
-# Re-load graph helpers & needed functions
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Read in relevant data
-si <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Conc_uM_DSi.csv")) %>% 
-  # Remove McMurdo streams with incomplete chemical information
-  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
-                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
-                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
-                                    "MCM_Priscu Stream "))
-# Check structure
-dplyr::glimpse(si)
-
-# Parse the data into the necessary format
-si_v2 <- si %>% 
-  # Standardize some LTER names
-  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>% 
-  # Flesh out 'slope direction' column slightly
-  dplyr::mutate(slope_direction = dplyr::case_when(
-    significance == "NS" ~ "NS",
-    significance == "marg" ~ "NS",
-    is.na(slope_direction) == T ~ "NA",
-    T ~ slope_direction),
-    slope_direction = factor(slope_direction, levels = c("pos", "NS", "neg", "NA"))) %>% 
-  # Get just necessary columns & unique rows
-  dplyr::select(sizer_groups, LTER, Year, Month, LTER_stream, slope_direction) %>% 
-  dplyr::distinct() %>% 
-  # Calculate necessary summary info within groups
-  dplyr::group_by(LTER, Month) %>% 
-  dplyr::mutate(total_ct = dplyr::n()) %>% 
-  dplyr::group_by(LTER, Month, total_ct, slope_direction) %>% 
-  dplyr::summarize(slope_ct = dplyr::n()) %>% 
-  dplyr::ungroup() %>% 
-  # Define other key variables
-  dplyr::mutate(prop_slope = slope_ct / total_ct)
-
-# Re-check structure
-dplyr::glimpse(si_v2)
-
-# Create desired graph
-ggplot(si_v2, aes(x = as.factor(Month), y = prop_slope, 
-                  fill = slope_direction, color = "x")) +
-  geom_bar(stat = "identity") +
-  facet_wrap(LTER ~ ., ncol = 4, axes = "all_x") +
-  scale_fill_manual(values = dir_palt) +
-  scale_color_manual(values = "#000") +
-  guides(color = "none") +
-  labs(x = "Month", y = "Slope Direction Proportion") +
-  theme_facetbox +
-  theme(legend.title = element_blank(),
-        legend.background = element_blank(),
-        legend.position = "inside",
-        legend.position.inside = c(1, 0),
-        legend.justification = c(1.8, -0.5),
-        strip.text = element_text(size = 14),
-        axis.text.x = element_text(size = 8))
-
-# Export locally
-ggsave(filename = file.path("graphs", "figures_bonus", 
-                            "fig_stack-bar_monthly-dsi-conc-um_slope-dir.png"),
-       height = 6, width = 8, units = "in")
-
-# Tidy environment
-rm(list = ls()); gc()
-
-## ----------------------------------------- ##
-# Stacked Barplot of Discharge ----
-## ----------------------------------------- ##
-
-# Re-load graph helpers & needed functions
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Read in relevant data
-disc <- read.csv(file = file.path("data", "stats-ready_monthly", "stats-ready_monthly_Discharge_cms_DSi.csv")) %>% 
-  # Remove McMurdo streams with incomplete chemical information
-  dplyr::filter(!LTER_stream %in% c("MCM_Commonwealth S", "MCM_Crescent Strea", 
-                                    "MCM_Delta Stream  ", "MCM_Harnish Creek ",
-                                    "MCM_Onyx River  La", "MCM_Onyx River  Lo",
-                                    "MCM_Priscu Stream "))
-# Check structure
-dplyr::glimpse(disc)
-
-# Parse the data into the necessary format
-disc_v2 <- disc %>% 
-  # Standardize some LTER names
-  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>% 
-  # Flesh out 'slope direction' column slightly
-  dplyr::mutate(slope_direction = dplyr::case_when(
-    significance == "NS" ~ "NS",
-    significance == "marg" ~ "NS",
-    is.na(slope_direction) == T ~ "NA",
-    T ~ slope_direction),
-    slope_direction = factor(slope_direction, levels = c("pos", "NS", "neg", "NA"))) %>% 
-  # Get just necessary columns & unique rows
-  dplyr::select(sizer_groups, LTER, Year, Month, LTER_stream, slope_direction) %>% 
-  dplyr::distinct() %>% 
-  # Calculate necessary summary info within groups
-  dplyr::group_by(LTER, Month) %>% 
-  dplyr::mutate(total_ct = dplyr::n()) %>% 
-  dplyr::group_by(LTER, Month, total_ct, slope_direction) %>% 
-  dplyr::summarize(slope_ct = dplyr::n(),
-                   .groups = "keep") %>% 
-  dplyr::ungroup() %>% 
-  # Define other key variables
-  dplyr::mutate(prop_slope = slope_ct / total_ct)
-
-# Re-check structure
-dplyr::glimpse(disc_v2)
-
-# Create desired graph
-ggplot(disc_v2, aes(x = as.factor(Month), y = prop_slope, 
-                    fill = slope_direction, color = "x")) +
-  geom_bar(stat = "identity") +
-  facet_wrap(LTER ~ ., ncol = 4, axes = "all_x") +
-  scale_fill_manual(values = dir_palt) +
-  scale_color_manual(values = "#000") +
-  guides(color = "none") +
-  labs(x = "Month", y = "Slope Direction Proportion") +
-  theme_facetbox +
-  theme(legend.title = element_blank(),
-        legend.background = element_blank(),
-        legend.position = "inside",
-        legend.position.inside = c(1, 0),
-        legend.justification = c(1.8, -0.5),
-        strip.text = element_text(size = 14),
-        axis.text.x = element_text(size = 8))
-
-# Export locally
-ggsave(filename = file.path("graphs", "figures_bonus", 
-                            "fig_stack-bar_monthly-discharge_slope-dir.png"),
-       height = 6, width = 8, units = "in")
-
-# Tidy environment
-rm(list = ls()); gc()
-
-## ----------------------------------------- ##
 # 'Pick Up Sticks' DSi % Change Figure ----
 ## ----------------------------------------- ##
 
@@ -1110,7 +965,7 @@ rm(list = ls()); gc()
 source(file.path("tools", "flow_graph-helpers.R"))
 
 # Loop across chemicals
-for(focal_chem in c("DSi", "DIN", "P")){
+for(focal_chem in c("DIN", "P")){
   # focal_chem <- "DIN"
   
   # Progress message
@@ -1299,85 +1154,6 @@ cowplot::plot_grid(plotlist = panel_list, ncol = 5)
 
 # Export locally
 ggsave(filename = file.path("graphs", "figures_bonus", "fig_mean-response-by-chem-and-lter.png"),
-       height = 12, width = 8, units = "in")
-
-# Tidy environment
-rm(list = ls()); gc()
-
-## ----------------------------------------- ##
-# FN vs Conc. Violins by LTER & Chemical (% Change) ----
-## ----------------------------------------- ##
-
-# Re-load graph helpers & needed functions
-source(file.path("tools", "flow_graph-helpers.R"))
-
-# Read in necessary data file(s)
-df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
-                               pattern = "_Conc_uM_|_FNConc_uM"),
-                      .f = ~ read.csv(file = file.path("data", "stats-ready_annual", .x))) %>% 
-  # Stack them vertically
-  purrr::list_rbind(x = .) %>% 
-  # Add a column for normalization
-  dplyr::mutate(normalize = ifelse(is.na(FNConc_uM) != T,
-                                   yes = "FN", no = "Not")) %>% 
-  # Drop Canada (lacks many chemicals)
-  dplyr::filter(!LTER %in% c("Canada")) %>% 
-  # Keep only significant slopes - excluding marginal
-  # dplyr::filter(significance %in% c("sig")) %>% # excluding for now
-  # Keep only certain durations of trends
-  dplyr::filter(section_duration >= 5) %>% 
-  # Pare down to only desired columns
-  dplyr::select(sizer_groups, LTER, Stream_Name, normalize, chemical, 
-                mean_response, percent_change) %>% 
-  dplyr::distinct() %>% 
-  # Standardize names of LTERs / chemicals
-  dplyr::mutate(LTER = gsub(pattern = "MCM", replacement = "McMurdo", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Finnish Environmental Institute", replacement = "Finland", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "Swedish Goverment", replacement = "Sweden", x = LTER)) %>%
-  dplyr::mutate(LTER = gsub(pattern = "NIVA", replacement = "Norway", x = LTER)) %>%
-  dplyr::mutate(chemical = gsub(pattern = "P", replacement = "DIP", x = chemical)) %>%
-  dplyr::mutate(chemical = gsub(pattern = "_", replacement = ":", x = chemical)) %>%
-  # Order chemicals
-  dplyr::mutate(chemical = ifelse(stringr::str_detect(string = chemical, pattern = ":"),
-                                  yes = gsub("Si", "DSi", chemical),
-                                  no = chemical)) %>% 
-  dplyr::mutate(chemical = factor(chemical, levels = c("DIN", "DSi:DIN", "DSi", 
-                                                       "DSi:DIP", "DIP"))) %>% 
-  # Generate 'norm chem' combo column
-  dplyr::mutate(norm_chem = paste0(normalize, "_", chemical), .after = normalize)
-
-# Check structure
-dplyr::glimpse(df_conc)
-
-# Summarize as well for mean +/- SE bars
-df_summary <- supportR::summary_table(data = df_conc, response = "percent_change",
-                                      groups = c("LTER", "normalize", "norm_chem", "chemical"))
-
-# Check that out
-dplyr::glimpse(df_summary)
-
-# Generate desired graph
-ggplot(df_conc, aes(x = normalize, y = percent_change)) +
-  geom_hline(yintercept = 0, linetype = 3) +
-  geom_jitter(aes(color = norm_chem), width = 0.15, alpha = 0.25) +
-  geom_violin(aes(fill = norm_chem), alpha = 0.2) +
-  # Facet by LTER & chemical
-  facet_grid(LTER ~ chemical, scales = "free_y") +
-  # Add averaged points with SE bars
-  geom_point(data = df_summary, aes(x = normalize, y = mean, fill = norm_chem), 
-             size = 3, shape = 21) +
-  geom_errorbar(data = df_summary, aes(x = normalize, y = mean, 
-                                       ymax = mean + std_error, 
-                                       ymin = mean - std_error), width = 0) +
-  # Aesthetic customization
-  labs(x = "Chemical", y = "Concentration % Change (Mean ± SE)") +
-  scale_color_manual(values = normchem_palt) +
-  scale_fill_manual(values = normchem_palt) +
-  theme_facetbox +
-  theme(strip.text.y = element_text(size = 12))
-
-# Export locally
-ggsave(filename = file.path("graphs", "figures_bonus", "fig_conc-perc-change-by-chem-and-lter-and-normalize.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
