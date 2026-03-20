@@ -74,11 +74,11 @@ chem_palt <- c("DIN" = "#ff758f", "DSi:DIN" = "#b79ced", "DSi" = "#a2d6f9",
 
 # Palette for 'norm chem'
 ## I.e., flow-normalized versus not & chemical
-normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#c1121f",
-                   "Not_DSi:DIN" = "#b79ced", "FN_DSi:DIN" = "#9d4edd", 
-                   "Not_DSi" = "#a2d6f9", "FN_DSi" = "#0077b6", 
-                   "Not_DSi:DIP" = "#9ef01a", "FN_DSi:DIP" = "#38b000",  
-                   "Not_DIP" = "#ffea00", "FN_DIP" = "#ffaa00")
+normchem_palt <- c("Not_DIN" = "#ff758f", "FN_DIN" = "#780000",
+                   "Not_DSi:DIN" = "#b79ced", "FN_DSi:DIN" = "#3c096c", 
+                   "Not_DSi" = "#a2d6f9", "FN_DSi" = "#2d00f7", 
+                   "Not_DSi:DIP" = "#9ef01a", "FN_DSi:DIP" = "#386641",  
+                   "Not_DIP" = "#ffea00", "FN_DIP" = "#e85d04")
 
 ## ----------------------------------------- ##
 # Generic `ggplot2` Theme ----
