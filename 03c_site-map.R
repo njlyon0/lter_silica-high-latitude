@@ -23,7 +23,7 @@ options(scipen = 10000)
 rm(list = ls()); gc()
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("graphs"), showWarnings = F)
+dir.create(path = file.path("graphs", "figures_actual"), showWarnings = F, recursive = T)
 
 # Identify desired prepared data
 prepped_file <- "stats-ready_annual_Conc_uM_DSi.csv"
@@ -185,7 +185,7 @@ map_low <- core_map +
 cowplot::plot_grid(map_high, map_low, labels = "AUTO", ncol = 1)
 
 # Save map
-ggsave(filename = file.path("graphs", "map_global.jpg"),
+ggsave(filename = file.path("graphs", "figures_actual", "fig-01A_map_global.jpg"),
        plot = last_plot(), width = 10, height = 5, units = "in", dpi = 560)
 
 ## ------------------------------------------ ##
@@ -217,7 +217,7 @@ map_lo <- core_map +
   theme(legend.position = "below"); map_lo
 
 # Save map - why isn't this saving correctly - dots are enormous
-ggsave(filename = file.path("graphs", "map_mcmurdo.jpg"),
+ggsave(filename = file.path("graphs", "figures_actual", "fig-01B_map_mcmurdo.jpg"),
        plot = last_plot(), width = 6, height = 5, units = "in", dpi = 560)
 
 # Clean up environment and collect garbage to speed R up going forward
