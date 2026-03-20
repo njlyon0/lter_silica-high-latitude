@@ -1,8 +1,6 @@
 ## ------------------------------------------------------- ##
 # Lithology & Land Cover Graphs
 ## ------------------------------------------------------- ##
-# Written by: Nick J Lyon
-
 # Purpose:
 ## Simple graphs of element concentration against lithology/land cover
 
@@ -19,7 +17,7 @@ librarian::shelf(tidyverse, supportR)
 
 # Make a folder for exporting graphs
 dir.create(path = file.path("graphs", "land-rock"), showWarnings = F, recursive = T)
-dir.create(path = file.path("graphs", "figures"), showWarnings = F)
+dir.create(path = file.path("graphs", "figures_supp-info"), showWarnings = F)
 
 # Clear environment
 rm(list = ls()); gc()
@@ -43,6 +41,8 @@ df_conc <- purrr::map(.x = dir(path = file.path("data", "stats-ready_annual"),
   # tidy "P" to match other graphs
   dplyr::mutate(chemical = ifelse(chemical == "P",
                                   yes = "DIP", no = chemical)) %>% 
+  # Order chemicals manually
+  dplyr::mutate(chemical = factor(chemical, levels = c("DSi", "DIN", "DIP"))) %>% 
   # Pare down to needed columns
   dplyr::select(LTER:LTER_stream, 
                 major_rock, major_land,
@@ -136,7 +136,8 @@ graph_rock_v2 <- graph_rock +
 cowplot::plot_grid(graph_land_v2, graph_rock_v2, nrow = 1, align = "h")
 
 # Export locally
-ggsave(file.path("graphs", "figures", "fig_conc-by-land-and-rock.png"),
-       height = 7, width = 14, units = "in")
+ggsave(file.path("graphs", "figures_supp-info", 
+  "fig-supp01_conc-by-land-and-rock.png"),
+  height = 7, width = 14, units = "in")
 
 # End ----
