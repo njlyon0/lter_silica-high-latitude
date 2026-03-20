@@ -1,10 +1,9 @@
 ## ------------------------------------------------------- ##
 # Figure Creation
 ## ------------------------------------------------------- ##
-# Written by: Joanna Carey, Lienne Sethna, & Nick J Lyon
-
 # Purpose:
 ## Make publication-quality figures
+## That are not currently part of the main text of the paper or in the supplemental info
 
 # Pre-Requisites:
 ## This script assumes you've run the "02_stats-prep.R" script
@@ -18,7 +17,7 @@
 librarian::shelf(tidyverse, cowplot, supportR)
 
 # Make a folder for exporting graphs
-dir.create(path = file.path("graphs", "figures"), showWarnings = F, recursive = T)
+dir.create(path = file.path("graphs", "figures_bonus"), showWarnings = F, recursive = T)
 
 # Clear environment
 rm(list = ls()); gc()
