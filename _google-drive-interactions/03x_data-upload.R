@@ -105,33 +105,7 @@ if(dir.exists(rock_path)){
 rm(list = ls()); gc()
 
 ## ----------------------------------------- ##
-# Upload Figures (3E) ----
-## ----------------------------------------- ##
-
-# Define path
-fig_path <- file.path("graphs", "figures")
-
-# Define Drive folder
-fig_url <- googledrive::as_id("https://drive.google.com/drive/u/0/folders/11Ya520cy7IRyUAmRhtrk0C4FgcjtnH4t")
-
-# If outputs exist:
-if(dir.exists(fig_path)){
-  
-  # Identify local files
-  fig_local <- dir(path = fig_path)
-  
-  # Iterate across them uploading each
-  purrr::walk(.x = fig_local,
-              .f = ~ googledrive::drive_upload(media = file.path(fig_path, .x), 
-                                               overwrite = T, path = fig_url))
-  
-}
-
-# Clear environment + collect garbage
-rm(list = ls()); gc()
-
-## ----------------------------------------- ##
-# Upload Green-Up Graphs (3F) ----
+# Upload Green-Up Graphs (3E) ----
 ## ----------------------------------------- ##
 
 # Define path
@@ -150,6 +124,84 @@ if(dir.exists(gup_path)){
   purrr::walk(.x = gup_local,
     .f = ~ googledrive::drive_upload(media = file.path(gup_path, .x), 
       overwrite = T, path = gup_url))
+}
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Upload Figures - Actual (3F) ----
+## ----------------------------------------- ##
+
+# Define path
+fig_path <- file.path("graphs", "figures_actual")
+
+# Define Drive folder
+fig_url <- googledrive::as_id("https://drive.google.com/drive/u/1/folders/1S0N0E4Ie2gLmJaotrmGDn2Ykbj_C5a8C")
+
+# If outputs exist:
+if(dir.exists(fig_path)){
+  
+  # Identify local files
+  fig_local <- dir(path = fig_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = fig_local,
+              .f = ~ googledrive::drive_upload(media = file.path(fig_path, .x), 
+                                               overwrite = T, path = fig_url))
+  
+}
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Upload Figures - Supplemental (3G) ----
+## ----------------------------------------- ##
+
+# Define path
+fig_path <- file.path("graphs", "figures_supp-info")
+
+# Define Drive folder
+fig_url <- googledrive::as_id("https://drive.google.com/drive/u/1/folders/1BVvQzKgAI5VII8FKGug19ZTZJkUd7ePW")
+
+# If outputs exist:
+if(dir.exists(fig_path)){
+  
+  # Identify local files
+  fig_local <- dir(path = fig_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = fig_local,
+              .f = ~ googledrive::drive_upload(media = file.path(fig_path, .x), 
+                                               overwrite = T, path = fig_url))
+  
+}
+
+# Clear environment + collect garbage
+rm(list = ls()); gc()
+
+## ----------------------------------------- ##
+# Upload Figures - Bonus (3H) ----
+## ----------------------------------------- ##
+
+# Define path
+fig_path <- file.path("graphs", "figures_bonus")
+
+# Define Drive folder
+fig_url <- googledrive::as_id("https://drive.google.com/drive/u/1/folders/11Ya520cy7IRyUAmRhtrk0C4FgcjtnH4t")
+
+# If outputs exist:
+if(dir.exists(fig_path)){
+  
+  # Identify local files
+  fig_local <- dir(path = fig_path)
+  
+  # Iterate across them uploading each
+  purrr::walk(.x = fig_local,
+              .f = ~ googledrive::drive_upload(media = file.path(fig_path, .x), 
+                                               overwrite = T, path = fig_url))
+  
 }
 
 # Clear environment + collect garbage
