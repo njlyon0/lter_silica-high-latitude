@@ -96,7 +96,7 @@ ggplot(data = df_q_simp, aes(x = Year, y = LTER_stream)) +
         legend.position.inside = c(0.425, 0.88))
 
 # Export graph
-ggsave(filename = file.path("graphs", "figures", "fig_bookmark-discharge.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_bookmark-discharge.png"),
        height = 9, width = 5, units = "in")
 
 # Tidy environment
@@ -226,13 +226,13 @@ for(file_resp in c("Conc_uM", "FNConc_uM", "Yield", "FNYield")){
                      nrow = 1, labels = "")
   
   # And export it
-  ggsave(filename = file.path("graphs", "figures", paste0("fig_bookmark-chemicals_", 
+  ggsave(filename = file.path("graphs", "figures_bonus", paste0("fig_bookmark-chemicals_", 
                                                           tolower(file_resp), ".png")),
          height = 9, width = 15, units = "in")
   
   # Assemble & export the second figure (ratios only)
   cowplot::plot_grid(chem_bookmarks[["DSi:DIN"]], chem_bookmarks[["DSi:DIP"]], nrow = 1)
-  ggsave(filename = file.path("graphs", "figures", paste0("fig_bookmark-chemical-ratios_", 
+  ggsave(filename = file.path("graphs", "figures_bonus", paste0("fig_bookmark-chemical-ratios_", 
                                                           tolower(file_resp), ".png")),
          height = 9, width = 10, units = "in")
   
@@ -374,7 +374,7 @@ for(chem in unique(df_chem_simp$chemical)){
   cowplot::plot_grid(plotlist = mo_list, nrow = 2, ncol = 6)
   
   # And export it
-  ggsave(filename = file.path("graphs", "figures", 
+  ggsave(filename = file.path("graphs", "figures_bonus", 
                               paste0("fig_bookmark_monthly-", tolower(chem), "_conc_um.png")),
          height = 16, width = 20, units = "in")
   
@@ -498,7 +498,7 @@ for(mo in sort(unique(df_q_simp$Month))){
 cowplot::plot_grid(plotlist = mo_list, nrow = 2, ncol = 6)
 
 # And export it
-ggsave(filename = file.path("graphs", "figures", "fig_bookmark_monthly-discharge.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_bookmark_monthly-discharge.png"),
        height = 16, width = 20, units = "in")
 
 # Tidy environment
@@ -591,7 +591,7 @@ ggplot(df_conc, aes(x = LTER_stream_ranked, y = Conc_uM, fill = LTER)) +
   theme(axis.text.x = element_blank())
 
 # Export graph
-ggsave(filename = file.path("graphs", "figures", "fig_boxplot-chemicals_conc_um.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_boxplot-chemicals_conc_um.png"),
        height = 7, width = 10, units = "in")
 
 # Tidy environment
@@ -690,7 +690,7 @@ for(focal_chem in unique(df_conc_sub$chemical)){
   focal_out <- paste0("fig_boxplot-chemicals-", tolower(focal_chem), "-zoom_conc_um.png")
   
   # Export locally
-  ggsave(filename = file.path("graphs", "figures", focal_out),
+  ggsave(filename = file.path("graphs", "figures_bonus", focal_out),
          height = 2, width = 6, units = "in")
 }
 
@@ -762,7 +762,7 @@ ggplot(si_v2, aes(x = as.factor(Month), y = prop_slope,
         axis.text.x = element_text(size = 8))
 
 # Export locally
-ggsave(filename = file.path("graphs", "figures", 
+ggsave(filename = file.path("graphs", "figures_bonus", 
                             "fig_stack-bar_monthly-dsi-conc-um_slope-dir.png"),
        height = 6, width = 8, units = "in")
 
@@ -835,7 +835,7 @@ ggplot(disc_v2, aes(x = as.factor(Month), y = prop_slope,
         axis.text.x = element_text(size = 8))
 
 # Export locally
-ggsave(filename = file.path("graphs", "figures", 
+ggsave(filename = file.path("graphs", "figures_bonus", 
                             "fig_stack-bar_monthly-discharge_slope-dir.png"),
        height = 6, width = 8, units = "in")
 
@@ -974,7 +974,7 @@ cowplot::plot_grid(perc_ET, perc_ppt, perc_snow, perc_temp, perc_pconc, perc_nco
                    perc_box, nrow = 3, labels = "AUTO")
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "fig_sticks_si_perc-change_Oct_4_25.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_sticks_si_perc-change_Oct_4_25.png"),
        height = 10, width = 15, units = "in")
 
 # Tidy environment
@@ -1096,7 +1096,7 @@ Qnorm2 <- stick_graph(data = si_v3, resp_var = "mean_si_conc",
         axis.text = element_text(color = "black")); Qnorm2
 
 # Export as a figure
-ggsave(filename = file.path("graphs", "figures", "Qnorm_noKrycklan.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "Qnorm_noKrycklan.png"),
        height = 3, width = 5, units = "in")
 
 # Tidy environment
@@ -1194,7 +1194,7 @@ for(focal_chem in c("DSi", "DIN", "P")){
           panel.spacing = unit(x = 2, units = "lines"))
   
   # Export as a figure
-  ggsave(filename = file.path("graphs", "figures", 
+  ggsave(filename = file.path("graphs", "figures_bonus", 
                               paste0("fig_monthly-boxplot-", tolower(pretty_chem), 
                                      "-conc-vs-fnconc.png")),
          height = 12, width = 10, units = "in")
@@ -1298,7 +1298,7 @@ for(focal_chem in levels(df_conc$chemical)){
 cowplot::plot_grid(plotlist = panel_list, ncol = 5)
 
 # Export locally
-ggsave(filename = file.path("graphs", "figures", "fig_mean-response-by-chem-and-lter.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_mean-response-by-chem-and-lter.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
@@ -1377,7 +1377,7 @@ ggplot(df_conc, aes(x = normalize, y = percent_change)) +
   theme(strip.text.y = element_text(size = 12))
 
 # Export locally
-ggsave(filename = file.path("graphs", "figures", "fig_conc-perc-change-by-chem-and-lter-and-normalize.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_conc-perc-change-by-chem-and-lter-and-normalize.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
@@ -1456,7 +1456,7 @@ ggplot(df_conc, aes(x = normalize, y = percent_change)) +
   theme(strip.text.y = element_text(size = 12))
 
 # Export locally
-ggsave(filename = file.path("graphs", "figures", "fig_yield-perc-change-by-chem-and-lter-and-normalize.png"),
+ggsave(filename = file.path("graphs", "figures_bonus", "fig_yield-perc-change-by-chem-and-lter-and-normalize.png"),
        height = 12, width = 8, units = "in")
 
 # Tidy environment
@@ -1560,7 +1560,7 @@ for(focal_chem in levels(df_combo$chemical)){
   focal_file <- paste0("fig_conc-vs-fnconc-", tolower(focal_chem), ".png")
   
   # Export locally
-  ggsave(filename = file.path("graphs", "figures", focal_file),
+  ggsave(filename = file.path("graphs", "figures_bonus", focal_file),
          height = 6, width = 8, units = "in")
   
 }
