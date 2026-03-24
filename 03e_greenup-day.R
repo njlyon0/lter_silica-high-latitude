@@ -18,6 +18,7 @@ librarian::shelf(tidyverse, emmeans, supportR)
 # Make a folder for exporting graphs
 dir.create(path = file.path("data", "stats-results"), showWarnings = F, recursive = T)
 dir.create(path = file.path("graphs", "greenup"), showWarnings = F, recursive = T)
+dir.create(path = file.path("graphs", "figures_supp-info"), showWarnings = F)
 
 # Clear environment
 rm(list = ls()); gc()
@@ -131,14 +132,15 @@ gup_smry
 stick_graph(data = gup_smry, resp_var = "mean",  
     exp_var = "year", sig = "ixn",
     lters = c("Canada", "Finland", "GRO", "Krycklan", "Norway", "Sweden")) +
-  labs(y = "Green-Up Day of Year)",
+  labs(y = "Green-Up (Day of Year)",
     x = "Year") +
   theme(legend.position = "inside",
     legend.position.inside = c(0.85, 0.85),
     axis.text = element_text(color = "black"))
 
 # Export this locally
-ggplot2::ggsave(filename = file.path("graphs", "greenup", "sticks_greenup-day-of-year.png"),
+ggplot2::ggsave(filename = file.path("graphs", "figures_supp-info",
+  "fig-supp11_sticks_greenup-day.png"),
   height = 5, width = 5, units = "in")
 
 # End ----
