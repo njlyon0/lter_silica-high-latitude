@@ -614,17 +614,17 @@ ggplot() +
         plot.title = element_text(hjust = 0.5),
         axis.line = element_line(color = "black"),
         axis.text.y = element_text(size = 14, color = "black"),
-        axis.text.x = element_text(size = 8, color = "black"),
+        axis.text.x = element_text(size = 14, color = "black"),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 17),
         strip.background = element_blank(),
-        strip.text = element_text(size = 12),
+        strip.text = element_text(size = 17),
         panel.spacing = unit(x = 2, units = "lines"))
 
 # Export as a figure
 ggsave(filename = file.path("graphs", "figures_actual", 
   "fig-06_monthly-boxplot-dsi-conc-vs-fnconc.png"),
-  height = 12, width = 10, units = "in")
+  height = 12, width = 14, units = "in")
 
 # Tidy environment
 rm(list = ls()); gc()
