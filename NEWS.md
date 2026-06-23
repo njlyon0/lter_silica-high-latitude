@@ -1,3 +1,9 @@
+## Version 1.2
+
+Development version of the code; features edits following acceptance of the respective manuscript at Global Biogeochemical Cycles.
+
+- Simplifies 'related repositories' section of README to link to relevant GitHub organization
+
 ## Version 1.1
 
 Version of the code supporting the manuscript at the time of its submission to [Global Biogeochemical Cycles](https://agupubs.onlinelibrary.wiley.com/journal/19449224). Also includes edits necessitated by peer reviewer comments. Changes from the preceding version are identified below.
