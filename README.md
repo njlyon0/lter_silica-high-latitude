@@ -14,7 +14,10 @@ All scripts listed below assume that you have run the preceding number script. S
 - **`03b_explore-graphs.R`** - Makes exploratory (i.e., not necessarily publication-quality) graphs of extracted SiZer information. Works for annual/seasonal/monthly input data
 - **`03c_site-map.R`** - Creates a map of the sites with an included permafrost raster for additional context. Also points are colored by mean Si concentration
 - **`03d_land-rock-graphs.R`** - Makes simple graphs of element concentration against lithology/land cover categories
-- **`03e_figures.R`** - Makes publication-quality figures from extracted SiZer information
+- **`03e_greenup-day.R`** - Analyzes and makes simple graph of greenup day data
+- **`03f_figures-actual.R`** - Makes publication-quality figures from extracted SiZer information _included in the main text of the publication_
+- **`03g_figures-supplement.R`** - Makes publication-quality figures from extracted SiZer information _included in the supplemental materials of the publication_
+- **`03h_figures-bonus.R`** - Makes publication-quality figures from extracted SiZer information _not included in either the main text or the supplemental materials of the publication_
 - **`04_tables.R`** - Generates publication-quality summary tables
 
 ## Related Repositories
