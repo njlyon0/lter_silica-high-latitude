@@ -1,6 +1,6 @@
 ## Version 1.1
 
-Changes from the preceding version are identified below as they are made.
+Version of the code supporting the manuscript at the time of its submission to [Global Biogeochemical Cycles](https://agupubs.onlinelibrary.wiley.com/journal/19449224). Also includes edits necessitated by peer reviewer comments. Changes from the preceding version are identified below.
 
 - Adds DOI badges for code and data to README
 - Creates script for land/rock multi-panel figure (`03d`)
