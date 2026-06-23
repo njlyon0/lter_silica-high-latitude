@@ -20,12 +20,6 @@ All scripts listed below assume that you have run the preceding number script. S
 - **`03h_figures-bonus.R`** - Makes publication-quality figures from extracted SiZer information _not included in either the main text or the supplemental materials of the publication_
 - **`04_tables.R`** - Generates publication-quality summary tables
 
-## Related Repositories
+## Related Work
 
-This working group has several other repositories. All are linked and described (briefly) below.
-
-- [lter/**lterwg-silica-data**](https://github.com/lter/lterwg-silica-data) - Primary data wrangling / tidying repository for "master" data files
-- [SwampThingPaul/**SiSyn**](https://github.com/SwampThingPaul/SiSyn) - Original repository for this working group. Performs many functions from data wrangling through analysis and figure creation
-- [lsethna/**NCEAS_SiSyn_CQ**](https://github.com/lsethna/NCEAS_SiSyn_CQ) - Examples concentration (C) and discharge (Q) relationships for a wide range of solutes
-- [lter/**lterwg-silica-spatial**](https://github.com/lter/lterwg-silica-spatial) - Extracts spatial and climatic information from within watershed shapefiles
-- [njlyon0/**lter_silica-high-latitude**](https://github.com/njlyon0/lter_silica-high-latitude) - Performs analysis and visualization for the high latitude manuscript
+For more information on work from this group, please visit [our GitHub Organization](https://github.com/global-river-chem).
