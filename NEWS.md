@@ -3,6 +3,7 @@
 Development version of the code; features edits following acceptance of the respective manuscript at Global Biogeochemical Cycles.
 
 - Simplifies 'related repositories' section of README to link to relevant GitHub organization
+- Adds article DOI to badge
 
 ## Version 1.1
 
